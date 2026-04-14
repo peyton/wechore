@@ -44,6 +44,14 @@ def test_mise_pins_project_tools() -> None:
     assert '"npm:prettier"' in mise
 
 
+def test_editorconfig_declares_clean_checkout_prettier_width() -> None:
+    editorconfig = (REPO_ROOT / ".editorconfig").read_text(encoding="utf-8")
+
+    assert "root = true" in editorconfig
+    assert "max_line_length = 100" in editorconfig
+    assert "end_of_line = lf" in editorconfig
+
+
 def test_hk_config_runs_linting_steps() -> None:
     hk = (REPO_ROOT / "hk.pkl").read_text(encoding="utf-8")
 
