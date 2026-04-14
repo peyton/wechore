@@ -28,7 +28,12 @@ struct SettingsView: View {
                 )
 
                 SettingsAppearanceSection()
-                SettingsProfileSection()
+                NavigationLink {
+                    StatisticsView()
+                } label: {
+                    Label("Household Stats", systemImage: "chart.bar.fill")
+                }
+                .buttonStyle(SecondaryActionButtonStyle())                SettingsProfileSection()
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()
                 SettingsDiagnosticsSection()
