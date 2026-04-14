@@ -1,6 +1,6 @@
 # CloudKit Setup
 
-WeChore uses Apple CloudKit and `CKShare` for household sharing. There is no WeChore-operated sync server.
+WeChore uses Apple CloudKit and `CKShare` for conversation sharing. There is no WeChore-operated sync server.
 
 ## Defaults
 
@@ -22,13 +22,15 @@ just cloudkit-validate-schema
 
 `cloudkit-doctor` checks that `xcrun cktool` can see the configured team. `cloudkit-export-schema` writes the current schema to `.state/cloudkit/wechore-cloudkit-schema.json`. `cloudkit-validate-schema` verifies that the exported schema is valid JSON.
 
-## MVP Record Shape
+## Conversation Record Shape
 
-The Swift `CloudKitHouseholdStore` writes deterministic record names into the custom zone `wechore-household`.
+The Swift `CloudKitConversationStore` writes deterministic record names into the custom zone `wechore-conversations`.
 
-- `Household.<id>`
-- `Member.<id>`
+- `ChatThread.<id>`
+- `ChatParticipant.<id>`
 - `Chore.<id>`
 - `ChoreMessage.<id>`
+- `TaskActivity.<id>`
+- `ThreadInvite.<id>`
 
-This record shape is intentionally small for the MVP and is covered by unit and integration tests with fake CloudKit clients.
+Thread-root `CKShare` metadata uses the chat title. Invite codes resolve through short-lived public invite records, while the shared conversation itself stays in the user's CloudKit account. This record shape is covered by unit and integration tests with fake CloudKit clients.

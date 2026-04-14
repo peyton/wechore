@@ -12,7 +12,7 @@ struct SettingsView: View {
 
                 SettingsRow(
                     title: "Apple-only sync",
-                    detail: appState.settings.cloudKitEnabled ? "CloudKit sharing enabled" : "CloudKit disabled for testing"
+                    detail: appState.settings.cloudKitEnabled ? "CloudKit conversation sharing enabled" : "CloudKit disabled for testing"
                 )
                 SettingsRow(
                     title: "Notifications",
@@ -20,11 +20,11 @@ struct SettingsView: View {
                 )
                 SettingsRow(
                     title: "Message intelligence",
-                    detail: "On-device parsing from WeChore messages only"
+                    detail: "Task extraction runs on device from WeChore chats only"
                 )
                 SettingsRow(
-                    title: "Voice handoff",
-                    detail: "FaceTime Audio first, Phone fallback"
+                    title: "Invites",
+                    detail: "Share links, codes, AirDrop, and nearby join"
                 )
 
                 Link("Support", destination: URL(string: "https://wechore.peyton.app/support/")!)

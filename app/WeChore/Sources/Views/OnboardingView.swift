@@ -3,7 +3,7 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(AppState.self) private var appState
     @State private var displayName = ""
-    @State private var householdName = ""
+    @State private var firstChatName = ""
     @State private var contact = ""
 
     var body: some View {
@@ -13,12 +13,12 @@ struct OnboardingView: View {
                     BrandLockup()
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Assign chores in the same place you talk about them.")
+                        Text("Make tasks where the conversation happens.")
                             .font(.largeTitle.bold())
                             .foregroundStyle(AppPalette.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(
-                            "WeChore uses CloudKit sharing, local reminders, and on-device suggestions. "
+                            "WeChore uses chats, DMs, local reminders, and on-device task extraction. "
                                 + "It never needs a WeChore server account."
                         )
                             .foregroundStyle(AppPalette.muted)
@@ -31,9 +31,9 @@ struct OnboardingView: View {
                             .accessibilityIdentifier("onboarding.name")
                             .textFieldStyle(.roundedBorder)
 
-                        TextField("Household name", text: $householdName)
+                        TextField("First group chat", text: $firstChatName)
                             .textInputAutocapitalization(.words)
-                            .accessibilityIdentifier("onboarding.household")
+                            .accessibilityIdentifier("onboarding.chatName")
                             .textFieldStyle(.roundedBorder)
 
                         TextField("FaceTime or phone", text: $contact)
@@ -46,7 +46,7 @@ struct OnboardingView: View {
                     Button("Start WeChore") {
                         appState.completeOnboarding(
                             displayName: displayName,
-                            householdName: householdName,
+                            householdName: firstChatName,
                             contact: contact
                         )
                     }
@@ -77,7 +77,7 @@ private struct BrandLockup: View {
                 Text("WeChore")
                     .font(.title.bold())
                     .foregroundStyle(AppPalette.ink)
-                Text("Household work, in sync.")
+                Text("Tasks inside chats.")
                     .font(.subheadline)
                     .foregroundStyle(AppPalette.muted)
             }

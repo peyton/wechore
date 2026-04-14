@@ -6,18 +6,23 @@ public protocol CloudKitDatabaseClient: Sendable {
     func records(matching query: CKQuery, inZoneWith zoneID: CKRecordZone.ID?) async throws -> [CKRecord]
 }
 
-public protocol HouseholdSyncing: Sendable {
+public protocol ConversationSyncing: Sendable {
     func records(for snapshot: ChoreSnapshot) -> [CKRecord]
     func save(snapshot: ChoreSnapshot) async throws
-    func share(for snapshot: ChoreSnapshot) -> CKShare
+    func share(for threadID: String, in snapshot: ChoreSnapshot) -> CKShare?
+    func invitePayload(for code: String, in snapshot: ChoreSnapshot, now: Date) -> InvitePayload?
 }
 
-public struct CloudKitHouseholdStore: HouseholdSyncing {
+public typealias HouseholdSyncing = ConversationSyncing
+
+public struct CloudKitConversationStore: ConversationSyncing {
     public enum RecordType {
-        public static let household = "Household"
-        public static let member = "Member"
+        public static let thread = "ChatThread"
+        public static let participant = "ChatParticipant"
         public static let chore = "Chore"
         public static let message = "ChoreMessage"
+        public static let taskActivity = "TaskActivity"
+        public static let invite = "ThreadInvite"
     }
 
     public let zoneID: CKRecordZone.ID
@@ -25,26 +30,22 @@ public struct CloudKitHouseholdStore: HouseholdSyncing {
 
     public init(
         database: CloudKitDatabaseClient,
-        zoneID: CKRecordZone.ID = CKRecordZone.ID(zoneName: "wechore-household", ownerName: CKCurrentUserDefaultName)
+        zoneID: CKRecordZone.ID = CKRecordZone.ID(
+            zoneName: "wechore-conversations",
+            ownerName: CKCurrentUserDefaultName
+        )
     ) {
         self.database = database
         self.zoneID = zoneID
     }
 
     public func records(for snapshot: ChoreSnapshot) -> [CKRecord] {
-        var output: [CKRecord] = []
-        let household = CKRecord(
-            recordType: RecordType.household,
-            recordID: recordID(recordType: RecordType.household, id: snapshot.household.id)
-        )
-        household["name"] = snapshot.household.name as CKRecordValue
-        household["updatedAt"] = snapshot.household.updatedAt as CKRecordValue
-        output.append(household)
-
-        output.append(contentsOf: snapshot.members.map(memberRecord))
-        output.append(contentsOf: snapshot.chores.map(choreRecord))
-        output.append(contentsOf: snapshot.messages.map(messageRecord))
-        return output
+        snapshot.threads.map(threadRecord)
+            + snapshot.participants.map(participantRecord)
+            + snapshot.chores.map(choreRecord)
+            + snapshot.messages.map(messageRecord)
+            + snapshot.taskActivities.map(taskActivityRecord)
+            + snapshot.invites.map(inviteRecord)
     }
 
     public func save(snapshot: ChoreSnapshot) async throws {
@@ -53,28 +54,63 @@ public struct CloudKitHouseholdStore: HouseholdSyncing {
         }
     }
 
-    public func share(for snapshot: ChoreSnapshot) -> CKShare {
-        let root = records(for: snapshot)[0]
+    public func share(for threadID: String, in snapshot: ChoreSnapshot) -> CKShare? {
+        guard let thread = snapshot.threads.first(where: { $0.id == threadID }) else { return nil }
+        let root = threadRecord(thread)
         let share = CKShare(rootRecord: root)
-        share[CKShare.SystemFieldKey.title] = snapshot.household.name as CKRecordValue
+        share[CKShare.SystemFieldKey.title] = thread.title as CKRecordValue
         return share
+    }
+
+    public func invitePayload(for code: String, in snapshot: ChoreSnapshot, now: Date) -> InvitePayload? {
+        let normalized = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard let invite = snapshot.invites.first(where: {
+            $0.code == normalized && $0.expiresAt >= now
+        }), let thread = snapshot.threads.first(where: { $0.id == invite.threadID }) else {
+            return nil
+        }
+        return InvitePayload(
+            inviteID: invite.id,
+            threadID: thread.id,
+            threadTitle: thread.title,
+            inviterParticipantID: invite.inviterParticipantID,
+            code: invite.code,
+            expiresAt: invite.expiresAt
+        )
     }
 
     private func recordID(recordType: String, id: String) -> CKRecord.ID {
         CKRecord.ID(recordName: "\(recordType).\(id)", zoneID: zoneID)
     }
 
-    private func memberRecord(_ member: Member) -> CKRecord {
+    private func threadRecord(_ thread: ChatThread) -> CKRecord {
         let record = CKRecord(
-            recordType: RecordType.member,
-            recordID: recordID(recordType: RecordType.member, id: member.id)
+            recordType: RecordType.thread,
+            recordID: recordID(recordType: RecordType.thread, id: thread.id)
         )
-        record["displayName"] = member.displayName as CKRecordValue
-        record["isCurrentUser"] = (member.isCurrentUser ? 1 : 0) as CKRecordValue
-        if let phoneNumber = member.phoneNumber {
+        record["kind"] = thread.kind.rawValue as CKRecordValue
+        record["title"] = thread.title as CKRecordValue
+        record["participantIDs"] = thread.participantIDs as CKRecordValue
+        record["pinnedTaskIDs"] = thread.pinnedTaskIDs as CKRecordValue
+        record["unreadCount"] = thread.unreadCount as CKRecordValue
+        record["createdAt"] = thread.createdAt as CKRecordValue
+        record["updatedAt"] = thread.updatedAt as CKRecordValue
+        record["lastActivityAt"] = thread.lastActivityAt as CKRecordValue
+        return record
+    }
+
+    private func participantRecord(_ participant: ChatParticipant) -> CKRecord {
+        let record = CKRecord(
+            recordType: RecordType.participant,
+            recordID: recordID(recordType: RecordType.participant, id: participant.id)
+        )
+        record["displayName"] = participant.displayName as CKRecordValue
+        record["isCurrentUser"] = (participant.isCurrentUser ? 1 : 0) as CKRecordValue
+        record["createdAt"] = participant.createdAt as CKRecordValue
+        if let phoneNumber = participant.phoneNumber {
             record["phoneNumber"] = phoneNumber as CKRecordValue
         }
-        if let faceTimeHandle = member.faceTimeHandle {
+        if let faceTimeHandle = participant.faceTimeHandle {
             record["faceTimeHandle"] = faceTimeHandle as CKRecordValue
         }
         return record
@@ -85,15 +121,24 @@ public struct CloudKitHouseholdStore: HouseholdSyncing {
             recordType: RecordType.chore,
             recordID: recordID(recordType: RecordType.chore, id: chore.id)
         )
+        record["threadID"] = chore.threadID as CKRecordValue
         record["title"] = chore.title as CKRecordValue
         record["notes"] = chore.notes as CKRecordValue
         record["createdByMemberID"] = chore.createdByMemberID as CKRecordValue
         record["assigneeID"] = chore.assigneeID as CKRecordValue
         record["status"] = chore.status.rawValue as CKRecordValue
+        record["reminderPolicy"] = chore.reminderPolicy.rawValue as CKRecordValue
+        record["notificationState"] = chore.notificationState.rawValue as CKRecordValue
         record["createdAt"] = chore.createdAt as CKRecordValue
         record["updatedAt"] = chore.updatedAt as CKRecordValue
+        if let sourceMessageID = chore.sourceMessageID {
+            record["sourceMessageID"] = sourceMessageID as CKRecordValue
+        }
         if let dueDate = chore.dueDate {
             record["dueDate"] = dueDate as CKRecordValue
+        }
+        if let lastReminderAt = chore.lastReminderAt {
+            record["lastReminderAt"] = lastReminderAt as CKRecordValue
         }
         return record
     }
@@ -103,6 +148,7 @@ public struct CloudKitHouseholdStore: HouseholdSyncing {
             recordType: RecordType.message,
             recordID: recordID(recordType: RecordType.message, id: message.id)
         )
+        record["threadID"] = message.threadID as CKRecordValue
         record["authorMemberID"] = message.authorMemberID as CKRecordValue
         record["body"] = message.body as CKRecordValue
         record["kind"] = message.kind.rawValue as CKRecordValue
@@ -119,7 +165,36 @@ public struct CloudKitHouseholdStore: HouseholdSyncing {
         }
         return record
     }
+
+    private func taskActivityRecord(_ activity: TaskActivity) -> CKRecord {
+        let record = CKRecord(
+            recordType: RecordType.taskActivity,
+            recordID: recordID(recordType: RecordType.taskActivity, id: activity.id)
+        )
+        record["threadID"] = activity.threadID as CKRecordValue
+        record["choreID"] = activity.choreID as CKRecordValue
+        record["actorParticipantID"] = activity.actorParticipantID as CKRecordValue
+        record["kind"] = activity.kind.rawValue as CKRecordValue
+        record["body"] = activity.body as CKRecordValue
+        record["createdAt"] = activity.createdAt as CKRecordValue
+        return record
+    }
+
+    private func inviteRecord(_ invite: ThreadInvite) -> CKRecord {
+        let record = CKRecord(
+            recordType: RecordType.invite,
+            recordID: recordID(recordType: RecordType.invite, id: invite.id)
+        )
+        record["threadID"] = invite.threadID as CKRecordValue
+        record["inviterParticipantID"] = invite.inviterParticipantID as CKRecordValue
+        record["code"] = invite.code as CKRecordValue
+        record["expiresAt"] = invite.expiresAt as CKRecordValue
+        record["createdAt"] = invite.createdAt as CKRecordValue
+        return record
+    }
 }
+
+public typealias CloudKitHouseholdStore = CloudKitConversationStore
 
 public actor FakeCloudKitDatabaseClient: CloudKitDatabaseClient {
     public private(set) var savedRecords: [String: CKRecord] = [:]

@@ -1,11 +1,11 @@
 # WeChore App
 
-WeChore is a SwiftUI iPhone and iPad app for assigning chores, tracking progress, sending reminders, and turning in-app messages into reviewable chore suggestions.
+WeChore is a SwiftUI iPhone and iPad app for chat-based task coordination. Group chats and DMs own their messages, participants, invites, task tiles, reminders, and completion updates.
 
 ## Architecture
 
 - `WeChore/Sources/Models` contains Codable domain models and the SwiftData snapshot cache.
-- `WeChore/Sources/Services` contains app state, CloudKit, notification, message suggestion, and communication handoff services.
+- `WeChore/Sources/Services` contains app state, CloudKit, notifications, task extraction, nearby invite exchange, and communication handoff services.
 - `WeChore/Sources/Shared` contains routing and visual tokens.
 - `WeChore/Sources/Views` contains the SwiftUI screens.
 - `WeChore/Tests` contains unit tests.

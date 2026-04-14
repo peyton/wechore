@@ -16,5 +16,9 @@
 	<array>
 		<string>$(WECHORE_APP_GROUP_ID)</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:wechore.peyton.app</string>
+	</array>
 </dict>
 </plist>
