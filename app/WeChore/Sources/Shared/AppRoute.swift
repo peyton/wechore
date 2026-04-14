@@ -3,6 +3,7 @@ import Foundation
 enum ChatDestination: Hashable {
     case thread(String)
     case joinStart
+    case myQRCode
     case settings
 }
 

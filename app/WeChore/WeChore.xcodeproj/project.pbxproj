@@ -12,6 +12,7 @@
 		092EFCB07D94CF9B2ACD6CC2 /* Clock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCF0082220993EF6294B35 /* Clock.swift */; };
 		09A3059468736225D3A84C6E /* TuistAssets+WeChoreDev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E0B3CCBB9F2CA47A52901B7 /* TuistAssets+WeChoreDev.swift */; };
 		09E811409FF7180B9553BE74 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 904E57B6772853AF1445E5F8 /* AppState.swift */; };
+		144F089A4CC7C2FE955C604C /* ContactPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */; };
 		1B4A47BFE222B65692A465F7 /* VoiceMessageServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5776EEC590992DB1D8C39EF4 /* VoiceMessageServices.swift */; };
 		21150B907A7A1159EEC72344 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
 		292FDE83B0FE1F2EDEDD43FD /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
@@ -23,6 +24,7 @@
 		3F70E9BC2616AE201060FC04 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
 		412573FCF0192DE9043D9553 /* Clock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCF0082220993EF6294B35 /* Clock.swift */; };
 		425028584323AEE018DC21B2 /* MessageSuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */; };
+		4458A59A2FCEB3620C38D9E7 /* ContactPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */; };
 		4684411D548710A2FB5311C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17828170DA4D5FEDF94EA80C /* Assets.xcassets */; };
 		5351BC7F05AB46A04C0A84E6 /* WidgetTimelineReloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D241160ED569D750FA9F88 /* WidgetTimelineReloader.swift */; };
 		5470A9EA14B4D248B574DFF4 /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
@@ -45,11 +47,13 @@
 		87C761A1BD33C5526097CD8F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */; };
 		8800AA6295DC153E165D1567 /* NearbyInviteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8002C9CDD9DA50A3F9721CB /* NearbyInviteService.swift */; };
 		884B012495DB0969543F93D5 /* WeChoreWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2ED4010281569611C1B7F81 /* WeChoreWidgets.swift */; };
+		88A6EE6A7ADB777DF0DB23F6 /* InviteQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */; };
 		8BCF2B6F6E8539FD25E3EE8B /* WeChoreWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2ED4010281569611C1B7F81 /* WeChoreWidgets.swift */; };
 		8D2A7018BC14FF80AD1EC777 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */; };
 		98EDCA2C253385B39954EF65 /* WeChoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */; };
 		9E42E5106C80AF0A52CB9323 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
 		9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
+		A21194D956E1B65DE85BFB8E /* QRCodeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7DE62879F47D510870CC76C /* QRCodeRenderer.swift */; };
 		A25B8D1479188553485A7386 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
 		A3E2842DC12C02398E5F303D /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
 		A420663CF3EEAFA4763BC76D /* WeChoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */; };
@@ -58,6 +62,7 @@
 		B0CA40F2AC9F90044D019A34 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 904E57B6772853AF1445E5F8 /* AppState.swift */; };
 		B10975C28010EA0789782FF2 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 35B078A38F61C6DA8A58AD2B /* AppIntents.framework */; };
 		B2C924146668AD4AE9506703 /* SharedSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CFC67E6F941A83FD76761C /* SharedSnapshotStore.swift */; };
+		B47F4430BE5422D020CEFBE9 /* QRCodeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7DE62879F47D510870CC76C /* QRCodeRenderer.swift */; };
 		B90042819A083FD803C157D5 /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
 		B995BE37D9FBD5F18FE701C6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17828170DA4D5FEDF94EA80C /* Assets.xcassets */; };
 		B9A5A51910A381B99393DA97 /* SharedSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CFC67E6F941A83FD76761C /* SharedSnapshotStore.swift */; };
@@ -70,6 +75,7 @@
 		D78E3CFA8010080845F1D996 /* CloudKitHouseholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */; };
 		DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */; };
 		DE53C6C4F86EFFA6D3BC8771 /* WidgetTimelineReloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D241160ED569D750FA9F88 /* WidgetTimelineReloader.swift */; };
+		E7EBB9903546867BF3A71AD4 /* InviteQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */; };
 		E82534DDD655A17AF6FDEBB7 /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
 		E8FA8318726D5289173839AF /* WeChoreIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */; };
 		F3C7EE5600202CB3A4BA7824 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AD8E0CC811743DD14E76300 /* WidgetKit.framework */; };
@@ -235,6 +241,7 @@
 		5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		5FB508596101C93FDEBA4BE2 /* TuistAssets+WeChore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+WeChore.swift"; sourceTree = "<group>"; };
 		63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreTests.swift; sourceTree = "<group>"; };
+		666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactPicker.swift; sourceTree = "<group>"; };
 		6AA60A67D6AE72E1B9E9288C /* TuistBundle+WeChore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+WeChore.swift"; sourceTree = "<group>"; };
 		75688C20095192147F2BA651 /* WeChoreDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreDeepLink.swift; sourceTree = "<group>"; };
 		79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
@@ -254,11 +261,13 @@
 		C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreIntegrationTests.swift; sourceTree = "<group>"; };
 		D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSuggestionEngine.swift; sourceTree = "<group>"; };
 		D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreUITests.swift; sourceTree = "<group>"; };
+		D7DE62879F47D510870CC76C /* QRCodeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeRenderer.swift; sourceTree = "<group>"; };
 		DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreApp.swift; sourceTree = "<group>"; };
 		E2ED4010281569611C1B7F81 /* WeChoreWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreWidgets.swift; sourceTree = "<group>"; };
 		E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		E8099D29BE0998FF09581473 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E9CFC67E6F941A83FD76761C /* SharedSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSnapshotStore.swift; sourceTree = "<group>"; };
+		F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteQRCodeView.swift; sourceTree = "<group>"; };
 		F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -323,6 +332,8 @@
 			isa = PBXGroup;
 			children = (
 				0B53447435F88D82364A810A /* ChoresView.swift */,
+				666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */,
+				F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */,
 				F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */,
 				2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */,
 				9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */,
@@ -358,6 +369,7 @@
 			children = (
 				016AC5C6A9F51FF736BF127A /* AppRoute.swift */,
 				E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */,
+				D7DE62879F47D510870CC76C /* QRCodeRenderer.swift */,
 				00DA29DF12173767FB8D1FD8 /* RuntimeEnvironment.swift */,
 				E9CFC67E6F941A83FD76761C /* SharedSnapshotStore.swift */,
 				75688C20095192147F2BA651 /* WeChoreDeepLink.swift */,
@@ -779,10 +791,13 @@
 				DE53C6C4F86EFFA6D3BC8771 /* WidgetTimelineReloader.swift in Sources */,
 				77371031B2F28DD449624828 /* AppRoute.swift in Sources */,
 				A25B8D1479188553485A7386 /* AppTheme.swift in Sources */,
+				A21194D956E1B65DE85BFB8E /* QRCodeRenderer.swift in Sources */,
 				AF43B4B5CF80B04E3446B304 /* RuntimeEnvironment.swift in Sources */,
 				069B7612AAA7DE52C2CC6789 /* SharedSnapshotStore.swift in Sources */,
 				B90042819A083FD803C157D5 /* WeChoreDeepLink.swift in Sources */,
 				F543304ADC47AC3F8C211108 /* ChoresView.swift in Sources */,
+				144F089A4CC7C2FE955C604C /* ContactPicker.swift in Sources */,
+				88A6EE6A7ADB777DF0DB23F6 /* InviteQRCodeView.swift in Sources */,
 				DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */,
 				D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */,
 				21150B907A7A1159EEC72344 /* RootView.swift in Sources */,
@@ -841,10 +856,13 @@
 				5351BC7F05AB46A04C0A84E6 /* WidgetTimelineReloader.swift in Sources */,
 				FDF54445C2CD028BCA583930 /* AppRoute.swift in Sources */,
 				9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */,
+				B47F4430BE5422D020CEFBE9 /* QRCodeRenderer.swift in Sources */,
 				7FDD27DC8648DF5EB4BD210D /* RuntimeEnvironment.swift in Sources */,
 				B2C924146668AD4AE9506703 /* SharedSnapshotStore.swift in Sources */,
 				5470A9EA14B4D248B574DFF4 /* WeChoreDeepLink.swift in Sources */,
 				69F23ED45B841BA673D3808D /* ChoresView.swift in Sources */,
+				4458A59A2FCEB3620C38D9E7 /* ContactPicker.swift in Sources */,
+				E7EBB9903546867BF3A71AD4 /* InviteQRCodeView.swift in Sources */,
 				6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */,
 				2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */,
 				A3E2842DC12C02398E5F303D /* RootView.swift in Sources */,

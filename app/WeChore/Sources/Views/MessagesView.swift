@@ -11,6 +11,7 @@ struct ConversationView: View {
     @State private var isVoiceMode = false
     @State private var isActionPanelOpen = false
     @State private var invitePayload: InvitePayload?
+    @State private var isInviteQRPresented = false
     @FocusState private var isDraftFocused: Bool
 
     private let bottomID = "conversation.bottom"
@@ -20,7 +21,8 @@ struct ConversationView: View {
             ConversationHeader(
                 threadID: threadID,
                 invitePayload: $invitePayload,
-                createInvite: createInvite
+                createInvite: createInvite,
+                showInviteQR: showInviteQR
             )
             StatusToast()
             FloatingTaskTile(threadID: threadID)
@@ -43,7 +45,8 @@ struct ConversationView: View {
                     ConversationActionPanel(
                         invitePayload: invitePayload,
                         newTask: prepareNewTaskPrompt,
-                        createInvite: createInvite
+                        createInvite: createInvite,
+                        showInviteQR: showInviteQR
                     )
                 }
             }
@@ -53,6 +56,25 @@ struct ConversationView: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(appState.thread(for: threadID)?.title ?? "Chat")
+        .sheet(isPresented: $isInviteQRPresented) {
+            if let invitePayload {
+                NavigationStack {
+                    ScrollView {
+                        InviteQRCodeCard(payload: invitePayload)
+                            .padding(18)
+                    }
+                    .background(AppPalette.canvas)
+                    .navigationTitle("Invite QR")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                isInviteQRPresented = false
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private func sendTextMessage() {
@@ -84,6 +106,13 @@ struct ConversationView: View {
     private func createInvite() {
         invitePayload = appState.createInvite(for: threadID)
     }
+
+    private func showInviteQR() {
+        if invitePayload == nil {
+            createInvite()
+        }
+        isInviteQRPresented = invitePayload != nil
+    }
 }
 
 private struct ConversationHeader: View {
@@ -91,6 +120,7 @@ private struct ConversationHeader: View {
     let threadID: String
     @Binding var invitePayload: InvitePayload?
     let createInvite: () -> Void
+    let showInviteQR: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -107,13 +137,23 @@ private struct ConversationHeader: View {
             }
             Spacer()
             if let payload = invitePayload {
-                ShareLink(item: payload.shareText) {
-                    Label("Share invite", systemImage: "square.and.arrow.up")
-                        .labelStyle(.iconOnly)
+                HStack(spacing: 2) {
+                    Button(action: showInviteQR) {
+                        Label("Show QR", systemImage: "qrcode")
+                            .labelStyle(.iconOnly)
+                    }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .accessibilityIdentifier("conversation.showInviteQR")
+
+                    ShareLink(item: payload.shareText) {
+                        Label("Share invite", systemImage: "square.and.arrow.up")
+                            .labelStyle(.iconOnly)
+                    }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .accessibilityIdentifier("conversation.shareInvite")
                 }
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-                .accessibilityIdentifier("conversation.shareInvite")
             } else {
                 Button(action: createInvite) {
                     Label("Invite", systemImage: "person.badge.plus")
@@ -857,6 +897,7 @@ private struct ConversationActionPanel: View {
     let invitePayload: InvitePayload?
     let newTask: () -> Void
     let createInvite: () -> Void
+    let showInviteQR: () -> Void
 
     private let columns = [
         GridItem(.adaptive(minimum: 116), spacing: 10, alignment: .top)
@@ -869,6 +910,8 @@ private struct ConversationActionPanel: View {
             ChatActionButton(title: "Invite", systemImage: "person.badge.plus", action: createInvite)
                 .accessibilityIdentifier("chat.action.invite")
             if let invitePayload {
+                ChatActionButton(title: "QR code", systemImage: "qrcode", action: showInviteQR)
+                    .accessibilityIdentifier("chat.action.qr")
                 ShareLink(item: invitePayload.shareText) {
                     VStack(spacing: 8) {
                         Image(systemName: "airplayaudio")
@@ -929,6 +972,7 @@ struct JoinStartView: View {
     @State private var dmName = ""
     @State private var dmContact = ""
     @State private var inviteCode = ""
+    @State private var isDMContactPickerPresented = false
 
     var body: some View {
         ScrollView {
@@ -936,6 +980,24 @@ struct JoinStartView: View {
                 Text("Join or Start")
                     .font(.largeTitle.bold())
                     .foregroundStyle(AppPalette.ink)
+
+                JoinStartPanel(title: "Scan a QR code") {
+                    Text(
+                        "Ask your friend to open My QR. Open the iPhone Camera app, "
+                            + "point it at their WeChore QR, then tap the join banner."
+                    )
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 10) {
+                        Image(systemName: "camera.viewfinder")
+                            .foregroundStyle(AppPalette.weChatGreen)
+                        Text("Camera scanning works with WeChore invite links.")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppPalette.ink)
+                    }
+                    .accessibilityIdentifier("join.scanQR")
+                }
 
                 JoinStartPanel(title: "Start a group chat") {
                     VisibleFieldLabel("Group chat name") {
@@ -965,6 +1027,14 @@ struct JoinStartView: View {
                             .textFieldStyle(.roundedBorder)
                             .accessibilityIdentifier("join.dmContact")
                     }
+                    Button {
+                        isDMContactPickerPresented = true
+                    } label: {
+                        Label("Choose from Contacts", systemImage: "person.crop.circle.badge.plus")
+                    }
+                    .buttonStyle(SecondaryActionButtonStyle())
+                    .accessibilityIdentifier("join.pickContact")
+
                     Button("Start DM") {
                         openThread(appState.startDM(
                             displayName: dmName,
@@ -1011,6 +1081,15 @@ struct JoinStartView: View {
         }
         .background(AppPalette.canvas)
         .navigationTitle("Join or Start")
+        .sheet(isPresented: $isDMContactPickerPresented) {
+            ContactPicker { selection in
+                dmName = selection.displayName
+                dmContact = selection.contactValue
+                isDMContactPickerPresented = false
+            } onCancel: {
+                isDMContactPickerPresented = false
+            }
+        }
     }
 
     private func openThread(_ threadID: String) {
