@@ -1,6 +1,6 @@
 # WeChore
 
-WeChore is an Apple-first chore coordination app for iPhone and iPad. It keeps household chores, reminders, progress checks, and message-derived suggestions local-first with SwiftData, CloudKit sharing, local notifications, and on-device text parsing.
+WeChore is an Apple-first chat and task app for iPhone and iPad. It organizes chores around group chats and DMs, keeps task reminders and progress local-first with SwiftData, CloudKit sharing, local notifications, and on-device extraction, and turns plain requests in a conversation into lightweight task tiles.
 
 ## Build And Run
 
@@ -41,7 +41,7 @@ docs/         Product, CloudKit, CI, App Store, and ExecPlan documentation
 
 ## Product Boundaries
 
-WeChore does not run a third-party server, does not read iMessage conversations, and does not build in-app VoIP. Collaboration uses CloudKit sharing. Voice and message reminders hand off to Apple system apps such as FaceTime, Phone, and Messages.
+WeChore does not run a third-party server, does not read iMessage conversations, and does not build in-app VoIP. Collaboration uses CloudKit conversation sharing, invite links, invite codes, and nearby exchange through public Apple APIs. Voice and message reminders hand off to Apple system apps such as FaceTime, Phone, AirDrop, and Messages.
 
 ## Source Availability And License
 

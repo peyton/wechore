@@ -19,11 +19,11 @@ struct ChoresView: View {
                 )
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Active chores")
+                    Text("Active tasks")
                         .font(.title2.bold())
                         .foregroundStyle(AppPalette.ink)
                     if appState.activeChores.isEmpty {
-                        EmptyState(text: "No active chores. Add one or accept a message suggestion.")
+                        EmptyState(text: "No active tasks. Send a request in chat or add one here.")
                     } else {
                         ForEach(appState.activeChores) { chore in
                             ChoreRow(chore: chore)
@@ -83,11 +83,11 @@ private struct HeaderSummary: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(appState.household.name)
+            Text("All Tasks")
                 .font(.largeTitle.bold())
                 .foregroundStyle(AppPalette.ink)
-                .accessibilityIdentifier("chores.householdName")
-            Text("\(appState.currentMemberChores.filter(\.isActive).count) chores assigned to \(appState.currentMember.displayName)")
+                .accessibilityIdentifier("chores.title")
+            Text("\(appState.currentMemberChores.filter(\.isActive).count) tasks assigned to \(appState.currentMember.displayName)")
                 .font(.headline)
                 .foregroundStyle(AppPalette.muted)
                 .accessibilityIdentifier("chores.assignmentSummary")
@@ -104,7 +104,7 @@ private struct AddChorePanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("New chore")
+            Text("New task")
                 .font(.headline)
             TextField("Take out trash", text: $title)
                 .accessibilityIdentifier("chore.title")
@@ -118,7 +118,7 @@ private struct AddChorePanel: View {
             .accessibilityIdentifier("chore.assignee")
             Toggle("Due tomorrow", isOn: $dueTomorrow)
                 .accessibilityIdentifier("chore.dueTomorrow")
-            Button("Add Chore", action: add)
+            Button("Add Task", action: add)
                 .buttonStyle(PrimaryActionButtonStyle())
                 .accessibilityIdentifier("chore.add")
         }

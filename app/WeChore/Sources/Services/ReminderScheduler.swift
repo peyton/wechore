@@ -25,9 +25,9 @@ public enum ReminderPlanner {
         let fallback = calendar.date(byAdding: .hour, value: 1, to: now) ?? now
         let fireDate = chore.dueDate.map { max($0, now) } ?? fallback
         return ReminderPlan(
-            identifier: "wechore.chore.\(chore.id)",
-            title: "WeChore reminder",
-            body: "\(assignee.displayName), check progress on \(chore.title).",
+            identifier: "wechore.thread.\(chore.threadID).task.\(chore.id)",
+            title: "WeChore task",
+            body: "\(assignee.displayName), check \(chore.title).",
             fireDate: fireDate
         )
     }

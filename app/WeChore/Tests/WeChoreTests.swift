@@ -5,17 +5,18 @@ import XCTest
 
 @MainActor
 final class WeChoreTests: XCTestCase {
-    func testAppRouterDefaultsToChats() {
+    func testAppRouterStartsAtChatTree() {
         let router = AppRouter()
 
-        XCTAssertEqual(router.selectedRoute, .messages)
-        XCTAssertEqual(router.selectedRoute.title, "Chats")
+        XCTAssertTrue(router.phonePath.isEmpty)
+        XCTAssertNil(router.selectedDestination)
     }
 
     func testChoreStatusTransitionUpdatesStatusAndTimestamp() {
         let created = Date(timeIntervalSince1970: 100)
         let updated = Date(timeIntervalSince1970: 200)
         var chore = Chore(
+            threadID: "thread-1",
             title: "Take out trash",
             createdByMemberID: "a",
             assigneeID: "b",
@@ -30,150 +31,235 @@ final class WeChoreTests: XCTestCase {
         XCTAssertFalse(chore.isActive)
     }
 
-    func testReminderPlannerUsesDueDateAndSpecificCopy() {
+    func testReminderPlannerUsesThreadScopedIdentifier() {
         let now = Date(timeIntervalSince1970: 1_000)
         let due = Date(timeIntervalSince1970: 2_000)
         let chore = Chore(
-            id: "chore-1",
+            id: "task-1",
+            threadID: "thread-family",
             title: "Unload dishwasher",
-            createdByMemberID: "member-1",
-            assigneeID: "member-2",
+            createdByMemberID: "participant-1",
+            assigneeID: "participant-2",
             dueDate: due
         )
-        let member = Member(id: "member-2", displayName: "Sam")
+        let participant = ChatParticipant(id: "participant-2", displayName: "Sam")
 
-        let plan = ReminderPlanner.plan(chore: chore, assignee: member, now: now)
+        let plan = ReminderPlanner.plan(chore: chore, assignee: participant, now: now)
 
-        XCTAssertEqual(plan.identifier, "wechore.chore.chore-1")
+        XCTAssertEqual(plan.identifier, "wechore.thread.thread-family.task.task-1")
         XCTAssertEqual(plan.fireDate, due)
-        XCTAssertEqual(plan.body, "Sam, check progress on Unload dishwasher.")
+        XCTAssertEqual(plan.body, "Sam, check Unload dishwasher.")
     }
 
-    func testMessageSuggestionEngineExtractsAssigneeDueDateAndTitle() {
+    func testRuleBasedExtractionCreatesClearTaskDraft() async {
         let now = Date(timeIntervalSince1970: 1_000)
-        let sam = Member(id: "sam", displayName: "Sam")
+        let sam = ChatParticipant(id: "participant-sam", displayName: "Sam")
         let message = ChoreMessage(
             id: "message-1",
-            authorMemberID: "me",
+            threadID: "thread-1",
+            authorMemberID: "participant-me",
             body: "Sam please unload dishwasher tomorrow"
         )
 
-        let suggestions = OnDeviceMessageSuggestionEngine().suggestions(
+        let drafts = await RuleBasedTaskExtractionEngine().extractTasks(
             from: message,
-            members: [sam],
+            participants: [sam],
             now: now
         )
 
-        XCTAssertEqual(suggestions.count, 1)
-        XCTAssertEqual(suggestions[0].assigneeID, "sam")
-        XCTAssertEqual(suggestions[0].title, "Unload dishwasher")
-        XCTAssertNotNil(suggestions[0].dueDate)
+        XCTAssertEqual(drafts.count, 1)
+        XCTAssertEqual(drafts[0].threadID, "thread-1")
+        XCTAssertEqual(drafts[0].assigneeID, "participant-sam")
+        XCTAssertEqual(drafts[0].title, "Unload dishwasher")
+        XCTAssertNotNil(drafts[0].dueDate)
+        XCTAssertFalse(drafts[0].needsConfirmation)
     }
 
-    func testMessageSuggestionEngineHandlesDictatedPunctuation() {
-        let now = Date(timeIntervalSince1970: 1_000)
-        let sam = Member(id: "sam", displayName: "Sam")
+    func testRuleBasedExtractionKeepsAmbiguousRequestAsDraft() async {
         let message = ChoreMessage(
             id: "message-1",
-            authorMemberID: "me",
-            body: "Sam, please unload the dishwasher tomorrow."
+            threadID: "thread-1",
+            authorMemberID: "participant-me",
+            body: "Please clean the bathroom tomorrow."
         )
 
-        let suggestions = OnDeviceMessageSuggestionEngine().suggestions(
+        let drafts = await RuleBasedTaskExtractionEngine().extractTasks(
             from: message,
-            members: [sam],
-            now: now
+            participants: [],
+            now: Date(timeIntervalSince1970: 1_000)
         )
 
-        XCTAssertEqual(suggestions.count, 1)
-        XCTAssertEqual(suggestions[0].assigneeID, "sam")
-        XCTAssertEqual(suggestions[0].title, "Unload the dishwasher")
+        XCTAssertEqual(drafts.count, 1)
+        XCTAssertEqual(drafts[0].title, "Clean the bathroom")
+        XCTAssertNil(drafts[0].assigneeID)
+        XCTAssertTrue(drafts[0].needsConfirmation)
     }
 
-    func testMessageSuggestionEngineDoesNotSuggestForPlainChat() {
+    func testPlainChatDoesNotExtractTask() async {
         let message = ChoreMessage(
             id: "message-1",
-            authorMemberID: "me",
+            threadID: "thread-1",
+            authorMemberID: "participant-me",
             body: "That movie was good"
         )
 
-        XCTAssertTrue(
-            OnDeviceMessageSuggestionEngine()
-                .suggestions(from: message, members: [], now: Date())
-                .isEmpty
+        let drafts = await RuleBasedTaskExtractionEngine().extractTasks(
+            from: message,
+            participants: [],
+            now: Date()
         )
+
+        XCTAssertTrue(drafts.isEmpty)
     }
 
-    func testCommunicationPrefersFaceTimeAudioThenPhone() {
-        let opener = AppleSystemCommunicationOpener()
-        let faceTime = Member(
-            displayName: "Sam",
-            phoneNumber: "5551231111",
-            faceTimeHandle: "sam@example.com"
-        )
-        let phone = Member(displayName: "Lee", phoneNumber: "(555) 123-2222")
+    func testSnapshotMigrationCreatesOneGroupChatFromOldPayload() throws {
+        let payload = Data("""
+        {
+          "household": {
+            "id": "household-old",
+            "name": "Pine House",
+            "createdAt": "1970-01-01T00:00:00Z",
+            "updatedAt": "1970-01-01T00:00:00Z"
+          },
+          "members": [
+            {
+              "id": "participant-peyton",
+              "displayName": "Peyton",
+              "isCurrentUser": true,
+              "createdAt": "1970-01-01T00:00:00Z"
+            },
+            {
+              "id": "participant-sam",
+              "displayName": "Sam",
+              "isCurrentUser": false,
+              "createdAt": "1970-01-01T00:00:00Z"
+            }
+          ],
+          "chores": [
+            {
+              "id": "task-old",
+              "title": "Load dishwasher",
+              "notes": "",
+              "createdByMemberID": "participant-peyton",
+              "assigneeID": "participant-sam",
+              "status": "open",
+              "createdAt": "1970-01-01T00:00:00Z",
+              "updatedAt": "1970-01-01T00:00:00Z"
+            }
+          ],
+          "messages": [
+            {
+              "id": "message-old",
+              "authorMemberID": "participant-peyton",
+              "body": "Sam please load dishwasher",
+              "createdAt": "1970-01-01T00:00:00Z"
+            }
+          ],
+          "reminderLogs": [],
+          "suggestions": [],
+          "settings": {
+            "hasCompletedOnboarding": true,
+            "selectedMemberID": "participant-peyton",
+            "notificationsEnabled": false,
+            "cloudKitEnabled": true
+          }
+        }
+        """.utf8)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
 
-        XCTAssertEqual(
-            opener.preferredVoiceURL(for: faceTime)?.absoluteString,
-            "facetime-audio://sam@example.com"
-        )
-        XCTAssertEqual(
-            opener.preferredVoiceURL(for: phone)?.absoluteString,
-            "tel:5551232222"
-        )
+        let snapshot = try decoder.decode(ChoreSnapshot.self, from: payload)
+
+        XCTAssertEqual(snapshot.threads.count, 1)
+        XCTAssertEqual(snapshot.threads[0].title, "Pine House")
+        XCTAssertEqual(snapshot.chores[0].threadID, snapshot.threads[0].id)
+        XCTAssertEqual(snapshot.messages[0].threadID, snapshot.threads[0].id)
+        XCTAssertEqual(snapshot.settings.selectedParticipantID, "participant-peyton")
     }
 
-    func testAppStateAcceptsMessageSuggestionIntoChores() {
-        let now = Date(timeIntervalSince1970: 1_000)
-        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
-        let state = AppState(repository: repository, clock: FixedClock(now))
+    func testInvitePayloadRoundTripsThroughAppURL() {
+        let payload = InvitePayload(
+            inviteID: "invite-1",
+            threadID: "thread-1",
+            threadTitle: "Pine Chat",
+            inviterParticipantID: "participant-peyton",
+            code: "PINE123",
+            expiresAt: Date(timeIntervalSince1970: 2_000)
+        )
 
-        state.postMessage("Sam please clean bathroom tomorrow")
+        let decoded = InvitePayload(url: payload.appURL())
 
-        XCTAssertEqual(state.suggestions.count, 1)
-        state.acceptSuggestion(state.suggestions[0])
-
-        XCTAssertTrue(state.chores.contains { $0.title == "Clean bathroom" })
-        XCTAssertTrue(state.suggestions.isEmpty)
+        XCTAssertEqual(decoded, payload)
+        XCTAssertTrue(payload.shareText.contains("PINE123"))
     }
 
-    func testVoiceMessageUsesSharedSuggestionPath() async {
+    func testAppStateAutoCreatesClearTaskFromMessage() async {
         let now = Date(timeIntervalSince1970: 1_000)
         let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
         let state = AppState(
             repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        await state.postMessage("Sam please clean bathroom tomorrow", in: "thread-pine")
+
+        XCTAssertTrue(state.chores.contains { $0.title == "Clean bathroom" && $0.threadID == "thread-pine" })
+        XCTAssertTrue(state.suggestions.isEmpty)
+        XCTAssertTrue(state.messages(in: "thread-pine").contains { $0.kind == .system })
+    }
+
+    func testAppStateKeepsAmbiguousTaskAsConfirmableDraft() async {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        await state.postMessage("Please clean bathroom tomorrow", in: "thread-pine")
+
+        XCTAssertEqual(state.taskDrafts(in: "thread-pine").count, 1)
+        state.confirmDraft(state.taskDrafts(in: "thread-pine")[0])
+        XCTAssertTrue(state.chores.contains { $0.title == "Clean bathroom" && $0.threadID == "thread-pine" })
+    }
+
+    func testFakeExtractionEngineNormalizesThreadAndMessage() async {
+        let engine = FakeTaskExtractionEngine(drafts: [
+            TaskDraft(sourceMessageID: "placeholder", title: "Take out trash")
+        ])
+        let message = ChoreMessage(
+            id: "message-real",
+            threadID: "thread-real",
+            authorMemberID: "me",
+            body: "anything"
+        )
+
+        let drafts = await engine.extractTasks(from: message, participants: [], now: Date(timeIntervalSince1970: 44))
+
+        XCTAssertEqual(drafts[0].threadID, "thread-real")
+        XCTAssertEqual(drafts[0].sourceMessageID, "message-real")
+        XCTAssertEqual(drafts[0].createdAt, Date(timeIntervalSince1970: 44))
+    }
+
+    func testVoiceMessageUsesSharedExtractionPath() async {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
             voiceRecorder: FakeVoiceMessageRecorder(duration: 3),
             voiceTranscriber: FakeVoiceMessageTranscriber(transcript: "Sam please sweep the floor tomorrow"),
             voicePlayer: FakeVoiceMessagePlayer(),
             clock: FixedClock(now)
         )
 
-        await state.startVoiceMessageRecording()
+        await state.startVoiceMessageRecording(in: "thread-pine")
         await state.finishVoiceMessageRecording()
 
-        XCTAssertEqual(state.messages.last?.kind, .voice)
-        XCTAssertEqual(state.messages.last?.body, "Sam please sweep the floor tomorrow")
-        XCTAssertEqual(state.messages.last?.voiceAttachment?.duration, 3)
-        XCTAssertEqual(state.suggestions.count, 1)
-        XCTAssertEqual(state.suggestions[0].title, "Sweep the floor")
-    }
-
-    func testChoreMessageDecodesOldTextPayloadAsTextMessage() throws {
-        let payload = Data("""
-        {
-          "id": "message-old",
-          "authorMemberID": "member-peyton",
-          "body": "Plain old message",
-          "createdAt": "1970-01-01T00:00:00Z"
-        }
-        """.utf8)
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let message = try decoder.decode(ChoreMessage.self, from: payload)
-
-        XCTAssertEqual(message.kind, .text)
-        XCTAssertNil(message.voiceAttachment)
+        XCTAssertEqual(state.messages(in: "thread-pine").last(where: { $0.kind == .voice })?.body, "Sam please sweep the floor tomorrow")
+        XCTAssertTrue(state.chores.contains { $0.title == "Sweep the floor" && $0.threadID == "thread-pine" })
     }
 
     func testVoiceAttachmentMetadataRoundTripsThroughSnapshot() throws {
@@ -181,7 +267,8 @@ final class WeChoreTests: XCTestCase {
         var snapshot = ChoreSnapshot.seededForUITests(now: now)
         snapshot.messages.append(ChoreMessage(
             id: "voice-1",
-            authorMemberID: "member-peyton",
+            threadID: "thread-pine",
+            authorMemberID: "participant-peyton",
             body: "Sam please sweep the floor tomorrow",
             kind: .voice,
             voiceAttachment: VoiceAttachment(
@@ -220,7 +307,7 @@ final class WeChoreTests: XCTestCase {
         }
     }
 
-    func testSwiftDataRepositoryRoundTripsSnapshot() throws {
+    func testSwiftDataRepositoryRoundTripsConversationSnapshot() throws {
         let container = try WeChoreModelContainerFactory.makeSharedContainer(isStoredInMemoryOnly: true)
         let repository = SwiftDataChoreRepository(context: ModelContext(container))
         let snapshot = ChoreSnapshot.seededForUITests(now: Date(timeIntervalSince1970: 123))
@@ -228,20 +315,21 @@ final class WeChoreTests: XCTestCase {
         try repository.saveSnapshot(snapshot)
         let loaded = try repository.loadSnapshot()
 
-        XCTAssertEqual(loaded.household.name, "Pine House")
-        XCTAssertEqual(loaded.members.count, 2)
-        XCTAssertEqual(loaded.chores.first?.title, "Load dishwasher")
+        XCTAssertEqual(loaded.threads.first?.title, "Pine Chat")
+        XCTAssertEqual(loaded.participants.count, 2)
+        XCTAssertEqual(loaded.chores.first?.threadID, "thread-pine")
     }
 
-    func testCloudKitRecordNamesAreDeterministic() {
+    func testCloudKitRecordNamesAreDeterministicForConversations() {
         let snapshot = ChoreSnapshot.seededForUITests(now: Date(timeIntervalSince1970: 123))
-        let store = CloudKitHouseholdStore(database: FakeCloudKitDatabaseClient())
+        let store = CloudKitConversationStore(database: FakeCloudKitDatabaseClient())
 
         let names = store.records(for: snapshot).map(\.recordID.recordName)
 
-        XCTAssertTrue(names.contains("Household.household-ui"))
-        XCTAssertTrue(names.contains("Member.member-peyton"))
-        XCTAssertTrue(names.contains("Chore.chore-dishes"))
+        XCTAssertTrue(names.contains("ChatThread.thread-pine"))
+        XCTAssertTrue(names.contains("ChatParticipant.participant-peyton"))
+        XCTAssertTrue(names.contains("Chore.task-dishes"))
+        XCTAssertTrue(names.contains("ThreadInvite.invite-pine"))
     }
 
     func testThemeGreenMatchesBrandToken() {
