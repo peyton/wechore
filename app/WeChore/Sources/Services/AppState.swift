@@ -88,6 +88,12 @@ final class AppState {
         chores.filter { $0.assigneeID == currentParticipant.id && $0.status != .archived }
     }
 
+    func activities(for choreID: String) -> [TaskActivity] {
+        snapshot.taskActivities
+            .filter { $0.choreID == choreID }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
     func completeOnboarding(displayName: String, householdName: String, contact: String) {
         let now = clock.now()
         var participant = currentParticipant
@@ -392,6 +398,25 @@ final class AppState {
         case .archived: .completed
         }
         recordActivity(for: chore, kind: activityKind, at: now)
+        if status == .done, let recurrence = chore.recurrence {
+            let calendar = Calendar.current
+            let nextDue: Date? = switch recurrence {
+            case "daily": calendar.date(byAdding: .day, value: 1, to: chore.dueDate ?? now)
+            case "weekly": calendar.date(byAdding: .weekOfYear, value: 1, to: chore.dueDate ?? now)
+            default: nil
+            }
+            if let nextDue {
+                var nextChore = chore
+                nextChore.id = UUID().uuidString
+                nextChore.status = .open
+                nextChore.dueDate = nextDue
+                nextChore.createdAt = now
+                nextChore.updatedAt = now
+                nextChore.notificationState = .notScheduled
+                nextChore.lastReminderAt = nil
+                snapshot.chores.append(nextChore)
+            }
+        }
         if status == .done {
             recentlyCompletedTaskID = chore.id
             snapshot.settings.recentlyCompletedTaskID = chore.id
@@ -407,7 +432,8 @@ final class AppState {
         title: String,
         assigneeID: String,
         dueDate: Date?,
-        notes: String
+        notes: String,
+        recurrence: String? = nil
     ) -> Bool {
         guard let index = snapshot.chores.firstIndex(where: { $0.id == choreID }) else {
             lastStatusMessage = "Task not found."
@@ -437,6 +463,7 @@ final class AppState {
         snapshot.chores[index].assigneeID = assigneeID
         snapshot.chores[index].dueDate = dueDate
         snapshot.chores[index].notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        snapshot.chores[index].recurrence = recurrence
         snapshot.chores[index].updatedAt = clock.now()
         return save("Updated \(trimmedTitle).")
     }

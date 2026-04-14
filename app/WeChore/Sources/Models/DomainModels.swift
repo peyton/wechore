@@ -309,6 +309,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
     public var reminderPolicy: TaskReminderPolicy
     public var notificationState: TaskNotificationState
     public var lastReminderAt: Date?
+    public var recurrence: String?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -325,6 +326,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         reminderPolicy: TaskReminderPolicy = .smart,
         notificationState: TaskNotificationState = .notScheduled,
         lastReminderAt: Date? = nil,
+        recurrence: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -340,6 +342,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         self.reminderPolicy = reminderPolicy
         self.notificationState = notificationState
         self.lastReminderAt = lastReminderAt
+        self.recurrence = recurrence
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -366,6 +369,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         case reminderPolicy
         case notificationState
         case lastReminderAt
+        case recurrence
         case createdAt
         case updatedAt
     }
@@ -387,6 +391,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
             forKey: .notificationState
         ) ?? .notScheduled
         lastReminderAt = try container.decodeIfPresent(Date.self, forKey: .lastReminderAt)
+        recurrence = try container.decodeIfPresent(String.self, forKey: .recurrence)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
     }

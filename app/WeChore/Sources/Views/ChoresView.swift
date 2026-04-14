@@ -269,6 +269,14 @@ private struct ChoreRow: View {
                             .font(.footnote)
                             .foregroundStyle(chore.isActive ? AppPalette.warning : AppPalette.muted)
                     }
+                    if chore.recurrence != nil {
+                        Label(
+                            chore.recurrence == "daily" ? "Daily" : "Weekly",
+                            systemImage: "arrow.clockwise"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(AppPalette.muted)
+                    }
                     if !chore.notes.isEmpty {
                         Text(chore.notes)
                             .font(.footnote)
@@ -357,6 +365,7 @@ private struct TaskEditorSheet: View {
     @State private var notes = ""
     @State private var hasDueDate = false
     @State private var dueDate = Date()
+    @State private var recurrence: String?
     @State private var status: ChoreStatus = .open
 
     var body: some View {
@@ -377,10 +386,38 @@ private struct TaskEditorSheet: View {
                     .lineLimit(2...5)
             }
 
+            Section("Repeat") {
+                Picker("Recurrence", selection: $recurrence) {
+                    Text("Never").tag(String?.none)
+                    Text("Daily").tag(String?.some("daily"))
+                    Text("Weekly").tag(String?.some("weekly"))
+                }
+            }
+
             Section("Status") {
                 Picker("Status", selection: $status) {
                     ForEach(ChoreStatus.allCases) { option in
                         Text(option.displayName).tag(option)
+                    }
+                }
+            }
+
+            Section("Activity") {
+                let activities = appState.activities(for: chore.id)
+                if activities.isEmpty {
+                    Text("No activity yet")
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                } else {
+                    ForEach(activities) { activity in
+                        HStack {
+                            Text(activity.kind.rawValue.capitalized)
+                                .font(.subheadline)
+                            Spacer()
+                            Text(activity.createdAt, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(AppPalette.muted)
+                        }
                     }
                 }
             }
@@ -412,6 +449,7 @@ private struct TaskEditorSheet: View {
         notes = chore.notes
         hasDueDate = chore.dueDate != nil
         dueDate = chore.dueDate ?? Date()
+        recurrence = chore.recurrence
         status = chore.status
     }
 
@@ -421,7 +459,8 @@ private struct TaskEditorSheet: View {
             title: title,
             assigneeID: selectedMemberID,
             dueDate: hasDueDate ? dueDate : nil,
-            notes: notes
+            notes: notes,
+            recurrence: recurrence
         ) else {
             return
         }
