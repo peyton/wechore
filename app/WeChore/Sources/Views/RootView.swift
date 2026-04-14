@@ -79,6 +79,8 @@ private struct ChatDestinationView: View {
             ConversationView(threadID: threadID)
         case .joinStart:
             JoinStartView()
+        case .myQRCode:
+            MyQRCodeView()
         case .settings:
             SettingsView()
         }
@@ -119,6 +121,13 @@ struct ChatTreeView: View {
                         Label("Join or Start", systemImage: "plus.bubble.fill")
                     }
                     .accessibilityIdentifier("chatTree.joinStart")
+
+                    Button {
+                        open(.myQRCode)
+                    } label: {
+                        Label("My QR", systemImage: "qrcode")
+                    }
+                    .accessibilityIdentifier("chatTree.myQR")
 
                     Button {
                         open(.settings)

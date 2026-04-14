@@ -13,6 +13,8 @@ enum RuntimeEnvironment {
         switch raw {
         case "join", "joinStart":
             return .joinStart
+        case "myQR", "qr":
+            return .myQRCode
         case "me", "settings":
             return .settings
         case "dm":

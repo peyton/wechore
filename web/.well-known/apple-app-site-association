@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "3VDQ4656LX.app.peyton.wechore",
+        "paths": ["/join*"]
+      },
+      {
+        "appID": "3VDQ4656LX.app.peyton.wechore.dev",
+        "paths": ["/join*"]
+      }
+    ]
+  }
+}

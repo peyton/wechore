@@ -193,6 +193,23 @@ final class WeChoreTests: XCTestCase {
         XCTAssertTrue(payload.shareText.contains("PINE123"))
     }
 
+    func testQRCodeRendererCreatesImageForInviteURL() {
+        let payload = InvitePayload(
+            inviteID: "invite-1",
+            threadID: "thread-1",
+            threadTitle: "Pine Chat",
+            inviterParticipantID: "participant-peyton",
+            code: "PINE123",
+            expiresAt: Date(timeIntervalSince1970: 2_000)
+        )
+
+        let image = QRCodeRenderer.makeImage(from: payload.universalURL.absoluteString)
+
+        XCTAssertNotNil(image)
+        XCTAssertGreaterThan(image?.size.width ?? 0, 0)
+        XCTAssertGreaterThan(image?.size.height ?? 0, 0)
+    }
+
     func testDMChoreIsAssignedToRecipientWithoutMention() async {
         let now = Date(timeIntervalSince1970: 1_000)
         let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))

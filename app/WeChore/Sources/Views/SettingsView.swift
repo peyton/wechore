@@ -24,9 +24,10 @@ struct SettingsView: View {
                 )
                 SettingsRow(
                     title: "Invites",
-                    detail: "Share links, codes, AirDrop, and nearby join"
+                    detail: "QR codes, Camera scanning, share links, AirDrop, and nearby join"
                 )
 
+                SettingsQRCodeSection()
                 WidgetFavoritesSection()
 
                 Link("Support", destination: URL(string: "https://wechore.peyton.app/support/")!)
@@ -40,6 +41,55 @@ struct SettingsView: View {
             .frame(maxWidth: 760, alignment: .leading)
         }
         .background(AppPalette.canvas)
+    }
+}
+
+private struct SettingsQRCodeSection: View {
+    @Environment(AppState.self) private var appState
+    @State private var invitePayload: InvitePayload?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("My QR")
+                        .font(.headline)
+                        .foregroundStyle(AppPalette.ink)
+                    Text("Friends can scan this with Camera to join your first chat.")
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Button("Refresh") {
+                    refreshInvite()
+                }
+                .buttonStyle(SecondaryActionButtonStyle())
+                .accessibilityIdentifier("settings.myQR.refresh")
+            }
+
+            if let invitePayload {
+                InviteQRCodeCard(payload: invitePayload, title: "My WeChore QR")
+            } else {
+                Text("Start a chat first, then your QR code appears here.")
+                    .font(.subheadline)
+                    .foregroundStyle(AppPalette.muted)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .task {
+            if invitePayload == nil {
+                refreshInvite()
+            }
+        }
+    }
+
+    private func refreshInvite() {
+        guard let threadID = appState.groupThreads.first?.id ?? appState.threads.first?.id else {
+            invitePayload = nil
+            return
+        }
+        invitePayload = appState.createInvite(for: threadID)
     }
 }
 

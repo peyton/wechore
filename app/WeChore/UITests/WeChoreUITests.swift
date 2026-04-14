@@ -11,6 +11,11 @@ final class WeChoreUITests: XCTestCase {
         app.launchArguments = ["UITEST_MODE"]
         app.launch()
 
+        XCTAssertTrue(app.staticTexts["Chats first. Tasks follow."].waitForExistence(timeout: 10))
+        element("onboarding.next", in: app).tap()
+        XCTAssertTrue(element("onboarding.option.nearby", in: app).waitForExistence(timeout: 5))
+        element("onboarding.next", in: app).tap()
+
         let name = app.textFields["onboarding.name"]
         XCTAssertTrue(name.waitForExistence(timeout: 10))
         name.tap()
@@ -37,12 +42,14 @@ final class WeChoreUITests: XCTestCase {
         XCTAssertTrue(waitForChatTree(in: app, timeout: 10))
         XCTAssertTrue(chatTreeThread("thread-pine", title: "Pine Chat", in: app).exists)
         XCTAssertTrue(chatTreeAction("chatTree.joinStart", title: "Join or Start", in: app).exists)
+        XCTAssertTrue(chatTreeAction("chatTree.myQR", title: "My QR", in: app).exists)
         XCTAssertTrue(chatTreeAction("chatTree.me", title: "Me", in: app).exists)
         XCTAssertEqual(app.tabBars.count, 0)
     }
 
     func testStartGroupChatDMInviteCodeAndNearbyJoinReachConversation() {
         let groupApp = seededApp(route: "join")
+        XCTAssertTrue(element("join.scanQR", in: groupApp).waitForExistence(timeout: 10))
         XCTAssertTrue(startGroupChat(in: groupApp, title: "Soccer Carpool"))
         XCTAssertTrue(groupApp.staticTexts["Soccer Carpool"].waitForExistence(timeout: 5))
 
@@ -59,6 +66,17 @@ final class WeChoreUITests: XCTestCase {
         XCTAssertTrue(nearby.waitForExistence(timeout: 10))
         nearby.tap()
         XCTAssertTrue(nearbyApp.staticTexts["Nearby Chat"].waitForExistence(timeout: 5))
+    }
+
+    func testMyQRCodeIsReachableFromChatTree() {
+        let app = seededApp()
+        XCTAssertTrue(waitForChatTree(in: app, timeout: 10))
+
+        chatTreeAction("chatTree.myQR", title: "My QR", in: app).tap()
+
+        XCTAssertTrue(app.staticTexts["My QR"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element("invite.qr", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("invite.qrShare", in: app).exists)
     }
 
     func testTypingClearAndAmbiguousRequestsPopulateTaskTile() {
@@ -131,6 +149,7 @@ final class WeChoreUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Apple-only sync"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["My QR"].exists)
         XCTAssertTrue(app.staticTexts["Widget Favorites"].waitForExistence(timeout: 5))
         XCTAssertTrue(element("settings.widgetFavorite.thread-pine", in: app).exists)
     }
@@ -158,6 +177,9 @@ final class WeChoreUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Invite ready for Pine Chat."].waitForExistence(timeout: 5))
         XCTAssertTrue(element("conversation.shareInvite", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("conversation.showInviteQR", in: app).waitForExistence(timeout: 5))
+        element("conversation.showInviteQR", in: app).tap()
+        XCTAssertTrue(element("invite.qr", in: app).waitForExistence(timeout: 5))
     }
 
     private func seededApp(
