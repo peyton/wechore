@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct ConversationView: View {
@@ -1092,7 +1093,7 @@ struct JoinStartView: View {
     }
 
     private var canJoinCode: Bool {
-        inviteCode.contains(where: \.isLetterOrNumber)
+        inviteCode.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
     }
 
     private func openThread(_ threadID: String?) {

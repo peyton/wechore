@@ -743,11 +743,12 @@ final class WeChoreTests: XCTestCase {
             body: "Sam please unload dishwasher today"
         )
 
-        let draft = try XCTUnwrap(await RuleBasedTaskExtractionEngine().extractTasks(
+        let drafts = await RuleBasedTaskExtractionEngine().extractTasks(
             from: message,
             participants: [sam],
             now: now
-        ).first)
+        )
+        let draft = try XCTUnwrap(drafts.first)
         let expected = try XCTUnwrap(calendar.date(
             byAdding: .second,
             value: -1,

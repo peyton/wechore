@@ -65,7 +65,7 @@ reset_test_simulator() {
 
 is_simulator_launch_error() {
   grep -Eq \
-    'CoreSimulatorService|Mach error -308|Invalid device state|Failed to install or launch the test runner|Simulator device failed to launch|FBSOpenApplicationServiceErrorDomain' \
+    'CoreSimulatorService|Mach error -308|Invalid device state|Failed to install or launch the test runner|Simulator device failed to launch|FBSOpenApplicationServiceErrorDomain|Timed out while launching application via Xcode|Failed to send signal 19' \
     "$xcodebuild_log_path"
 }
 
@@ -111,7 +111,11 @@ while true; do
     break
   fi
 
-  if [ "$attempt" -ge "$max_attempts" ] || has_xctest_failure || ! is_simulator_launch_error; then
+  if has_xctest_failure && ! is_simulator_launch_error; then
+    exit "$status"
+  fi
+
+  if [ "$attempt" -ge "$max_attempts" ] || ! is_simulator_launch_error; then
     exit "$status"
   fi
 
