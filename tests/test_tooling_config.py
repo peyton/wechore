@@ -27,6 +27,8 @@ def test_justfile_exposes_required_commands() -> None:
         "appstore-create-app:",
         "appstore-preflight:",
         "appstore-check:",
+        "appstore-provisioning-plan:",
+        "appstore-ensure-provisioning:",
         "testflight-archive:",
         "testflight-upload:",
         "preview-package",

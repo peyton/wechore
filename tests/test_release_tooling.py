@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,21 @@ from scripts.app_store_connect.check_asc import (
     asc_environment,
 )
 from scripts.app_store_connect.preflight import validate_release_preflight
+from scripts.app_store_connect.provisioning import (
+    BundleIdRecord,
+    CapabilityRecord,
+    CertificateRecord,
+    ProfileRecord,
+    RequiredCapability,
+    app_group_settings,
+    capability_satisfies,
+    create_bundle_id_body,
+    create_capability_body,
+    create_profile_body,
+    is_usable_distribution_certificate,
+    is_usable_profile,
+    production_requirements,
+)
 from scripts.cloudflare.setup import (
     CloudflareConfig,
     DEFAULT_EMAIL_PREFIXES,
@@ -192,3 +208,149 @@ def test_release_preflight_rejects_development_cloudkit_environment() -> None:
     )
 
     assert any("must be Production" in error for error in errors)
+
+
+def test_provisioning_requirements_cover_app_and_widget_identifiers() -> None:
+    requirements = production_requirements()
+
+    assert [requirement.identifier for requirement in requirements] == [
+        DEFAULT_BUNDLE_ID,
+        "app.peyton.wechore.widgets",
+    ]
+    assert {cap.capability_type for cap in requirements[0].capabilities} == {
+        "APP_GROUPS",
+        "ASSOCIATED_DOMAINS",
+        "ICLOUD",
+    }
+    assert {cap.capability_type for cap in requirements[1].capabilities} == {
+        "APP_GROUPS"
+    }
+
+
+def test_create_bundle_id_body_uses_json_api_shape() -> None:
+    requirement = production_requirements()[0]
+
+    body = create_bundle_id_body(requirement)
+
+    assert body == {
+        "data": {
+            "type": "bundleIds",
+            "attributes": {
+                "identifier": DEFAULT_BUNDLE_ID,
+                "name": "WeChore",
+                "platform": "IOS",
+            },
+        }
+    }
+
+
+def test_create_capability_body_links_capability_to_bundle_id() -> None:
+    bundle = BundleIdRecord(
+        resource_id="bundle-123",
+        name="WeChore",
+        identifier=DEFAULT_BUNDLE_ID,
+        platform="IOS",
+    )
+    capability = RequiredCapability(
+        "APP_GROUPS",
+        app_group_settings("group.app.peyton.wechore"),
+    )
+
+    body = create_capability_body(bundle, capability)
+
+    assert body["data"]["type"] == "bundleIdCapabilities"
+    assert body["data"]["attributes"] == {
+        "capabilityType": "APP_GROUPS",
+        "settings": [
+            {
+                "key": "APP_GROUP_IDENTIFIERS",
+                "options": [{"key": "group.app.peyton.wechore", "enabled": True}],
+            }
+        ],
+    }
+    assert body["data"]["relationships"]["bundleId"]["data"] == {
+        "type": "bundleIds",
+        "id": "bundle-123",
+    }
+
+
+def test_create_profile_body_links_bundle_and_certificates() -> None:
+    requirement = production_requirements()[0]
+    bundle = BundleIdRecord(
+        resource_id="bundle-123",
+        name="WeChore",
+        identifier=DEFAULT_BUNDLE_ID,
+        platform="IOS",
+    )
+    certificates = [
+        CertificateRecord(
+            resource_id="cert-1",
+            certificate_type="DISTRIBUTION",
+            display_name="Apple Distribution",
+            expiration_date=None,
+            activated=True,
+        )
+    ]
+
+    body = create_profile_body(requirement, bundle, certificates, "IOS_APP_STORE")
+
+    assert body["data"]["type"] == "profiles"
+    assert body["data"]["attributes"] == {
+        "name": "WeChore App Store",
+        "profileType": "IOS_APP_STORE",
+    }
+    assert body["data"]["relationships"]["bundleId"]["data"]["id"] == "bundle-123"
+    assert body["data"]["relationships"]["certificates"]["data"] == [
+        {"type": "certificates", "id": "cert-1"}
+    ]
+
+
+def test_capability_satisfies_required_enabled_options() -> None:
+    expected = RequiredCapability(
+        "APP_GROUPS",
+        app_group_settings("group.app.peyton.wechore"),
+    )
+    actual = CapabilityRecord(
+        resource_id="cap-1",
+        capability_type="APP_GROUPS",
+        settings=(
+            {
+                "key": "APP_GROUP_IDENTIFIERS",
+                "options": [{"key": "group.app.peyton.wechore", "enabled": True}],
+            },
+        ),
+    )
+    disabled = CapabilityRecord(
+        resource_id="cap-1",
+        capability_type="APP_GROUPS",
+        settings=(
+            {
+                "key": "APP_GROUP_IDENTIFIERS",
+                "options": [{"key": "group.app.peyton.wechore", "enabled": False}],
+            },
+        ),
+    )
+
+    assert capability_satisfies(actual, expected)
+    assert not capability_satisfies(disabled, expected)
+
+
+def test_distribution_certificate_and_profile_usability_checks_expiration() -> None:
+    now = datetime(2026, 4, 14, tzinfo=UTC)
+    active_certificate = CertificateRecord(
+        resource_id="cert-1",
+        certificate_type="IOS_DISTRIBUTION",
+        display_name="Apple Distribution",
+        expiration_date=now + timedelta(days=1),
+        activated=True,
+    )
+    expired_profile = ProfileRecord(
+        resource_id="profile-1",
+        name="WeChore App Store",
+        profile_type="IOS_APP_STORE",
+        profile_state="ACTIVE",
+        expiration_date=now - timedelta(days=1),
+    )
+
+    assert is_usable_distribution_certificate(active_certificate, now)
+    assert not is_usable_profile(expired_profile, "IOS_APP_STORE", now)

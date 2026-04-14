@@ -165,17 +165,24 @@ class AppStoreConnectClient:
         path: str,
         *,
         query: Mapping[str, str | list[str]] | None = None,
+        body: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         url = f"{API_ROOT}{path}"
         if query:
             url = f"{url}?{urlencode(query, doseq=True)}"
+        headers = {
+            "Authorization": f"Bearer {create_jwt(self.config)}",
+            "Accept": "application/json",
+        }
+        data = None
+        if body is not None:
+            data = json.dumps(body).encode("utf-8")
+            headers["Content-Type"] = "application/json"
         request = Request(
             url,
+            data=data,
             method=method,
-            headers={
-                "Authorization": f"Bearer {create_jwt(self.config)}",
-                "Accept": "application/json",
-            },
+            headers=headers,
         )
         try:
             with urlopen(request, timeout=30) as response:
