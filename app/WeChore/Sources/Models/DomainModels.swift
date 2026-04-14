@@ -125,6 +125,7 @@ public struct ChatParticipant: Identifiable, Hashable, Codable, Sendable {
     public var displayName: String
     public var phoneNumber: String?
     public var faceTimeHandle: String?
+    public var avatarEmoji: String?
     public var isCurrentUser: Bool
     public var createdAt: Date
 
@@ -133,6 +134,7 @@ public struct ChatParticipant: Identifiable, Hashable, Codable, Sendable {
         displayName: String,
         phoneNumber: String? = nil,
         faceTimeHandle: String? = nil,
+        avatarEmoji: String? = nil,
         isCurrentUser: Bool = false,
         createdAt: Date = Date()
     ) {
@@ -140,6 +142,7 @@ public struct ChatParticipant: Identifiable, Hashable, Codable, Sendable {
         self.displayName = displayName
         self.phoneNumber = phoneNumber
         self.faceTimeHandle = faceTimeHandle
+        self.avatarEmoji = avatarEmoji
         self.isCurrentUser = isCurrentUser
         self.createdAt = createdAt
     }

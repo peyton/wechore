@@ -119,12 +119,27 @@ private struct SettingsProfileSection: View {
     @Environment(AppState.self) private var appState
     @State private var displayName = ""
     @State private var contact = ""
+    @State private var selectedEmoji: String?
+    @State private var isEmojiPickerPresented = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Profile")
                 .font(.headline)
                 .foregroundStyle(AppPalette.ink)
+            Button {
+                isEmojiPickerPresented = true
+            } label: {
+                HStack {
+                    Text(selectedEmoji ?? "😊")
+                        .font(.largeTitle)
+                    Text("Change avatar")
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.profile.avatar")
             TextField("Name", text: $displayName)
                 .textContentType(.name)
                 .textInputAutocapitalization(.words)
@@ -136,7 +151,11 @@ private struct SettingsProfileSection: View {
                 .textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("settings.profile.contact")
             Button("Save Profile") {
-                _ = appState.updateCurrentParticipant(displayName: displayName, contact: contact)
+                _ = appState.updateCurrentParticipant(
+                    displayName: displayName,
+                    contact: contact,
+                    avatarEmoji: selectedEmoji
+                )
             }
             .buttonStyle(PrimaryActionButtonStyle())
             .disabled(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -150,11 +169,15 @@ private struct SettingsProfileSection: View {
         .onChange(of: appState.currentParticipant) { _, _ in
             load()
         }
+        .sheet(isPresented: $isEmojiPickerPresented) {
+            EmojiPickerSheet(selectedEmoji: $selectedEmoji)
+        }
     }
 
     private func load() {
         displayName = appState.currentParticipant.displayName
         contact = appState.currentParticipant.faceTimeHandle ?? appState.currentParticipant.phoneNumber ?? ""
+        selectedEmoji = appState.currentParticipant.avatarEmoji
     }
 }
 

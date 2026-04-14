@@ -67,6 +67,7 @@ struct WeChoreApp: App {
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .active else { return }
                     appState.refreshFromSharedState()
+                    appState.clearBadge()
                 }
         }
     }
