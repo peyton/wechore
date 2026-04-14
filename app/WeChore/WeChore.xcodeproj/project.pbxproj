@@ -1,0 +1,1214 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		07A655AA47B7B16DDE46557E /* TuistAssets+WeChore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB508596101C93FDEBA4BE2 /* TuistAssets+WeChore.swift */; };
+		092EFCB07D94CF9B2ACD6CC2 /* Clock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCF0082220993EF6294B35 /* Clock.swift */; };
+		09A3059468736225D3A84C6E /* TuistAssets+WeChoreDev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E0B3CCBB9F2CA47A52901B7 /* TuistAssets+WeChoreDev.swift */; };
+		09E811409FF7180B9553BE74 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 904E57B6772853AF1445E5F8 /* AppState.swift */; };
+		21150B907A7A1159EEC72344 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
+		2E79DF102256163B6DE4257C /* TuistBundle+WeChore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA60A67D6AE72E1B9E9288C /* TuistBundle+WeChore.swift */; };
+		2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */; };
+		32481D35475FBDB412C33492 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
+		3F70E9BC2616AE201060FC04 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
+		412573FCF0192DE9043D9553 /* Clock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCF0082220993EF6294B35 /* Clock.swift */; };
+		425028584323AEE018DC21B2 /* MessageSuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */; };
+		448D64F2FD71E1FB21D50D3F /* HouseholdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29EB030115CC2E44378D4A9 /* HouseholdView.swift */; };
+		4684411D548710A2FB5311C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17828170DA4D5FEDF94EA80C /* Assets.xcassets */; };
+		5E2ADB61860923691D0A6171 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */; };
+		610597C82F7AB23BCABC9965 /* WeChoreUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */; };
+		6380C2325FE6750AFD858FF3 /* MessageSuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */; };
+		64D7F70D64644B75EA42D85C /* StoredModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE2D028F2405BB3E99C7B91E /* StoredModels.swift */; };
+		6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */; };
+		69F23ED45B841BA673D3808D /* ChoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B53447435F88D82364A810A /* ChoresView.swift */; };
+		6AC06BD1E47F006BEF9BD114 /* Repository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E994A026F5DF5FBF75A268 /* Repository.swift */; };
+		70785E6F38DA6A9C8001FE14 /* WeChoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */; };
+		77371031B2F28DD449624828 /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 016AC5C6A9F51FF736BF127A /* AppRoute.swift */; };
+		7FA838F46B4EC576CC8750C3 /* TuistBundle+WeChoreDev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E7A7758B91BF63A4E2A62E2 /* TuistBundle+WeChoreDev.swift */; };
+		7FDD27DC8648DF5EB4BD210D /* RuntimeEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DA29DF12173767FB8D1FD8 /* RuntimeEnvironment.swift */; };
+		800021DD3BAE675E75C26C3A /* CloudKitHouseholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */; };
+		846F0470C3C80CC4A689C4FF /* SystemCommunicationOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */; };
+		87C761A1BD33C5526097CD8F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */; };
+		8D2A7018BC14FF80AD1EC777 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */; };
+		98EDCA2C253385B39954EF65 /* WeChoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */; };
+		9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
+		A0342072201DB35D57A12E2D /* HouseholdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29EB030115CC2E44378D4A9 /* HouseholdView.swift */; };
+		A25B8D1479188553485A7386 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
+		A3E2842DC12C02398E5F303D /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
+		A420663CF3EEAFA4763BC76D /* WeChoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */; };
+		AF43B4B5CF80B04E3446B304 /* RuntimeEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DA29DF12173767FB8D1FD8 /* RuntimeEnvironment.swift */; };
+		B0CA40F2AC9F90044D019A34 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 904E57B6772853AF1445E5F8 /* AppState.swift */; };
+		B995BE37D9FBD5F18FE701C6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17828170DA4D5FEDF94EA80C /* Assets.xcassets */; };
+		BB8B63041D210511FE9CF80C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */; };
+		C54539DA1FCB53E7AF6BA7D7 /* Repository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E994A026F5DF5FBF75A268 /* Repository.swift */; };
+		CB9130B54703322CCF710322 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */; };
+		D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */; };
+		D78E3CFA8010080845F1D996 /* CloudKitHouseholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */; };
+		DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */; };
+		E8FA8318726D5289173839AF /* WeChoreIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */; };
+		F543304ADC47AC3F8C211108 /* ChoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B53447435F88D82364A810A /* ChoresView.swift */; };
+		F5A2CB0834887B2664C1C8CE /* SystemCommunicationOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */; };
+		FB9E2497FD779AEC80BE265F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */; };
+		FCBCE56F629878AC91F0D9E7 /* StoredModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE2D028F2405BB3E99C7B91E /* StoredModels.swift */; };
+		FDF54445C2CD028BCA583930 /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 016AC5C6A9F51FF736BF127A /* AppRoute.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		13CC417A6DC8CFB9148C0596 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 19E4725336DA21C864F7FA4A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 05B46027AB810265A68EBC33;
+			remoteInfo = WeChore;
+		};
+		62F828BDC692C80F0F2ED802 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 19E4725336DA21C864F7FA4A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 05B46027AB810265A68EBC33;
+			remoteInfo = WeChore;
+		};
+		6E0CB7532BDD8DB5D670320B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 19E4725336DA21C864F7FA4A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 05B46027AB810265A68EBC33;
+			remoteInfo = WeChore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		097B17D903901AB1F2F99D77 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		312E4C6A173FD1F79524D64C /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7C3CB27B97D040A03EE3E627 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		87A07A31BA26699382164E6F /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A8062323E08625DC4DE933F4 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		00DA29DF12173767FB8D1FD8 /* RuntimeEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeEnvironment.swift; sourceTree = "<group>"; };
+		016AC5C6A9F51FF736BF127A /* AppRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
+		0B53447435F88D82364A810A /* ChoresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoresView.swift; sourceTree = "<group>"; };
+		17828170DA4D5FEDF94EA80C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCommunicationOpener.swift; sourceTree = "<group>"; };
+		19B0B8C0C16F584635F977E4 /* WeChoreUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WeChoreUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2508119621C5A8802EE71AE4 /* WeChoreIntegrationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WeChoreIntegrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitHouseholdStore.swift; sourceTree = "<group>"; };
+		3E7A7758B91BF63A4E2A62E2 /* TuistBundle+WeChoreDev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+WeChoreDev.swift"; sourceTree = "<group>"; };
+		41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		45DEAC4E1F1BD7EA690E62EE /* WeChore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeChore.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E0B3CCBB9F2CA47A52901B7 /* TuistAssets+WeChoreDev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+WeChoreDev.swift"; sourceTree = "<group>"; };
+		57878227AC9597EEB732DC98 /* Tests.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Tests.plist; sourceTree = "<group>"; };
+		5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5FB508596101C93FDEBA4BE2 /* TuistAssets+WeChore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+WeChore.swift"; sourceTree = "<group>"; };
+		63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreTests.swift; sourceTree = "<group>"; };
+		6AA60A67D6AE72E1B9E9288C /* TuistBundle+WeChore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+WeChore.swift"; sourceTree = "<group>"; };
+		79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
+		7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduler.swift; sourceTree = "<group>"; };
+		82E8E74DBE2C36F7B14019A9 /* WeChore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WeChore.entitlements; sourceTree = "<group>"; };
+		8BD141F64931FE97AE9C85A5 /* WeChoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WeChoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		904E57B6772853AF1445E5F8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		91DCF0082220993EF6294B35 /* Clock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clock.swift; sourceTree = "<group>"; };
+		9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		A8C8F5EC061A571D76405E67 /* WeChoreDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeChoreDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B29EB030115CC2E44378D4A9 /* HouseholdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdView.swift; sourceTree = "<group>"; };
+		BE2D028F2405BB3E99C7B91E /* StoredModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredModels.swift; sourceTree = "<group>"; };
+		C3E994A026F5DF5FBF75A268 /* Repository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repository.swift; sourceTree = "<group>"; };
+		C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreIntegrationTests.swift; sourceTree = "<group>"; };
+		D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSuggestionEngine.swift; sourceTree = "<group>"; };
+		D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreUITests.swift; sourceTree = "<group>"; };
+		DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreApp.swift; sourceTree = "<group>"; };
+		E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		E8099D29BE0998FF09581473 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		188A3F1C8E774826E2BEFA4D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4EE1C362391C7ECE112DD6F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5886615EAF8045BC30F525BD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4ADBC8F5FD52B7AE9FD7E71 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2FD71570B621BDAD0AAEC9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		007FB5D8901FB8BF39DF1621 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				0B53447435F88D82364A810A /* ChoresView.swift */,
+				B29EB030115CC2E44378D4A9 /* HouseholdView.swift */,
+				F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */,
+				2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */,
+				9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */,
+				5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		109D09AE35F42D3219927B55 /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		11B8CBBBD0FEADCDD99A5F94 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				45DEAC4E1F1BD7EA690E62EE /* WeChore.app */,
+				A8C8F5EC061A571D76405E67 /* WeChoreDev.app */,
+				2508119621C5A8802EE71AE4 /* WeChoreIntegrationTests.xctest */,
+				8BD141F64931FE97AE9C85A5 /* WeChoreTests.xctest */,
+				19B0B8C0C16F584635F977E4 /* WeChoreUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		16E5999FBA05BED1D0F139F0 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				016AC5C6A9F51FF736BF127A /* AppRoute.swift */,
+				E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */,
+				00DA29DF12173767FB8D1FD8 /* RuntimeEnvironment.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		2C5D224AB258503CF70B7F5C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				904E57B6772853AF1445E5F8 /* AppState.swift */,
+				91DCF0082220993EF6294B35 /* Clock.swift */,
+				2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */,
+				D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */,
+				7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */,
+				C3E994A026F5DF5FBF75A268 /* Repository.swift */,
+				19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3E5B90005374DA642F52E7A2 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				5FB508596101C93FDEBA4BE2 /* TuistAssets+WeChore.swift */,
+				4E0B3CCBB9F2CA47A52901B7 /* TuistAssets+WeChoreDev.swift */,
+				6AA60A67D6AE72E1B9E9288C /* TuistBundle+WeChore.swift */,
+				3E7A7758B91BF63A4E2A62E2 /* TuistBundle+WeChoreDev.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		43DD0EA231BC73CF7DCCDF0A /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		4592A82F18C90276435B534B = {
+			isa = PBXGroup;
+			children = (
+				11B8CBBBD0FEADCDD99A5F94 /* Products */,
+				793FB178C5121DE930B6F548 /* Project */,
+			);
+			sourceTree = "<group>";
+		};
+		6382C10BC5D9736A94E94AD2 /* IntegrationTests */ = {
+			isa = PBXGroup;
+			children = (
+				C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */,
+			);
+			path = IntegrationTests;
+			sourceTree = "<group>";
+		};
+		6EFE24E11D8B86575FD50D1B /* Derived */ = {
+			isa = PBXGroup;
+			children = (
+				3E5B90005374DA642F52E7A2 /* Sources */,
+			);
+			path = Derived;
+			sourceTree = "<group>";
+		};
+		793FB178C5121DE930B6F548 /* Project */ = {
+			isa = PBXGroup;
+			children = (
+				6EFE24E11D8B86575FD50D1B /* Derived */,
+				6382C10BC5D9736A94E94AD2 /* IntegrationTests */,
+				D602AD99269C1E98E5DBB7AF /* Resources */,
+				A0900991194D16BD7247DC11 /* Sources */,
+				43DD0EA231BC73CF7DCCDF0A /* Tests */,
+				109D09AE35F42D3219927B55 /* UITests */,
+				E8099D29BE0998FF09581473 /* Info.plist */,
+				57878227AC9597EEB732DC98 /* Tests.plist */,
+				82E8E74DBE2C36F7B14019A9 /* WeChore.entitlements */,
+			);
+			name = Project;
+			sourceTree = "<group>";
+		};
+		A0900991194D16BD7247DC11 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				AE5405385D3CDA28C740C480 /* Models */,
+				2C5D224AB258503CF70B7F5C /* Services */,
+				16E5999FBA05BED1D0F139F0 /* Shared */,
+				007FB5D8901FB8BF39DF1621 /* Views */,
+				DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		AE5405385D3CDA28C740C480 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */,
+				BE2D028F2405BB3E99C7B91E /* StoredModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D602AD99269C1E98E5DBB7AF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				17828170DA4D5FEDF94EA80C /* Assets.xcassets */,
+				41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		05B46027AB810265A68EBC33 /* WeChore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EC94569B79EF6EEA162634AC /* Build configuration list for PBXNativeTarget "WeChore" */;
+			buildPhases = (
+				0F662195B44202EC55CF8312 /* Sources */,
+				5F9A830C9368D11B2AC83D0E /* Resources */,
+				F2FD71570B621BDAD0AAEC9A /* Frameworks */,
+				097B17D903901AB1F2F99D77 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WeChore;
+			packageProductDependencies = (
+			);
+			productName = WeChore;
+			productReference = 45DEAC4E1F1BD7EA690E62EE /* WeChore.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4781599F97B8B7E4F2B5093D /* WeChoreIntegrationTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1B0439DEA928F4CC5D1C5596 /* Build configuration list for PBXNativeTarget "WeChoreIntegrationTests" */;
+			buildPhases = (
+				AFCF391EA86A8E7AD37451DD /* Sources */,
+				EA6D71E943635621C5CF244B /* Resources */,
+				5886615EAF8045BC30F525BD /* Frameworks */,
+				312E4C6A173FD1F79524D64C /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				31A5BDBC6143EB34A05C55A2 /* PBXTargetDependency */,
+			);
+			name = WeChoreIntegrationTests;
+			packageProductDependencies = (
+			);
+			productName = WeChoreIntegrationTests;
+			productReference = 2508119621C5A8802EE71AE4 /* WeChoreIntegrationTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		60ACDCA71E6E27EF14A257E9 /* WeChoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D7C6FA242C9214DFF251F39 /* Build configuration list for PBXNativeTarget "WeChoreTests" */;
+			buildPhases = (
+				8BAAB2CA6B8DE1F305425338 /* Sources */,
+				E8F7702FB40C121B8E2A671E /* Resources */,
+				4EE1C362391C7ECE112DD6F0 /* Frameworks */,
+				7C3CB27B97D040A03EE3E627 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5C3DA41BFA2A4239AA60222E /* PBXTargetDependency */,
+			);
+			name = WeChoreTests;
+			packageProductDependencies = (
+			);
+			productName = WeChoreTests;
+			productReference = 8BD141F64931FE97AE9C85A5 /* WeChoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6A630B082AA6AE5A1C81034C /* WeChoreDev */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9AB2F766ACD061C5B401FA0E /* Build configuration list for PBXNativeTarget "WeChoreDev" */;
+			buildPhases = (
+				9BA960934DAD52988F5B7EFC /* Sources */,
+				85F670393DEA309A4428C9A9 /* Resources */,
+				188A3F1C8E774826E2BEFA4D /* Frameworks */,
+				87A07A31BA26699382164E6F /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WeChoreDev;
+			packageProductDependencies = (
+			);
+			productName = WeChoreDev;
+			productReference = A8C8F5EC061A571D76405E67 /* WeChoreDev.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B710E221966E7CC1E0B92976 /* WeChoreUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 87C2EACE5FA0E5C6A50AA14C /* Build configuration list for PBXNativeTarget "WeChoreUITests" */;
+			buildPhases = (
+				A0B2B1419268DDC2DB818AA6 /* Sources */,
+				59591805A2DC52B99F72F057 /* Resources */,
+				C4ADBC8F5FD52B7AE9FD7E71 /* Frameworks */,
+				A8062323E08625DC4DE933F4 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7FF2CC29FEDC265079181353 /* PBXTargetDependency */,
+			);
+			name = WeChoreUITests;
+			packageProductDependencies = (
+			);
+			productName = WeChoreUITests;
+			productReference = 19B0B8C0C16F584635F977E4 /* WeChoreUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		19E4725336DA21C864F7FA4A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				TargetAttributes = {
+					4781599F97B8B7E4F2B5093D = {
+						TestTargetID = 05B46027AB810265A68EBC33;
+					};
+					60ACDCA71E6E27EF14A257E9 = {
+						TestTargetID = 05B46027AB810265A68EBC33;
+					};
+					B710E221966E7CC1E0B92976 = {
+						TestTargetID = 05B46027AB810265A68EBC33;
+					};
+				};
+			};
+			buildConfigurationList = A19791A831C38F67D481BCED /* Build configuration list for PBXProject "WeChore" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 4592A82F18C90276435B534B;
+			productRefGroup = 11B8CBBBD0FEADCDD99A5F94 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				05B46027AB810265A68EBC33 /* WeChore */,
+				6A630B082AA6AE5A1C81034C /* WeChoreDev */,
+				4781599F97B8B7E4F2B5093D /* WeChoreIntegrationTests */,
+				60ACDCA71E6E27EF14A257E9 /* WeChoreTests */,
+				B710E221966E7CC1E0B92976 /* WeChoreUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		59591805A2DC52B99F72F057 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5F9A830C9368D11B2AC83D0E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4684411D548710A2FB5311C8 /* Assets.xcassets in Resources */,
+				FB9E2497FD779AEC80BE265F /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		85F670393DEA309A4428C9A9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B995BE37D9FBD5F18FE701C6 /* Assets.xcassets in Resources */,
+				5E2ADB61860923691D0A6171 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8F7702FB40C121B8E2A671E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA6D71E943635621C5CF244B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0F662195B44202EC55CF8312 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07A655AA47B7B16DDE46557E /* TuistAssets+WeChore.swift in Sources */,
+				2E79DF102256163B6DE4257C /* TuistBundle+WeChore.swift in Sources */,
+				32481D35475FBDB412C33492 /* DomainModels.swift in Sources */,
+				64D7F70D64644B75EA42D85C /* StoredModels.swift in Sources */,
+				B0CA40F2AC9F90044D019A34 /* AppState.swift in Sources */,
+				092EFCB07D94CF9B2ACD6CC2 /* Clock.swift in Sources */,
+				D78E3CFA8010080845F1D996 /* CloudKitHouseholdStore.swift in Sources */,
+				425028584323AEE018DC21B2 /* MessageSuggestionEngine.swift in Sources */,
+				CB9130B54703322CCF710322 /* ReminderScheduler.swift in Sources */,
+				6AC06BD1E47F006BEF9BD114 /* Repository.swift in Sources */,
+				F5A2CB0834887B2664C1C8CE /* SystemCommunicationOpener.swift in Sources */,
+				77371031B2F28DD449624828 /* AppRoute.swift in Sources */,
+				A25B8D1479188553485A7386 /* AppTheme.swift in Sources */,
+				AF43B4B5CF80B04E3446B304 /* RuntimeEnvironment.swift in Sources */,
+				F543304ADC47AC3F8C211108 /* ChoresView.swift in Sources */,
+				448D64F2FD71E1FB21D50D3F /* HouseholdView.swift in Sources */,
+				DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */,
+				D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */,
+				21150B907A7A1159EEC72344 /* RootView.swift in Sources */,
+				87C761A1BD33C5526097CD8F /* SettingsView.swift in Sources */,
+				70785E6F38DA6A9C8001FE14 /* WeChoreApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8BAAB2CA6B8DE1F305425338 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				98EDCA2C253385B39954EF65 /* WeChoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BA960934DAD52988F5B7EFC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				09A3059468736225D3A84C6E /* TuistAssets+WeChoreDev.swift in Sources */,
+				7FA838F46B4EC576CC8750C3 /* TuistBundle+WeChoreDev.swift in Sources */,
+				3F70E9BC2616AE201060FC04 /* DomainModels.swift in Sources */,
+				FCBCE56F629878AC91F0D9E7 /* StoredModels.swift in Sources */,
+				09E811409FF7180B9553BE74 /* AppState.swift in Sources */,
+				412573FCF0192DE9043D9553 /* Clock.swift in Sources */,
+				800021DD3BAE675E75C26C3A /* CloudKitHouseholdStore.swift in Sources */,
+				6380C2325FE6750AFD858FF3 /* MessageSuggestionEngine.swift in Sources */,
+				8D2A7018BC14FF80AD1EC777 /* ReminderScheduler.swift in Sources */,
+				C54539DA1FCB53E7AF6BA7D7 /* Repository.swift in Sources */,
+				846F0470C3C80CC4A689C4FF /* SystemCommunicationOpener.swift in Sources */,
+				FDF54445C2CD028BCA583930 /* AppRoute.swift in Sources */,
+				9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */,
+				7FDD27DC8648DF5EB4BD210D /* RuntimeEnvironment.swift in Sources */,
+				69F23ED45B841BA673D3808D /* ChoresView.swift in Sources */,
+				A0342072201DB35D57A12E2D /* HouseholdView.swift in Sources */,
+				6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */,
+				2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */,
+				A3E2842DC12C02398E5F303D /* RootView.swift in Sources */,
+				BB8B63041D210511FE9CF80C /* SettingsView.swift in Sources */,
+				A420663CF3EEAFA4763BC76D /* WeChoreApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0B2B1419268DDC2DB818AA6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				610597C82F7AB23BCABC9965 /* WeChoreUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFCF391EA86A8E7AD37451DD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E8FA8318726D5289173839AF /* WeChoreIntegrationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		31A5BDBC6143EB34A05C55A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = WeChore;
+			target = 05B46027AB810265A68EBC33 /* WeChore */;
+			targetProxy = 62F828BDC692C80F0F2ED802 /* PBXContainerItemProxy */;
+		};
+		5C3DA41BFA2A4239AA60222E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = WeChore;
+			target = 05B46027AB810265A68EBC33 /* WeChore */;
+			targetProxy = 6E0CB7532BDD8DB5D670320B /* PBXContainerItemProxy */;
+		};
+		7FF2CC29FEDC265079181353 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = WeChore;
+			target = 05B46027AB810265A68EBC33 /* WeChore */;
+			targetProxy = 13CC417A6DC8CFB9148C0596 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		074AF1AACC76A75E8930DFC2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WeChore.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3VDQ4656LX;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.peyton.wechore.dev;
+				PRODUCT_NAME = WeChoreDev;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore.dev;
+				WECHORE_DISPLAY_NAME = "WeChore Dev";
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore.dev;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = "wechore-dev";
+			};
+			name = Release;
+		};
+		29384174D19139AF58A4D5E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Tests.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.peyton.wechore.ui-tests";
+				PRODUCT_NAME = WeChoreUITests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WeChore;
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Debug;
+		};
+		36510C8B006A6D22EEEDD26D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WeChore.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3VDQ4656LX;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.peyton.wechore;
+				PRODUCT_NAME = WeChore;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Debug;
+		};
+		66175C0AD72015B2EE4EC861 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Tests.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.peyton.wechore.integration-tests";
+				PRODUCT_NAME = WeChoreIntegrationTests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WeChore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WeChore";
+				TEST_TARGET_NAME = WeChore;
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Release;
+		};
+		75B15C2233F3F77D6917FBC2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Tests.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.peyton.wechore.ui-tests";
+				PRODUCT_NAME = WeChoreUITests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WeChore;
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Release;
+		};
+		7EACB6F69229E001695CE032 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Tests.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.peyton.wechore.tests;
+				PRODUCT_NAME = WeChoreTests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WeChore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WeChore";
+				TEST_TARGET_NAME = WeChore;
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Release;
+		};
+		810C1B5E339DF18D4E77A376 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 202604140700280;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+				WECHORE_BUILD_NUMBER = 20260414.070028.0;
+			};
+			name = Release;
+		};
+		AE84FDF72F0D72171129B90E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Tests.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.peyton.wechore.integration-tests";
+				PRODUCT_NAME = WeChoreIntegrationTests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WeChore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WeChore";
+				TEST_TARGET_NAME = WeChore;
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Debug;
+		};
+		D356680D8AEE7F13D15AE8F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 202604140700280;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				WECHORE_BUILD_NUMBER = 20260414.070028.0;
+			};
+			name = Debug;
+		};
+		EE6EF01BC29DBABC4472EE01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Tests.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.peyton.wechore.tests;
+				PRODUCT_NAME = WeChoreTests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WeChore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WeChore";
+				TEST_TARGET_NAME = WeChore;
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Debug;
+		};
+		F5EA63EA97FD5A8B85A8F9F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WeChore.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3VDQ4656LX;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.peyton.wechore;
+				PRODUCT_NAME = WeChore;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore;
+				WECHORE_DISPLAY_NAME = WeChore;
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = wechore;
+			};
+			name = Release;
+		};
+		F9BB6572D428B992CB7956F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WeChore.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3VDQ4656LX;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.7;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.peyton.wechore.dev;
+				PRODUCT_NAME = WeChoreDev;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WECHORE_APP_GROUP_ID = group.app.peyton.wechore.dev;
+				WECHORE_DISPLAY_NAME = "WeChore Dev";
+				WECHORE_ICLOUD_CONTAINER = iCloud.app.peyton.wechore.dev;
+				WECHORE_ICLOUD_ENVIRONMENT = Development;
+				WECHORE_URL_SCHEME = "wechore-dev";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1B0439DEA928F4CC5D1C5596 /* Build configuration list for PBXNativeTarget "WeChoreIntegrationTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AE84FDF72F0D72171129B90E /* Debug */,
+				66175C0AD72015B2EE4EC861 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5D7C6FA242C9214DFF251F39 /* Build configuration list for PBXNativeTarget "WeChoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE6EF01BC29DBABC4472EE01 /* Debug */,
+				7EACB6F69229E001695CE032 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		87C2EACE5FA0E5C6A50AA14C /* Build configuration list for PBXNativeTarget "WeChoreUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				29384174D19139AF58A4D5E9 /* Debug */,
+				75B15C2233F3F77D6917FBC2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9AB2F766ACD061C5B401FA0E /* Build configuration list for PBXNativeTarget "WeChoreDev" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9BB6572D428B992CB7956F9 /* Debug */,
+				074AF1AACC76A75E8930DFC2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A19791A831C38F67D481BCED /* Build configuration list for PBXProject "WeChore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D356680D8AEE7F13D15AE8F6 /* Debug */,
+				810C1B5E339DF18D4E77A376 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EC94569B79EF6EEA162634AC /* Build configuration list for PBXNativeTarget "WeChore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36510C8B006A6D22EEEDD26D /* Debug */,
+				F5EA63EA97FD5A8B85A8F9F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 19E4725336DA21C864F7FA4A /* Project object */;
+}
