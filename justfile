@@ -44,7 +44,7 @@ appstore-api-key:
 
 [group('appstore')]
 appstore-check:
-    WECHORE_FLAVOR=prod mise exec -- uv run python -m scripts.app_store_connect.check
+    WECHORE_FLAVOR=prod mise exec -- uv run python -m scripts.app_store_connect.check_asc
 
 [group('appstore')]
 appstore-preflight:

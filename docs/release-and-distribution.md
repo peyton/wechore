@@ -88,7 +88,7 @@ record exists.
    The repo defaults to this team id, but keeping it as an environment variable
    makes future team changes explicit.
 
-6. Verify the App Store Connect app is visible to the API key:
+6. Verify the App Store Connect app is visible through `asc`:
 
    ```text
    export APP_STORE_CONNECT_API_KEY_ID=<key id>
@@ -103,8 +103,11 @@ record exists.
 
    ```text
    Release metadata preflight passed.
-   Found App Store Connect app: WeChore (app.peyton.wechore, sku WECHORE-IOS, id ...)
+   Found App Store Connect app with asc: WeChore (app.peyton.wechore, sku WECHORE-IOS, id ...)
    ```
+
+   `appstore-check` also supports an authenticated local `asc` profile, but CI
+   uses the App Store Connect environment variables above.
 
 ## TestFlight Upload
 

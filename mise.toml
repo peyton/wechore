@@ -8,6 +8,7 @@ uv = "latest"
 node = "24"
 "npm:prettier" = "latest"
 "npm:wrangler" = "latest"
+"github:rudrankriyam/App-Store-Connect-CLI" = { version = "1.2.2", bin = "asc" }
 ruff = "latest"
 shellcheck = "latest"
 rumdl = "latest"

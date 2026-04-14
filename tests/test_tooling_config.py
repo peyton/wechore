@@ -63,6 +63,7 @@ def test_mise_pins_project_tools() -> None:
     assert 'python = "3.14"' in mise
     assert '"npm:prettier"' in mise
     assert '"npm:wrangler"' in mise
+    assert '"github:rudrankriyam/App-Store-Connect-CLI"' in mise
 
 
 def test_editorconfig_declares_clean_checkout_prettier_width() -> None:

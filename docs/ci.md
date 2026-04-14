@@ -33,10 +33,10 @@ just ci
 - `preview-release` creates non-semver GitHub prereleases from every push to
   `master`.
 - `testflight` runs `mise exec -- just appstore-preflight`, verifies App Store
-  Connect access, and uploads production iOS archives to TestFlight for app or
-  release-tooling changes on `master` when the `testflight` environment has the
-  required App Store Connect values. If those values are not configured, it emits
-  a notice and skips the upload.
+  Connect app visibility through `asc`, and uploads production iOS archives to
+  TestFlight for app or release-tooling changes on `master` when the `testflight`
+  environment has the required App Store Connect values. If those values are not
+  configured, it emits a notice and skips the upload.
 - `deploy-web` validates and builds `web/`, then deploys to Cloudflare Pages
   production from `master` and same-repo preview URLs from pull requests when
   the matching Cloudflare environment values are configured. If those values are

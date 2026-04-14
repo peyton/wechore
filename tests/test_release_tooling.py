@@ -7,11 +7,16 @@ import pytest
 
 from scripts.app_store_connect.check import (
     AppRecord,
+    AppStoreAppMissingError,
     AppStoreConnectConfig,
     AppStoreConnectError,
     DEFAULT_BUNDLE_ID,
     manual_creation_message,
     validate_app_record,
+)
+from scripts.app_store_connect.check_asc import (
+    app_record_from_asc_payload,
+    asc_environment,
 )
 from scripts.app_store_connect.preflight import validate_release_preflight
 from scripts.cloudflare.setup import (
@@ -128,6 +133,32 @@ def test_app_store_record_metadata_must_match_expected_values() -> None:
 
     with pytest.raises(AppStoreConnectError, match="metadata mismatch"):
         validate_app_record(config, record)
+
+
+def test_asc_environment_maps_existing_app_store_connect_names() -> None:
+    env = asc_environment(
+        {
+            "APP_STORE_CONNECT_API_KEY_ID": "KEY123",
+            "APP_STORE_CONNECT_API_ISSUER_ID": "issuer",
+            "APP_STORE_CONNECT_API_KEY_P8_BASE64": "base64",
+        }
+    )
+
+    assert env["ASC_KEY_ID"] == "KEY123"
+    assert env["ASC_ISSUER_ID"] == "issuer"
+    assert env["ASC_PRIVATE_KEY_B64"] == "base64"
+    assert env["ASC_BYPASS_KEYCHAIN"] == "1"
+
+
+def test_asc_app_check_reuses_manual_creation_message() -> None:
+    config = AppStoreConnectConfig(
+        key_id="KEY123",
+        issuer_id="issuer",
+        private_key_pem=b"key",
+    )
+
+    with pytest.raises(AppStoreAppMissingError, match="Name: WeChore"):
+        app_record_from_asc_payload({"data": []}, config)
 
 
 def test_release_preflight_accepts_committed_app_store_metadata() -> None:
