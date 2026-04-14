@@ -770,7 +770,7 @@ private struct ChatComposer: View {
                     isActionPanelOpen ? "Close actions" : "More actions",
                     systemImage: isActionPanelOpen ? "xmark.circle.fill" : "plus.circle.fill"
                 )
-                    .labelStyle(.iconOnly)
+                .labelStyle(.iconOnly)
             }
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
@@ -986,9 +986,9 @@ struct JoinStartView: View {
                         "Ask your friend to open My QR. Open the iPhone Camera app, "
                             + "point it at their WeChore QR, then tap the join banner."
                     )
-                        .font(.subheadline)
-                        .foregroundStyle(AppPalette.muted)
-                        .fixedSize(horizontal: false, vertical: true)
+                    .font(.subheadline)
+                    .foregroundStyle(AppPalette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         Image(systemName: "camera.viewfinder")
                             .foregroundStyle(AppPalette.weChatGreen)

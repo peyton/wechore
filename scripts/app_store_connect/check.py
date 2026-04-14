@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -106,7 +107,12 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     if key_path:
         return Path(key_path).expanduser().read_bytes()
     if key_base64:
-        return base64.b64decode(key_base64)
+        try:
+            return base64.b64decode(key_base64, validate=True)
+        except (binascii.Error, ValueError) as error:
+            raise AppStoreConnectError(
+                "APP_STORE_CONNECT_API_KEY_P8_BASE64 is not valid base64."
+            ) from error
     if key_raw:
         return key_raw.encode("utf-8")
     raise AppStoreConnectError(
@@ -230,7 +236,35 @@ def check_app(config: AppStoreConnectConfig) -> AppRecord:
     record = client.find_app(config.bundle_id)
     if record is None:
         raise AppStoreAppMissingError(manual_creation_message(config))
+    validate_app_record(config, record)
     return record
+
+
+def validate_app_record(
+    config: AppStoreConnectConfig,
+    record: AppRecord,
+) -> None:
+    mismatches: list[str] = []
+    expected_values = {
+        "name": config.app_name,
+        "bundle_id": config.bundle_id,
+        "sku": config.sku,
+        "primary_locale": config.primary_locale,
+    }
+    actual_values = {
+        "name": record.name,
+        "bundle_id": record.bundle_id,
+        "sku": record.sku,
+        "primary_locale": record.primary_locale,
+    }
+    for field, expected in expected_values.items():
+        actual = actual_values[field]
+        if actual != expected:
+            mismatches.append(f"{field} expected {expected!r}, found {actual!r}")
+    if mismatches:
+        raise AppStoreConnectError(
+            "App Store Connect app metadata mismatch: " + "; ".join(mismatches)
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -3,11 +3,17 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 
+import pytest
+
 from scripts.app_store_connect.check import (
+    AppRecord,
     AppStoreConnectConfig,
+    AppStoreConnectError,
     DEFAULT_BUNDLE_ID,
     manual_creation_message,
+    validate_app_record,
 )
+from scripts.app_store_connect.preflight import validate_release_preflight
 from scripts.cloudflare.setup import (
     CloudflareConfig,
     DEFAULT_EMAIL_PREFIXES,
@@ -16,7 +22,6 @@ from scripts.cloudflare.setup import (
     routing_rule_payload,
     validate_email_domain,
 )
-import pytest
 
 
 def test_app_store_manual_creation_message_names_required_values() -> None:
@@ -98,3 +103,61 @@ def test_private_key_can_be_loaded_from_base64_env(tmp_path: Path) -> None:
     assert (
         load_private_key_pem({"APP_STORE_CONNECT_API_KEY_PATH": str(key_path)}) == key
     )
+
+
+def test_private_key_rejects_invalid_base64_env() -> None:
+    from scripts.app_store_connect.check import load_private_key_pem
+
+    with pytest.raises(AppStoreConnectError, match="not valid base64"):
+        load_private_key_pem({"APP_STORE_CONNECT_API_KEY_P8_BASE64": "not base64!"})
+
+
+def test_app_store_record_metadata_must_match_expected_values() -> None:
+    config = AppStoreConnectConfig(
+        key_id="KEY123",
+        issuer_id="issuer",
+        private_key_pem=b"key",
+    )
+    record = AppRecord(
+        app_id="app-id",
+        name="Wrong",
+        bundle_id=DEFAULT_BUNDLE_ID,
+        sku="WRONG-SKU",
+        primary_locale="en-US",
+    )
+
+    with pytest.raises(AppStoreConnectError, match="metadata mismatch"):
+        validate_app_record(config, record)
+
+
+def test_release_preflight_accepts_committed_app_store_metadata() -> None:
+    key = b"-----BEGIN PRIVATE KEY-----\nexample\n-----END PRIVATE KEY-----\n"
+
+    errors = validate_release_preflight(
+        {
+            "APP_IDENTIFIER": DEFAULT_BUNDLE_ID,
+            "APP_STORE_CONNECT_API_KEY_ID": "KEY123",
+            "APP_STORE_CONNECT_API_ISSUER_ID": "issuer",
+            "APP_STORE_CONNECT_API_KEY_P8_BASE64": base64.b64encode(key).decode(
+                "ascii"
+            ),
+            "TEAM_ID": "3VDQ4656LX",
+            "WECHORE_CLOUD_KIT_ENVIRONMENT": "Production",
+        },
+        require_credentials=True,
+    )
+
+    assert errors == []
+
+
+def test_release_preflight_rejects_development_cloudkit_environment() -> None:
+    errors = validate_release_preflight(
+        {
+            "APP_IDENTIFIER": DEFAULT_BUNDLE_ID,
+            "TEAM_ID": "3VDQ4656LX",
+            "WECHORE_CLOUD_KIT_ENVIRONMENT": "Development",
+        },
+        require_credentials=False,
+    )
+
+    assert any("must be Production" in error for error in errors)

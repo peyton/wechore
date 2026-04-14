@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
-from datetime import UTC, datetime
+import pytest
 
-from scripts.tooling.resolve_versions import parse_release_tag, resolve_build_number
+from scripts.tooling.resolve_versions import (
+    VersionResolutionError,
+    parse_release_tag,
+    resolve_build_number,
+    resolve_marketing_version,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +25,7 @@ def test_justfile_exposes_required_commands() -> None:
         "build:",
         "run:",
         "appstore-create-app:",
+        "appstore-preflight:",
         "appstore-check:",
         "testflight-archive:",
         "testflight-upload:",
@@ -84,6 +91,7 @@ def test_hk_config_runs_linting_steps() -> None:
 
 def test_release_tag_and_build_number_helpers() -> None:
     assert parse_release_tag("v1.2.3") == "1.2.3"
+    assert resolve_marketing_version({"WECHORE_MARKETING_VERSION": "2.3.4"}) == "2.3.4"
     assert resolve_build_number({"WECHORE_BUILD_NUMBER": "42"}) == "42"
     assert (
         resolve_build_number({"GITHUB_RUN_NUMBER": "123", "GITHUB_RUN_ATTEMPT": "2"})
@@ -92,3 +100,10 @@ def test_release_tag_and_build_number_helpers() -> None:
     assert resolve_build_number({}, now=datetime(2026, 4, 14, 11, 30, tzinfo=UTC)) == (
         "2604141130"
     )
+
+    with pytest.raises(VersionResolutionError):
+        resolve_marketing_version({"WECHORE_MARKETING_VERSION": "2.3"})
+    with pytest.raises(VersionResolutionError):
+        resolve_build_number({"WECHORE_BUILD_NUMBER": "1.2.3"})
+    with pytest.raises(VersionResolutionError):
+        resolve_build_number({"GITHUB_RUN_NUMBER": "abc"})

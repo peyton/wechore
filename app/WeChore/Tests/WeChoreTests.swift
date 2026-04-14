@@ -193,6 +193,14 @@ final class WeChoreTests: XCTestCase {
         XCTAssertTrue(payload.shareText.contains("PINE123"))
     }
 
+    func testDeepLinkURLConstructionDoesNotRequireForceUnwrapFallback() {
+        let url = WeChoreDeepLink.thread("thread-pine").url()
+
+        XCTAssertEqual(url.scheme, "wechore")
+        XCTAssertEqual(url.host, "thread")
+        XCTAssertEqual(url.path, "/thread-pine")
+    }
+
     func testExpiredInvitesArePrunedDuringNormalization() {
         let now = Date(timeIntervalSince1970: 2_000)
         var snapshot = ChoreSnapshot.seededForUITests(now: now)

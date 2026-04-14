@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
@@ -21,6 +22,7 @@ REQUIRED_FILES = (
     "assets/app-icon.svg",
     "assets/app-preview.svg",
     "assets/site.css",
+    ".well-known/apple-app-site-association",
 )
 REQUIRED_EMAILS_BY_FILE = {
     Path("index.html"): (CONTACT_EMAIL, SUPPORT_EMAIL, PRIVACY_EMAIL, SECURITY_EMAIL),
@@ -218,6 +220,25 @@ def validate_site(root: Path) -> list[str]:
             expected = f"https://wechore.peyton.app{path}"
             if expected not in sitemap_text:
                 errors.append(f"sitemap.xml missing {expected}.")
+    aasa = resolved_root / ".well-known" / "apple-app-site-association"
+    if aasa.is_file():
+        try:
+            payload = json.loads(aasa.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            errors.append(
+                f".well-known/apple-app-site-association is invalid JSON: {error}."
+            )
+        else:
+            details = payload.get("applinks", {}).get("details", [])
+            if not any(
+                entry.get("appID") == "3VDQ4656LX.app.peyton.wechore"
+                and "/join*" in entry.get("paths", [])
+                for entry in details
+            ):
+                errors.append(
+                    ".well-known/apple-app-site-association missing production "
+                    "/join* applink entry."
+                )
     for path in html_files(resolved_root):
         errors.extend(validate_html_file(resolved_root, path))
     return errors

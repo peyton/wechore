@@ -94,12 +94,15 @@ record exists.
    export APP_STORE_CONNECT_API_KEY_ID=<key id>
    export APP_STORE_CONNECT_API_ISSUER_ID=<issuer id>
    export APP_STORE_CONNECT_API_KEY_PATH=/absolute/path/AuthKey_<KEY_ID>.p8
+   export TEAM_ID=3VDQ4656LX
+   mise exec -- just appstore-preflight
    mise exec -- just appstore-check
    ```
 
-   Expected result:
+   Expected results:
 
    ```text
+   Release metadata preflight passed.
    Found App Store Connect app: WeChore (app.peyton.wechore, sku WECHORE-IOS, id ...)
    ```
 
@@ -112,6 +115,7 @@ export APP_STORE_CONNECT_API_KEY_ID=<key id>
 export APP_STORE_CONNECT_API_ISSUER_ID=<issuer id>
 export APP_STORE_CONNECT_API_KEY_PATH=/absolute/path/AuthKey_<KEY_ID>.p8
 export TEAM_ID=3VDQ4656LX
+mise exec -- just appstore-preflight
 mise exec -- just testflight-upload
 ```
 
@@ -120,8 +124,9 @@ The command archives the `WeChore` production scheme, exports with
 artifacts under `.build/` and `.DerivedData/archive/`.
 
 GitHub Actions runs the same upload from `.github/workflows/testflight.yml` on
-every push to `master` and on manual dispatch. New builds appear in App Store
-Connect under TestFlight after Apple processing completes.
+app or release-tooling pushes to `master` and on manual dispatch. Documentation
+or website-only pushes do not create a new TestFlight build. New builds appear in
+App Store Connect under TestFlight after Apple processing completes.
 
 ## Versioning
 
