@@ -630,6 +630,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
     public var widgetFavoriteThreadIDs: [String]
     public var widgetFavoriteTaskIDs: [String]
     public var recentlyCompletedTaskID: String?
+    public var themePreference: String // "system", "light", "dark"
 
     public init(
         hasCompletedOnboarding: Bool = false,
@@ -638,7 +639,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         cloudKitEnabled: Bool = true,
         widgetFavoriteThreadIDs: [String] = [],
         widgetFavoriteTaskIDs: [String] = [],
-        recentlyCompletedTaskID: String? = nil
+        recentlyCompletedTaskID: String? = nil,
+        themePreference: String = "system"
     ) {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.selectedParticipantID = selectedParticipantID
@@ -647,6 +649,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         self.widgetFavoriteThreadIDs = widgetFavoriteThreadIDs
         self.widgetFavoriteTaskIDs = widgetFavoriteTaskIDs
         self.recentlyCompletedTaskID = recentlyCompletedTaskID
+        self.themePreference = themePreference
     }
 
     public var selectedMemberID: String? {
@@ -663,6 +666,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         case widgetFavoriteThreadIDs
         case widgetFavoriteTaskIDs
         case recentlyCompletedTaskID
+        case themePreference
     }
 
     public init(from decoder: Decoder) throws {
@@ -683,6 +687,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
             forKey: .widgetFavoriteTaskIDs
         ) ?? []
         recentlyCompletedTaskID = try container.decodeIfPresent(String.self, forKey: .recentlyCompletedTaskID)
+        themePreference = try container.decodeIfPresent(String.self, forKey: .themePreference) ?? "system"
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -694,6 +699,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         try container.encode(widgetFavoriteThreadIDs, forKey: .widgetFavoriteThreadIDs)
         try container.encode(widgetFavoriteTaskIDs, forKey: .widgetFavoriteTaskIDs)
         try container.encodeIfPresent(recentlyCompletedTaskID, forKey: .recentlyCompletedTaskID)
+        try container.encode(themePreference, forKey: .themePreference)
     }
 }
 

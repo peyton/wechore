@@ -27,6 +27,7 @@ struct SettingsView: View {
                     detail: "QR codes, Camera scanning, share links, AirDrop, and nearby join"
                 )
 
+                SettingsAppearanceSection()
                 SettingsProfileSection()
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()
@@ -56,6 +57,35 @@ private enum SettingsLinks {
         ?? URL(fileURLWithPath: "/support")
     static let privacy = URL(string: "https://wechore.peyton.app/privacy/")
         ?? URL(fileURLWithPath: "/privacy")
+}
+
+private struct SettingsAppearanceSection: View {
+    @Environment(AppState.self) private var appState
+
+    private var themeBinding: Binding<String> {
+        Binding(
+            get: { appState.settings.themePreference },
+            set: { appState.updateThemePreference($0) }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Appearance")
+                .font(.headline)
+                .foregroundStyle(AppPalette.ink)
+            Picker("Theme", selection: themeBinding) {
+                Text("System").tag("system")
+                Text("Light").tag("light")
+                Text("Dark").tag("dark")
+            }
+            .pickerStyle(.segmented)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(AppPalette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
 }
 
 private struct SettingsQRCodeSection: View {

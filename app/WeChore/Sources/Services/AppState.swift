@@ -793,6 +793,11 @@ final class AppState {
         }
     }
 
+    func updateThemePreference(_ preference: String) {
+        snapshot.settings.themePreference = preference
+        save("Theme updated.")
+    }
+
     private func createTask(from draft: TaskDraft, sourceMessage: ChoreMessage, at now: Date) -> Chore? {
         let assigneeID = draft.assigneeID ?? currentParticipant.id
         guard !hasActiveDuplicateTask(title: draft.title, assigneeID: assigneeID, threadID: draft.threadID) else {
