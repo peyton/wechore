@@ -119,6 +119,16 @@ final class AppState {
         snapshot.household.updatedAt = now
         snapshot.participants = [participant]
         snapshot.threads = [thread]
+
+        let demoMessage = ChoreMessage(
+            threadID: thread.id,
+            authorMemberID: "system",
+            // swiftlint:disable:next line_length
+            body: "Welcome to WeChore! Try sending a message like \"Can someone take out the trash tonight?\" — WeChore will extract it as a task.",
+            kind: .system
+        )
+        snapshot.messages.append(demoMessage)
+
         snapshot.settings.hasCompletedOnboarding = true
         snapshot.settings.selectedParticipantID = participant.id
         save("Chat ready.")

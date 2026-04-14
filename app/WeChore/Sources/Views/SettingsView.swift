@@ -27,6 +27,13 @@ struct SettingsView: View {
                     detail: "QR codes, Camera scanning, share links, AirDrop, and nearby join"
                 )
 
+                NavigationLink {
+                    StatisticsView()
+                } label: {
+                    Label("Household Stats", systemImage: "chart.bar.fill")
+                }
+                .buttonStyle(SecondaryActionButtonStyle())
+
                 SettingsProfileSection()
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()

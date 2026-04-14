@@ -183,6 +183,8 @@ private struct TaskScopePicker: View {
     }
 }
 
+private let quickPicks = ["Take out trash", "Do laundry", "Unload dishwasher", "Vacuum", "Clean bathroom", "Wash dishes"]
+
 private struct AddChorePanel: View {
     @Environment(AppState.self) private var appState
     @Binding var title: String
@@ -195,6 +197,18 @@ private struct AddChorePanel: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("New task")
                 .font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(quickPicks, id: \.self) { pick in
+                        Button(pick) { title = pick }
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(AppPalette.receivedBubble)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                }
+            }
             TextField("Take out trash", text: $title)
                 .accessibilityIdentifier("chore.title")
                 .textFieldStyle(.roundedBorder)
