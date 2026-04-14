@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct InviteQRCodeCard: View {
     let payload: InvitePayload
     var title: String = "Scan to join"
     var detail: String = "Open Camera, point it at this code, then tap the WeChore join banner."
+    @State private var copied = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -44,6 +46,18 @@ struct InviteQRCodeCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .accessibilityIdentifier("invite.qrCodeText")
                 Spacer()
+                Button {
+                    UIPasteboard.general.string = payload.shareText
+                    copied = true
+                    Task {
+                        try? await Task.sleep(for: .seconds(2))
+                        copied = false
+                    }
+                } label: {
+                    Label(copied ? "Copied!" : "Copy", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(SecondaryActionButtonStyle())
+                .accessibilityIdentifier("invite.copyLink")
                 ShareLink(item: payload.shareText) {
                     Label("Share", systemImage: "square.and.arrow.up")
                 }

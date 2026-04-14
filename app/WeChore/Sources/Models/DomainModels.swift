@@ -85,6 +85,16 @@ public enum TaskDraftAssignmentState: String, Codable, CaseIterable, Identifiabl
     public var id: String { rawValue }
 }
 
+public struct MessageReaction: Hashable, Codable, Sendable {
+    public var emoji: String
+    public var participantID: String
+
+    public init(emoji: String, participantID: String) {
+        self.emoji = emoji
+        self.participantID = participantID
+    }
+}
+
 public struct VoiceAttachment: Hashable, Codable, Sendable {
     public var localAudioFilename: String
     public var duration: TimeInterval
@@ -125,6 +135,7 @@ public struct ChatParticipant: Identifiable, Hashable, Codable, Sendable {
     public var displayName: String
     public var phoneNumber: String?
     public var faceTimeHandle: String?
+    public var avatarEmoji: String?
     public var isCurrentUser: Bool
     public var createdAt: Date
 
@@ -133,6 +144,7 @@ public struct ChatParticipant: Identifiable, Hashable, Codable, Sendable {
         displayName: String,
         phoneNumber: String? = nil,
         faceTimeHandle: String? = nil,
+        avatarEmoji: String? = nil,
         isCurrentUser: Bool = false,
         createdAt: Date = Date()
     ) {
@@ -140,6 +152,7 @@ public struct ChatParticipant: Identifiable, Hashable, Codable, Sendable {
         self.displayName = displayName
         self.phoneNumber = phoneNumber
         self.faceTimeHandle = faceTimeHandle
+        self.avatarEmoji = avatarEmoji
         self.isCurrentUser = isCurrentUser
         self.createdAt = createdAt
     }
@@ -306,9 +319,11 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
     public var sourceMessageID: String?
     public var dueDate: Date?
     public var status: ChoreStatus
+    public var urgency: SuggestionUrgency
     public var reminderPolicy: TaskReminderPolicy
     public var notificationState: TaskNotificationState
     public var lastReminderAt: Date?
+    public var recurrence: String?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -322,9 +337,11 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         sourceMessageID: String? = nil,
         dueDate: Date? = nil,
         status: ChoreStatus = .open,
+        urgency: SuggestionUrgency = .normal,
         reminderPolicy: TaskReminderPolicy = .smart,
         notificationState: TaskNotificationState = .notScheduled,
         lastReminderAt: Date? = nil,
+        recurrence: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -337,9 +354,11 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         self.sourceMessageID = sourceMessageID
         self.dueDate = dueDate
         self.status = status
+        self.urgency = urgency
         self.reminderPolicy = reminderPolicy
         self.notificationState = notificationState
         self.lastReminderAt = lastReminderAt
+        self.recurrence = recurrence
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -363,9 +382,11 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         case sourceMessageID
         case dueDate
         case status
+        case urgency
         case reminderPolicy
         case notificationState
         case lastReminderAt
+        case recurrence
         case createdAt
         case updatedAt
     }
@@ -381,12 +402,14 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         sourceMessageID = try container.decodeIfPresent(String.self, forKey: .sourceMessageID)
         dueDate = try container.decodeIfPresent(Date.self, forKey: .dueDate)
         status = try container.decodeIfPresent(ChoreStatus.self, forKey: .status) ?? .open
+        urgency = try container.decodeIfPresent(SuggestionUrgency.self, forKey: .urgency) ?? .normal
         reminderPolicy = try container.decodeIfPresent(TaskReminderPolicy.self, forKey: .reminderPolicy) ?? .smart
         notificationState = try container.decodeIfPresent(
             TaskNotificationState.self,
             forKey: .notificationState
         ) ?? .notScheduled
         lastReminderAt = try container.decodeIfPresent(Date.self, forKey: .lastReminderAt)
+        recurrence = try container.decodeIfPresent(String.self, forKey: .recurrence)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
     }
@@ -424,6 +447,8 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
     public var body: String
     public var kind: ChoreMessageKind
     public var voiceAttachment: VoiceAttachment?
+    public var imageFilename: String?
+    public var reactions: [MessageReaction]
     public var createdAt: Date
 
     public init(
@@ -433,6 +458,8 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         body: String,
         kind: ChoreMessageKind = .text,
         voiceAttachment: VoiceAttachment? = nil,
+        imageFilename: String? = nil,
+        reactions: [MessageReaction] = [],
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -441,6 +468,8 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         self.body = body
         self.kind = kind
         self.voiceAttachment = voiceAttachment
+        self.imageFilename = imageFilename
+        self.reactions = reactions
         self.createdAt = createdAt
     }
 
@@ -451,6 +480,8 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         case body
         case kind
         case voiceAttachment
+        case imageFilename
+        case reactions
         case createdAt
     }
 
@@ -462,6 +493,8 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         body = try container.decode(String.self, forKey: .body)
         kind = try container.decodeIfPresent(ChoreMessageKind.self, forKey: .kind) ?? .text
         voiceAttachment = try container.decodeIfPresent(VoiceAttachment.self, forKey: .voiceAttachment)
+        imageFilename = try container.decodeIfPresent(String.self, forKey: .imageFilename)
+        reactions = try container.decodeIfPresent([MessageReaction].self, forKey: .reactions) ?? []
         createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
 }
@@ -630,7 +663,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
     public var widgetFavoriteThreadIDs: [String]
     public var widgetFavoriteTaskIDs: [String]
     public var recentlyCompletedTaskID: String?
-
+    public var mutedThreadIDs: Set<String>
+    public var themePreference: String // "system", "light", "dark"
     public init(
         hasCompletedOnboarding: Bool = false,
         selectedParticipantID: String? = nil,
@@ -638,8 +672,9 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         cloudKitEnabled: Bool = true,
         widgetFavoriteThreadIDs: [String] = [],
         widgetFavoriteTaskIDs: [String] = [],
-        recentlyCompletedTaskID: String? = nil
-    ) {
+        recentlyCompletedTaskID: String? = nil,
+        mutedThreadIDs: Set<String> = []
+        themePreference: String = "system"    ) {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.selectedParticipantID = selectedParticipantID
         self.notificationsEnabled = notificationsEnabled
@@ -647,7 +682,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         self.widgetFavoriteThreadIDs = widgetFavoriteThreadIDs
         self.widgetFavoriteTaskIDs = widgetFavoriteTaskIDs
         self.recentlyCompletedTaskID = recentlyCompletedTaskID
-    }
+        self.mutedThreadIDs = mutedThreadIDs
+        self.themePreference = themePreference    }
 
     public var selectedMemberID: String? {
         get { selectedParticipantID }
@@ -663,7 +699,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         case widgetFavoriteThreadIDs
         case widgetFavoriteTaskIDs
         case recentlyCompletedTaskID
-    }
+        case mutedThreadIDs
+        case themePreference    }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -683,7 +720,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
             forKey: .widgetFavoriteTaskIDs
         ) ?? []
         recentlyCompletedTaskID = try container.decodeIfPresent(String.self, forKey: .recentlyCompletedTaskID)
-    }
+        mutedThreadIDs = try container.decodeIfPresent(Set<String>.self, forKey: .mutedThreadIDs) ?? []
+        themePreference = try container.decodeIfPresent(String.self, forKey: .themePreference) ?? "system"    }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -694,7 +732,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         try container.encode(widgetFavoriteThreadIDs, forKey: .widgetFavoriteThreadIDs)
         try container.encode(widgetFavoriteTaskIDs, forKey: .widgetFavoriteTaskIDs)
         try container.encodeIfPresent(recentlyCompletedTaskID, forKey: .recentlyCompletedTaskID)
-    }
+        try container.encode(mutedThreadIDs, forKey: .mutedThreadIDs)
+        try container.encode(themePreference, forKey: .themePreference)    }
 }
 
 public struct ChoreSnapshot: Hashable, Codable, Sendable {
@@ -1042,3 +1081,27 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
         return ids.filter { seen.insert($0).inserted }
     }
 }
+
+#if canImport(ActivityKit)
+import ActivityKit
+
+public struct TaskActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var taskTitle: String
+        public var startedAt: Date
+
+        public init(taskTitle: String, startedAt: Date) {
+            self.taskTitle = taskTitle
+            self.startedAt = startedAt
+        }
+    }
+
+    public var taskID: String
+    public var threadTitle: String
+
+    public init(taskID: String, threadTitle: String) {
+        self.taskID = taskID
+        self.threadTitle = threadTitle
+    }
+}
+#endif

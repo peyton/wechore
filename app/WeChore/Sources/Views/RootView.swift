@@ -95,6 +95,17 @@ struct ChatTreeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if appState.threads.isEmpty {
+                ContentUnavailableView {
+                    Label("No chats yet", systemImage: "bubble.left.and.bubble.right")
+                } description: {
+                    Text("Start a chat to begin tracking chores with your household.")
+                } actions: {
+                    Button("Start a Chat") { open(.joinStart) }
+                        .buttonStyle(PrimaryActionButtonStyle())
+                }
+            }
+
             List {
                 if !appState.groupThreads.isEmpty {
                     Section("Group chats") {
@@ -148,8 +159,22 @@ struct ChatTreeView: View {
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
+            .refreshable {
+                await appState.refresh()
+            }
         }
         .background(AppPalette.canvas)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    open(.tasks)
+                } label: {
+                    Label("New Task", systemImage: "plus")
+                }
+                .keyboardShortcut("n", modifiers: .command)
+                .accessibilityIdentifier("chatTree.newTask")
+            }
+        }
         .accessibilityIdentifier("chat.tree")
     }
 
@@ -174,6 +199,11 @@ private struct ChatThreadRow: View {
                             .font(.headline)
                             .foregroundStyle(AppPalette.ink)
                             .lineLimit(1)
+                        if appState.isThreadMuted(threadID: thread.id) {
+                            Image(systemName: "bell.slash.fill")
+                                .font(.caption2)
+                                .foregroundStyle(AppPalette.muted)
+                        }
                         Spacer()
                         Text(thread.lastActivityAt.weChoreShortDueText)
                             .font(.caption2)
@@ -194,6 +224,16 @@ private struct ChatThreadRow: View {
             .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                appState.toggleThreadMute(threadID: thread.id)
+            } label: {
+                Label(
+                    appState.isThreadMuted(threadID: thread.id) ? "Unmute" : "Mute",
+                    systemImage: appState.isThreadMuted(threadID: thread.id) ? "bell.fill" : "bell.slash.fill"
+                )
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens chat.")
@@ -211,17 +251,28 @@ private struct ChatThreadRow: View {
 }
 
 private struct ThreadAvatar: View {
+    @Environment(AppState.self) private var appState
     let thread: ChatThread
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(thread.kind == .group ? AppPalette.weChatGreen : AppPalette.surface)
-            Image(systemName: thread.kind == .group ? "person.2.fill" : "person.fill")
-                .font(.headline)
-                .foregroundStyle(thread.kind == .group ? AppPalette.onAccent : AppPalette.ink)
+            if let emoji = firstParticipantEmoji {
+                Text(emoji)
+                    .font(.title2)
+            } else {
+                Image(systemName: thread.kind == .group ? "person.2.fill" : "person.fill")
+                    .font(.headline)
+                    .foregroundStyle(thread.kind == .group ? AppPalette.onAccent : AppPalette.ink)
+            }
         }
         .frame(width: 44, height: 44)
         .accessibilityHidden(true)
+    }
+
+    private var firstParticipantEmoji: String? {
+        appState.participants(in: thread.id)
+            .first(where: { $0.avatarEmoji != nil })?.avatarEmoji
     }
 }

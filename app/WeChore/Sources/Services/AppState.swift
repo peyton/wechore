@@ -1,4 +1,8 @@
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 import Foundation
+import UserNotifications
 
 @MainActor
 @Observable
@@ -88,7 +92,13 @@ final class AppState {
         chores.filter { $0.assigneeID == currentParticipant.id && $0.status != .archived }
     }
 
-    func completeOnboarding(displayName: String, householdName: String, contact: String) {
+    func activities(for choreID: String) -> [TaskActivity] {
+        snapshot.taskActivities
+            .filter { $0.choreID == choreID }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func completeOnboarding(displayName: String, householdName: String, contact: String, avatarEmoji: String? = nil) {
         let now = clock.now()
         var participant = currentParticipant
         let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,6 +109,7 @@ final class AppState {
         } else if !trimmedContact.isEmpty {
             participant.phoneNumber = Self.normalizedPhoneNumber(trimmedContact)
         }
+        participant.avatarEmoji = avatarEmoji
         participant.isCurrentUser = true
 
         let trimmedChatTitle = householdName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -119,6 +130,16 @@ final class AppState {
         snapshot.household.updatedAt = now
         snapshot.participants = [participant]
         snapshot.threads = [thread]
+
+        let demoMessage = ChoreMessage(
+            threadID: thread.id,
+            authorMemberID: "system",
+            // swiftlint:disable:next line_length
+            body: "Welcome to WeChore! Try sending a message like \"Can someone take out the trash tonight?\" — WeChore will extract it as a task.",
+            kind: .system
+        )
+        snapshot.messages.append(demoMessage)
+
         snapshot.settings.hasCompletedOnboarding = true
         snapshot.settings.selectedParticipantID = participant.id
         save("Chat ready.")
@@ -305,6 +326,41 @@ final class AppState {
         await postMessage(transcript, in: threadID, kind: .voice, voiceAttachment: attachment)
     }
 
+    func postImageMessage(imageData: Data, in threadID: String) async -> Bool {
+        let filename = UUID().uuidString + ".jpg"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        do {
+            try imageData.write(to: url)
+        } catch {
+            lastStatusMessage = "Could not save image."
+            return false
+        }
+        let now = clock.now()
+        let message = ChoreMessage(
+            threadID: threadID,
+            authorMemberID: currentParticipant.id,
+            body: "\u{1f4f7} Photo",
+            imageFilename: filename,
+            createdAt: now
+        )
+        snapshot.messages.append(message)
+        touchThread(threadID, at: now)
+        return save("Photo sent.")
+    }
+
+    func toggleReaction(emoji: String, messageID: String) {
+        guard let index = snapshot.messages.firstIndex(where: { $0.id == messageID }) else { return }
+        let participantID = currentParticipant.id
+        if let existingIndex = snapshot.messages[index].reactions.firstIndex(where: {
+            $0.emoji == emoji && $0.participantID == participantID
+        }) {
+            snapshot.messages[index].reactions.remove(at: existingIndex)
+        } else {
+            snapshot.messages[index].reactions.append(MessageReaction(emoji: emoji, participantID: participantID))
+        }
+        save(nil)
+    }
+
     @discardableResult
     func addChore(
         title: String,
@@ -378,6 +434,11 @@ final class AppState {
         save("Draft removed.")
     }
 
+    func deleteMessage(id: String) {
+        snapshot.messages.removeAll { $0.id == id }
+        save("Message deleted.")
+    }
+
     func updateStatus(choreID: String, status: ChoreStatus) {
         guard let index = snapshot.chores.firstIndex(where: { $0.id == choreID }) else { return }
         guard snapshot.chores[index].status != status else { return }
@@ -392,6 +453,30 @@ final class AppState {
         case .archived: .completed
         }
         recordActivity(for: chore, kind: activityKind, at: now)
+        if status == .inProgress {
+            startLiveActivity(for: choreID)
+        } else if status == .done || status == .archived {
+            endLiveActivity(for: choreID)
+        }
+        if status == .done, let recurrence = chore.recurrence {
+            let calendar = Calendar.current
+            let nextDue: Date? = switch recurrence {
+            case "daily": calendar.date(byAdding: .day, value: 1, to: chore.dueDate ?? now)
+            case "weekly": calendar.date(byAdding: .weekOfYear, value: 1, to: chore.dueDate ?? now)
+            default: nil
+            }
+            if let nextDue {
+                var nextChore = chore
+                nextChore.id = UUID().uuidString
+                nextChore.status = .open
+                nextChore.dueDate = nextDue
+                nextChore.createdAt = now
+                nextChore.updatedAt = now
+                nextChore.notificationState = .notScheduled
+                nextChore.lastReminderAt = nil
+                snapshot.chores.append(nextChore)
+            }
+        }
         if status == .done {
             recentlyCompletedTaskID = chore.id
             snapshot.settings.recentlyCompletedTaskID = chore.id
@@ -407,7 +492,8 @@ final class AppState {
         title: String,
         assigneeID: String,
         dueDate: Date?,
-        notes: String
+        notes: String,
+        recurrence: String? = nil
     ) -> Bool {
         guard let index = snapshot.chores.firstIndex(where: { $0.id == choreID }) else {
             lastStatusMessage = "Task not found."
@@ -437,11 +523,12 @@ final class AppState {
         snapshot.chores[index].assigneeID = assigneeID
         snapshot.chores[index].dueDate = dueDate
         snapshot.chores[index].notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        snapshot.chores[index].recurrence = recurrence
         snapshot.chores[index].updatedAt = clock.now()
         return save("Updated \(trimmedTitle).")
     }
 
-    func updateCurrentParticipant(displayName: String, contact: String) -> Bool {
+    func updateCurrentParticipant(displayName: String, contact: String, avatarEmoji: String? = nil) -> Bool {
         guard let index = snapshot.participants.firstIndex(where: { $0.id == currentParticipant.id }) else {
             lastStatusMessage = "Profile could not be updated."
             return false
@@ -454,6 +541,7 @@ final class AppState {
         let trimmedContact = contact.trimmingCharacters(in: .whitespacesAndNewlines)
         snapshot.participants[index].displayName = trimmedName
         snapshot.participants[index].isCurrentUser = true
+        snapshot.participants[index].avatarEmoji = avatarEmoji
         if trimmedContact.contains("@") {
             snapshot.participants[index].faceTimeHandle = trimmedContact
             snapshot.participants[index].phoneNumber = nil
@@ -489,6 +577,15 @@ final class AppState {
             applyLoadedSnapshot(loaded, shouldAnnounceRecentCompletion: true)
         } catch {
             lastStatusMessage = "WeChore could not refresh the latest changes."
+        }
+    }
+
+    func refresh() async {
+        do {
+            let refreshed = try repository.loadSnapshot()
+            applyLoadedSnapshot(refreshed, shouldAnnounceRecentCompletion: false)
+        } catch {
+            lastStatusMessage = "Could not refresh."
         }
     }
 
@@ -793,6 +890,51 @@ final class AppState {
         }
     }
 
+    // MARK: - Thread muting
+
+    func isThreadMuted(threadID: String) -> Bool {
+        snapshot.settings.mutedThreadIDs.contains(threadID)
+    }
+
+    func toggleThreadMute(threadID: String) {
+        if snapshot.settings.mutedThreadIDs.contains(threadID) {
+            snapshot.settings.mutedThreadIDs.remove(threadID)
+            save("Notifications unmuted.")
+        } else {
+            snapshot.settings.mutedThreadIDs.insert(threadID)
+            save("Notifications muted.")
+        }
+    }
+
+    // MARK: - Live Activities
+
+    func startLiveActivity(for choreID: String) {
+        #if canImport(ActivityKit)
+        guard let chore = snapshot.chores.first(where: { $0.id == choreID }) else { return }
+        let threadTitle = thread(for: chore.threadID)?.title ?? "WeChore"
+        if #available(iOS 16.2, *), ActivityAuthorizationInfo().areActivitiesEnabled {
+            let attributes = TaskActivityAttributes(taskID: choreID, threadTitle: threadTitle)
+            let state = TaskActivityAttributes.ContentState(taskTitle: chore.title, startedAt: clock.now())
+            _ = try? Activity.request(attributes: attributes, content: .init(state: state, staleDate: nil))
+        }
+        #endif
+    }
+
+    func endLiveActivity(for choreID: String) {
+        #if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            let activities = Activity<TaskActivityAttributes>.activities
+            for activity in activities where activity.attributes.taskID == choreID {
+                Task {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+            }
+        }
+        #endif
+    func updateThemePreference(_ preference: String) {
+        snapshot.settings.themePreference = preference
+        save("Theme updated.")    }
+
     private func createTask(from draft: TaskDraft, sourceMessage: ChoreMessage, at now: Date) -> Chore? {
         let assigneeID = draft.assigneeID ?? currentParticipant.id
         guard !hasActiveDuplicateTask(title: draft.title, assigneeID: assigneeID, threadID: draft.threadID) else {
@@ -807,6 +949,7 @@ final class AppState {
             sourceMessageID: sourceMessage.id,
             dueDate: draft.dueDate,
             status: .open,
+            urgency: draft.urgency,
             reminderPolicy: draft.dueDate == nil ? .smart : .dueDate,
             createdAt: now,
             updatedAt: now
@@ -948,6 +1091,7 @@ final class AppState {
             try repository.saveSnapshot(snapshot)
             lastStatusMessage = message
             widgetTimelineReloader.reloadAllTimelines()
+            updateBadgeCount()
             return true
         } catch {
             if let loaded = try? repository.loadSnapshot() {
@@ -955,6 +1099,23 @@ final class AppState {
             }
             lastStatusMessage = "WeChore could not save the latest change."
             return false
+        }
+    }
+
+    private func updateBadgeCount() {
+        let overdue = chores.filter { chore in
+            chore.isActive && (chore.dueDate ?? .distantFuture) < clock.now()
+        }.count
+        let unread = threads.reduce(0) { $0 + $1.unreadCount }
+        let total = overdue + unread
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(total)
+        }
+    }
+
+    func clearBadge() {
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(0)
         }
     }
 

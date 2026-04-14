@@ -27,7 +27,13 @@ struct SettingsView: View {
                     detail: "QR codes, Camera scanning, share links, AirDrop, and nearby join"
                 )
 
-                SettingsProfileSection()
+                SettingsAppearanceSection()
+                NavigationLink {
+                    StatisticsView()
+                } label: {
+                    Label("Household Stats", systemImage: "chart.bar.fill")
+                }
+                .buttonStyle(SecondaryActionButtonStyle())                SettingsProfileSection()
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()
                 SettingsDiagnosticsSection()
@@ -56,6 +62,35 @@ private enum SettingsLinks {
         ?? URL(fileURLWithPath: "/support")
     static let privacy = URL(string: "https://wechore.peyton.app/privacy/")
         ?? URL(fileURLWithPath: "/privacy")
+}
+
+private struct SettingsAppearanceSection: View {
+    @Environment(AppState.self) private var appState
+
+    private var themeBinding: Binding<String> {
+        Binding(
+            get: { appState.settings.themePreference },
+            set: { appState.updateThemePreference($0) }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Appearance")
+                .font(.headline)
+                .foregroundStyle(AppPalette.ink)
+            Picker("Theme", selection: themeBinding) {
+                Text("System").tag("system")
+                Text("Light").tag("light")
+                Text("Dark").tag("dark")
+            }
+            .pickerStyle(.segmented)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(AppPalette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
 }
 
 private struct SettingsQRCodeSection: View {
@@ -119,12 +154,27 @@ private struct SettingsProfileSection: View {
     @Environment(AppState.self) private var appState
     @State private var displayName = ""
     @State private var contact = ""
+    @State private var selectedEmoji: String?
+    @State private var isEmojiPickerPresented = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Profile")
                 .font(.headline)
                 .foregroundStyle(AppPalette.ink)
+            Button {
+                isEmojiPickerPresented = true
+            } label: {
+                HStack {
+                    Text(selectedEmoji ?? "😊")
+                        .font(.largeTitle)
+                    Text("Change avatar")
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.profile.avatar")
             TextField("Name", text: $displayName)
                 .textContentType(.name)
                 .textInputAutocapitalization(.words)
@@ -136,7 +186,11 @@ private struct SettingsProfileSection: View {
                 .textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("settings.profile.contact")
             Button("Save Profile") {
-                _ = appState.updateCurrentParticipant(displayName: displayName, contact: contact)
+                _ = appState.updateCurrentParticipant(
+                    displayName: displayName,
+                    contact: contact,
+                    avatarEmoji: selectedEmoji
+                )
             }
             .buttonStyle(PrimaryActionButtonStyle())
             .disabled(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -150,11 +204,15 @@ private struct SettingsProfileSection: View {
         .onChange(of: appState.currentParticipant) { _, _ in
             load()
         }
+        .sheet(isPresented: $isEmojiPickerPresented) {
+            EmojiPickerSheet(selectedEmoji: $selectedEmoji)
+        }
     }
 
     private func load() {
         displayName = appState.currentParticipant.displayName
         contact = appState.currentParticipant.faceTimeHandle ?? appState.currentParticipant.phoneNumber ?? ""
+        selectedEmoji = appState.currentParticipant.avatarEmoji
     }
 }
 

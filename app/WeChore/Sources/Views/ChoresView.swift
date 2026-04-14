@@ -1,22 +1,28 @@
 import SwiftUI
+import UIKit
 
 struct ChoresView: View {
     @Environment(AppState.self) private var appState
     @State private var title = ""
     @State private var selectedMemberID = ""
     @State private var duePreset: DuePreset = .tomorrow
+    @State private var customDate = Date()
     @State private var scope: TaskScope = .all
+    @State private var searchText = ""
+    @State private var sortOrder: TaskSortOrder = .dueDate
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HeaderSummary(scope: scope)
                 TaskScopePicker(scope: $scope)
+                TaskSortPicker(sortOrder: $sortOrder)
 
                 AddChorePanel(
                     title: $title,
                     selectedMemberID: $selectedMemberID,
                     duePreset: $duePreset,
+                    customDate: $customDate,
                     canAdd: canAddChore,
                     add: addChore
                 )
@@ -27,6 +33,7 @@ struct ChoresView: View {
             .frame(maxWidth: 920, alignment: .leading)
         }
         .background(AppPalette.canvas)
+        .searchable(text: $searchText, prompt: "Search tasks")
         .navigationTitle("Tasks")
         .safeAreaInset(edge: .bottom) {
             AppStatusBanner(allowsUndo: true)
@@ -43,6 +50,9 @@ struct ChoresView: View {
         appState.chores.filter { chore in
             chore.status != .archived
                 && (scope == .all || chore.assigneeID == appState.currentParticipant.id)
+                && (searchText.isEmpty || chore.title.localizedCaseInsensitiveContains(searchText)
+                    || chore.notes.localizedCaseInsensitiveContains(searchText)
+                    || appState.assigneeName(for: chore).localizedCaseInsensitiveContains(searchText))
         }
     }
 
@@ -54,39 +64,65 @@ struct ChoresView: View {
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
         let done = filteredChores.filter { $0.status == .done }
 
-        return [
-            TaskListSection(title: "Blocked", chores: blocked, emptyText: nil),
-            TaskListSection(
-                title: "Overdue",
-                chores: unblocked.filter { ($0.dueDate ?? .distantFuture) < today },
-                emptyText: nil
-            ),
-            TaskListSection(
-                title: "Today",
-                chores: unblocked.filter { chore in
-                    chore.dueDate.map { Calendar.current.isDate($0, inSameDayAs: today) } ?? false
-                },
-                emptyText: "Nothing due today."
-            ),
-            TaskListSection(
-                title: "Upcoming",
-                chores: unblocked.filter { ($0.dueDate ?? .distantPast) >= tomorrow },
-                emptyText: nil
-            ),
-            TaskListSection(
-                title: "No due date",
-                chores: unblocked.filter { $0.dueDate == nil },
-                emptyText: nil
-            ),
-            TaskListSection(title: "Done", chores: Array(done.prefix(6)), emptyText: nil)
-        ]
+        let sections: [TaskListSection]
+        switch sortOrder {
+        case .dueDate:
+            sections = [
+                TaskListSection(title: "Blocked", chores: blocked, emptyText: nil),
+                TaskListSection(
+                    title: "Overdue",
+                    chores: unblocked.filter { ($0.dueDate ?? .distantFuture) < today },
+                    emptyText: nil
+                ),
+                TaskListSection(
+                    title: "Today",
+                    chores: unblocked.filter { chore in
+                        chore.dueDate.map { Calendar.current.isDate($0, inSameDayAs: today) } ?? false
+                    },
+                    emptyText: "Nothing due today. Send a message like \"Take out the trash tonight\" and WeChore will create the task."
+                ),
+                TaskListSection(
+                    title: "Upcoming",
+                    chores: unblocked.filter { ($0.dueDate ?? .distantPast) >= tomorrow },
+                    emptyText: nil
+                ),
+                TaskListSection(
+                    title: "No due date",
+                    chores: unblocked.filter { $0.dueDate == nil },
+                    emptyText: nil
+                ),
+                TaskListSection(title: "Done", chores: Array(done.prefix(6)), emptyText: nil),
+            ]
+        case .urgency:
+            let urgencyOrder: (Chore) -> Int = { chore in
+                switch chore.urgency {
+                case .urgent: 0
+                case .soon: 1
+                case .normal: 2
+                }
+            }
+            let sorted = unblocked.sorted { urgencyOrder($0) < urgencyOrder($1) }
+            sections = [
+                TaskListSection(title: "Blocked", chores: blocked, emptyText: nil),
+                TaskListSection(title: "Active", chores: sorted, emptyText: "No active tasks."),
+                TaskListSection(title: "Done", chores: Array(done.prefix(6)), emptyText: nil),
+            ]
+        case .title:
+            let sorted = unblocked.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            sections = [
+                TaskListSection(title: "Blocked", chores: blocked, emptyText: nil),
+                TaskListSection(title: "Active", chores: sorted, emptyText: "No active tasks."),
+                TaskListSection(title: "Done", chores: Array(done.prefix(6)), emptyText: nil),
+            ]
+        }
+        return sections
     }
 
     private func addChore() {
         let didAdd = appState.addChore(
             title: title,
             assigneeID: selectedMemberID.isEmpty ? appState.currentMember.id : selectedMemberID,
-            dueDate: duePreset.dueDate()
+            dueDate: duePreset.dueDate(customDate: customDate)
         )
         if didAdd {
             title = ""
@@ -116,14 +152,23 @@ private enum TaskScope: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+private enum TaskSortOrder: String, CaseIterable, Identifiable {
+    case dueDate = "Due date"
+    case urgency = "Urgency"
+    case title = "Title"
+
+    var id: String { rawValue }
+}
+
 private enum DuePreset: String, CaseIterable, Identifiable {
     case none = "No due date"
     case today = "Today"
     case tomorrow = "Tomorrow"
+    case custom = "Pick date"
 
     var id: String { rawValue }
 
-    func dueDate(now: Date = Date(), calendar: Calendar = .current) -> Date? {
+    func dueDate(customDate: Date = Date(), now: Date = Date(), calendar: Calendar = .current) -> Date? {
         switch self {
         case .none:
             return nil
@@ -131,6 +176,8 @@ private enum DuePreset: String, CaseIterable, Identifiable {
             return calendar.endOfDay(afterAdding: 0, to: now)
         case .tomorrow:
             return calendar.endOfDay(afterAdding: 1, to: now)
+        case .custom:
+            return calendar.endOfDay(afterAdding: 0, to: customDate)
         }
     }
 }
@@ -183,11 +230,26 @@ private struct TaskScopePicker: View {
     }
 }
 
+private struct TaskSortPicker: View {
+    @Binding var sortOrder: TaskSortOrder
+
+    var body: some View {
+        Picker("Sort by", selection: $sortOrder) {
+            ForEach(TaskSortOrder.allCases) { option in
+                Text(option.rawValue).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("tasks.sortOrder")
+    }
+}
+private let quickPicks = ["Take out trash", "Do laundry", "Unload dishwasher", "Vacuum", "Clean bathroom", "Wash dishes"]
 private struct AddChorePanel: View {
     @Environment(AppState.self) private var appState
     @Binding var title: String
     @Binding var selectedMemberID: String
     @Binding var duePreset: DuePreset
+    @Binding var customDate: Date
     let canAdd: Bool
     let add: () -> Void
 
@@ -195,6 +257,18 @@ private struct AddChorePanel: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("New task")
                 .font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(quickPicks, id: \.self) { pick in
+                        Button(pick) { title = pick }
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(AppPalette.receivedBubble)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                }
+            }
             TextField("Take out trash", text: $title)
                 .accessibilityIdentifier("chore.title")
                 .textFieldStyle(.roundedBorder)
@@ -212,7 +286,12 @@ private struct AddChorePanel: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("chore.duePreset")
+            if duePreset == .custom {
+                DatePicker("Custom date", selection: $customDate, displayedComponents: .date)
+                    .accessibilityIdentifier("chore.customDate")
+            }
             Button("Add Task", action: add)
+                .keyboardShortcut(.return, modifiers: .command)
                 .buttonStyle(PrimaryActionButtonStyle())
                 .disabled(!canAdd)
                 .accessibilityIdentifier("chore.add")
@@ -227,24 +306,35 @@ private struct TaskSections: View {
     let sections: [TaskListSection]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        List {
             ForEach(sections) { section in
                 if !section.chores.isEmpty || section.emptyText != nil {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(section.title)
-                            .font(.title3.bold())
-                            .foregroundStyle(AppPalette.ink)
+                    Section {
                         if section.chores.isEmpty, let emptyText = section.emptyText {
                             EmptyState(text: emptyText)
+                                .listRowInsets(EdgeInsets())
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                         } else {
                             ForEach(section.chores) { chore in
                                 ChoreRow(chore: chore)
+                                    .listRowInsets(EdgeInsets())
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
                             }
                         }
+                    } header: {
+                        Text(section.title)
+                            .font(.title3.bold())
+                            .foregroundStyle(AppPalette.ink)
+                            .textCase(nil)
                     }
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        .frame(minHeight: 200)
     }
 }
 
@@ -264,10 +354,27 @@ private struct ChoreRow: View {
                     Text("\(appState.assigneeName(for: chore)) • \(chore.status.displayName)")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(AppPalette.muted)
+                    if chore.urgency == .urgent {
+                        Text("Urgent")
+                            .font(.caption.bold())
+                            .foregroundStyle(AppPalette.danger)
+                    } else if chore.urgency == .soon {
+                        Text("Soon")
+                            .font(.caption.bold())
+                            .foregroundStyle(AppPalette.warning)
+                    }
                     if let dueDate = chore.dueDate {
                         Text("Due \(dueDate.weChoreShortDueText)")
                             .font(.footnote)
                             .foregroundStyle(chore.isActive ? AppPalette.warning : AppPalette.muted)
+                    }
+                    if chore.recurrence != nil {
+                        Label(
+                            chore.recurrence == "daily" ? "Daily" : "Weekly",
+                            systemImage: "arrow.clockwise"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(AppPalette.muted)
                     }
                     if !chore.notes.isEmpty {
                         Text(chore.notes)
@@ -285,6 +392,21 @@ private struct ChoreRow: View {
         .padding(14)
         .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .swipeActions(edge: .leading) {
+            Button {
+                appState.updateStatus(choreID: chore.id, status: .done)
+            } label: {
+                Label("Done", systemImage: "checkmark.circle")
+            }
+            .tint(.green)
+        }
+        .swipeActions(edge: .trailing) {
+            Button {
+                isEditorPresented = true
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+        }
         .sheet(isPresented: $isEditorPresented) {
             NavigationStack {
                 TaskEditorSheet(chore: chore)
@@ -295,6 +417,7 @@ private struct ChoreRow: View {
 
 private struct ChoreActionGroup: View {
     @Environment(AppState.self) private var appState
+    @State private var showArchiveConfirmation = false
     let chore: Chore
     let edit: () -> Void
 
@@ -319,19 +442,29 @@ private struct ChoreActionGroup: View {
         ChoreControlButton(title: "Edit", identifier: "chore.edit.\(chore.id)", action: edit)
         if chore.status == .done {
             ChoreControlButton(title: "Reopen", identifier: "chore.reopen.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .open)
             }
             ChoreControlButton(title: "Archive", identifier: "chore.archive.\(chore.id)") {
-                appState.updateStatus(choreID: chore.id, status: .archived)
+                showArchiveConfirmation = true
+            }
+            .confirmationDialog("Archive this task?", isPresented: $showArchiveConfirmation) {
+                Button("Archive", role: .destructive) {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    appState.updateStatus(choreID: chore.id, status: .archived)
+                }
             }
         } else {
             ChoreControlButton(title: "Start", identifier: "chore.start.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .inProgress)
             }
             ChoreControlButton(title: "Blocked", identifier: "chore.blocked.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .blocked)
             }
             ChoreControlButton(title: "Done", identifier: "chore.done.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .done)
             }
             ChoreControlButton(title: "Remind", identifier: "chore.remind.\(chore.id)") {
@@ -357,7 +490,10 @@ private struct TaskEditorSheet: View {
     @State private var notes = ""
     @State private var hasDueDate = false
     @State private var dueDate = Date()
+    @State private var recurrence: String?
     @State private var status: ChoreStatus = .open
+    @State private var originalUpdatedAt = Date()
+    @State private var showConflictAlert = false
 
     var body: some View {
         Form {
@@ -377,10 +513,38 @@ private struct TaskEditorSheet: View {
                     .lineLimit(2...5)
             }
 
+            Section("Repeat") {
+                Picker("Recurrence", selection: $recurrence) {
+                    Text("Never").tag(String?.none)
+                    Text("Daily").tag(String?.some("daily"))
+                    Text("Weekly").tag(String?.some("weekly"))
+                }
+            }
+
             Section("Status") {
                 Picker("Status", selection: $status) {
                     ForEach(ChoreStatus.allCases) { option in
                         Text(option.displayName).tag(option)
+                    }
+                }
+            }
+
+            Section("Activity") {
+                let activities = appState.activities(for: chore.id)
+                if activities.isEmpty {
+                    Text("No activity yet")
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                } else {
+                    ForEach(activities) { activity in
+                        HStack {
+                            Text(activity.kind.rawValue.capitalized)
+                                .font(.subheadline)
+                            Spacer()
+                            Text(activity.createdAt, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(AppPalette.muted)
+                        }
                     }
                 }
             }
@@ -399,6 +563,12 @@ private struct TaskEditorSheet: View {
             }
         }
         .onAppear(perform: load)
+        .alert("Task was modified", isPresented: $showConflictAlert) {
+            Button("Overwrite") { forceSave() }
+            Button("Discard my changes", role: .cancel) { dismiss() }
+        } message: {
+            Text("Someone else changed this task while you were editing. Overwrite with your changes?")
+        }
     }
 
     private var canSave: Bool {
@@ -407,21 +577,33 @@ private struct TaskEditorSheet: View {
     }
 
     private func load() {
+        originalUpdatedAt = chore.updatedAt
         title = chore.title
         selectedMemberID = chore.assigneeID
         notes = chore.notes
         hasDueDate = chore.dueDate != nil
         dueDate = chore.dueDate ?? Date()
+        recurrence = chore.recurrence
         status = chore.status
     }
 
     private func save() {
+        if let current = appState.chores.first(where: { $0.id == chore.id }),
+           current.updatedAt > originalUpdatedAt {
+            showConflictAlert = true
+            return
+        }
+        forceSave()
+    }
+
+    private func forceSave() {
         guard appState.updateChore(
             choreID: chore.id,
             title: title,
             assigneeID: selectedMemberID,
             dueDate: hasDueDate ? dueDate : nil,
-            notes: notes
+            notes: notes,
+            recurrence: recurrence
         ) else {
             return
         }
