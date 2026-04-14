@@ -492,6 +492,15 @@ final class AppState {
         }
     }
 
+    func refresh() async {
+        do {
+            let refreshed = try repository.loadSnapshot()
+            applyLoadedSnapshot(refreshed, shouldAnnounceRecentCompletion: false)
+        } catch {
+            lastStatusMessage = "Could not refresh."
+        }
+    }
+
     func scheduleReminder(for chore: Chore) async {
         guard chore.isActive else {
             lastStatusMessage = "Only active tasks can be reminded."

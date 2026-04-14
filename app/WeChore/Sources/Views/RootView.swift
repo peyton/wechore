@@ -95,6 +95,17 @@ struct ChatTreeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if appState.threads.isEmpty {
+                ContentUnavailableView {
+                    Label("No chats yet", systemImage: "bubble.left.and.bubble.right")
+                } description: {
+                    Text("Start a chat to begin tracking chores with your household.")
+                } actions: {
+                    Button("Start a Chat") { open(.joinStart) }
+                        .buttonStyle(PrimaryActionButtonStyle())
+                }
+            }
+
             List {
                 if !appState.groupThreads.isEmpty {
                     Section("Group chats") {
@@ -148,6 +159,9 @@ struct ChatTreeView: View {
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
+            .refreshable {
+                await appState.refresh()
+            }
         }
         .background(AppPalette.canvas)
         .accessibilityIdentifier("chat.tree")
