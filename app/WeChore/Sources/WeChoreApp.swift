@@ -50,6 +50,7 @@ struct WeChoreApp: App {
                 .environment(appState)
                 .environment(router)
                 .modelContainer(container)
+                .preferredColorScheme(colorScheme)
                 .tint(AppPalette.weChatGreen)
                 .modifier(UITestDynamicTypeModifier())
                 .onAppear {
@@ -69,6 +70,14 @@ struct WeChoreApp: App {
                     appState.refreshFromSharedState()
                     appState.clearBadge()
                 }
+        }
+    }
+
+    private var colorScheme: ColorScheme? {
+        switch appState.settings.themePreference {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
         }
     }
 
