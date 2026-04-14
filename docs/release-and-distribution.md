@@ -128,6 +128,11 @@ app or release-tooling pushes to `master` and on manual dispatch. Documentation
 or website-only pushes do not create a new TestFlight build. New builds appear in
 App Store Connect under TestFlight after Apple processing completes.
 
+If the `testflight` GitHub environment is missing any required App Store Connect
+value, the workflow emits a notice and skips the upload instead of failing the
+push. Run `mise exec -- just appstore-preflight` locally or configure the
+environment values above to enable uploads.
+
 ## Versioning
 
 Shipping releases use semver tags:
@@ -275,6 +280,9 @@ mise exec -- just cloudflare-deploy BRANCH=pr-123
 The GitHub workflow deploys production only from `master`. Pull requests use a
 branch-specific Cloudflare Pages URL such as `https://pr-123.wechore.pages.dev`
 when the pull request branch is in the same repository and can access secrets.
+If the matching GitHub environment is missing `CLOUDFLARE_API_TOKEN` or
+`CLOUDFLARE_ACCOUNT_ID`, the workflow still validates the static site, emits a
+notice, and skips the external deploy.
 
 ## Final Verification
 

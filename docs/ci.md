@@ -34,9 +34,13 @@ just ci
   `master`.
 - `testflight` runs `mise exec -- just appstore-preflight`, verifies App Store
   Connect access, and uploads production iOS archives to TestFlight for app or
-  release-tooling changes on `master`.
-- `deploy-web` deploys `web/` to Cloudflare Pages production from `master` and
-  same-repo preview URLs from pull requests.
+  release-tooling changes on `master` when the `testflight` environment has the
+  required App Store Connect values. If those values are not configured, it emits
+  a notice and skips the upload.
+- `deploy-web` validates and builds `web/`, then deploys to Cloudflare Pages
+  production from `master` and same-repo preview URLs from pull requests when
+  the matching Cloudflare environment values are configured. If those values are
+  missing, it emits a notice and skips the external deploy.
 
 The workflows pin action versions by SHA, install tools through
 `jdx/mise-action`, set explicit job timeouts, and select Xcode `26.3.0` instead of
