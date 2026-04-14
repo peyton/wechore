@@ -17,7 +17,7 @@ def test_ci_workflow_uses_mise_and_just_shards() -> None:
     assert "timeout-minutes: 15" in workflow
     assert "timeout-minutes: 90" in workflow
     assert "timeout-minutes: 45" in workflow
-    assert 'xcode-version: "26.5"' in workflow
+    assert 'xcode-version: "26.3.0"' in workflow
     assert "WECHORE_CLOUD_KIT_ENVIRONMENT: Production" in workflow
     assert "mise exec -- just ci-lint" in workflow
     assert "mise exec -- just ci-python" in workflow
@@ -62,7 +62,7 @@ def test_testflight_workflow_uploads_from_master_with_environment_secrets() -> N
     assert '"scripts/app_store_connect/**"' in workflow
     assert '"scripts/tooling/**"' in workflow
     assert "environment: testflight" in workflow
-    assert 'xcode-version: "26.5"' in workflow
+    assert 'xcode-version: "26.3.0"' in workflow
     assert "APP_STORE_CONNECT_API_KEY_ID" in workflow
     assert "APP_STORE_CONNECT_API_ISSUER_ID" in workflow
     assert "APP_STORE_CONNECT_API_KEY_P8_BASE64" in workflow

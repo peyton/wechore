@@ -39,5 +39,5 @@ just ci
   same-repo preview URLs from pull requests.
 
 The workflows pin action versions by SHA, install tools through
-`jdx/mise-action`, set explicit job timeouts, and select Xcode `26.5` instead of
+`jdx/mise-action`, set explicit job timeouts, and select Xcode `26.3.0` instead of
 floating to the runner's latest Xcode.
