@@ -28,6 +28,10 @@ Open `app/WeChore.xcworkspace` after generation if you prefer Xcode.
 | Lint                     | `just lint`         |
 | Format                   | `just fmt`          |
 | Web check                | `just web-check`    |
+| App Store check          | `just appstore-check` |
+| TestFlight upload        | `just testflight-upload` |
+| Cloudflare setup         | `just cloudflare-setup` |
+| Cloudflare web deploy    | `just cloudflare-deploy` |
 
 ## Layout
 
@@ -43,10 +47,4 @@ docs/         Product, CloudKit, CI, App Store, and ExecPlan documentation
 
 WeChore does not run a third-party server, does not read iMessage conversations, and does not build in-app VoIP. Collaboration uses CloudKit conversation sharing, invite links, invite codes, and nearby exchange through public Apple APIs. Voice and message reminders hand off to Apple system apps such as FaceTime, Phone, AirDrop, and Messages.
 
-## Source Availability And License
-
-WeChore is source-available for review only and is not open source. Copyright (c) 2026 Peyton Randolph. All rights reserved.
-
-No license is granted to use, copy, modify, merge, publish, distribute, sublicense, sell, offer for sale, deploy, submit to an app marketplace, create derivative works from, or otherwise exploit this project in source or binary form without a separate written license from Peyton Randolph.
-
-Any fork, mirror, archive, or copy that exists because of a source hosting platform's functionality must preserve the copyright notice and rights reservation, and must not be distributed, deployed, published, submitted to an app marketplace, or used to create derivative works. No trademark, trade dress, app name, app icon, branding, or design rights are granted.
+Release and hosting steps are documented in `docs/release-and-distribution.md`.

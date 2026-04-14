@@ -26,6 +26,48 @@ build:
 run:
     bash scripts/tooling/run.sh
 
+[group('appstore')]
+appstore-create-app:
+    @printf '%s\n' 'Apple does not expose an official POST /v1/apps App Store Connect API endpoint.'
+    @printf '%s\n' 'Create the app record once in App Store Connect with:'
+    @printf '%s\n' '  Name: WeChore'
+    @printf '%s\n' '  Bundle ID: app.peyton.wechore'
+    @printf '%s\n' '  SKU: WECHORE-IOS'
+    @printf '%s\n' '  Primary locale: en-US'
+    @printf '%s\n' '  Platform: iOS'
+    @printf '%s\n' '  Version: 1.0.0'
+    @if command -v open >/dev/null 2>&1; then open 'https://appstoreconnect.apple.com/apps'; fi
+
+[group('appstore')]
+appstore-api-key:
+    bash scripts/tooling/appstore_api_key.sh
+
+[group('appstore')]
+appstore-check:
+    WECHORE_FLAVOR=prod mise exec -- uv run python -m scripts.app_store_connect.check
+
+[group('release')]
+testflight-archive:
+    WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production bash scripts/tooling/archive_release.sh
+
+[group('release')]
+testflight-upload:
+    WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production bash scripts/tooling/upload_testflight.sh
+
+[group('release')]
+preview-package VERSION='':
+    version="{{VERSION}}"; version="${version#VERSION=}"; if [ -z "$version" ]; then version="preview-$(git rev-parse --short=12 HEAD)"; fi; \
+        mise exec -- just web-build; \
+        mise exec -- uv run python -m scripts.web.package_static_site --version "$version"
+
+[group('release')]
+preview-release VERSION='':
+    version="{{VERSION}}"; version="${version#VERSION=}"; if [ -z "$version" ]; then version="preview-master-$(git rev-parse --short=12 HEAD)"; fi; \
+        tag="preview/$version"; \
+        mise exec -- just preview-package VERSION="$version"; \
+        gh release create "$tag" .build/releases/wechore-web-"$version".tar.gz .build/releases/wechore-web-"$version".tar.gz.sha256 \
+            --generate-notes --latest=false --prerelease --target "$(git rev-parse HEAD)" --title "WeChore preview $version"
+
 [group('web')]
 web-serve PORT='8000':
     port="{{PORT}}"; port="${port#PORT=}"; cd web && uv run python -m http.server "$port"
@@ -44,6 +86,30 @@ web-build: web-check
     rm -rf .build/web
     mkdir -p .build/web
     cp -R web/. .build/web/
+
+[group('cloudflare')]
+cloudflare-setup EMAIL_ROUTING_DESTINATION='':
+    dest="{{EMAIL_ROUTING_DESTINATION}}"; dest="${dest#EMAIL_ROUTING_DESTINATION=}"; if [ -n "$dest" ]; then export EMAIL_ROUTING_DESTINATION="$dest"; fi; \
+        mise exec -- uv run python -m scripts.cloudflare.setup
+
+[group('cloudflare')]
+cloudflare-pages-setup:
+    mise exec -- uv run python -m scripts.cloudflare.setup --skip-dns --skip-email
+
+[group('cloudflare')]
+cloudflare-dns-setup:
+    mise exec -- uv run python -m scripts.cloudflare.setup --skip-pages --skip-email
+
+[group('cloudflare')]
+cloudflare-email-setup EMAIL_ROUTING_DESTINATION='':
+    dest="{{EMAIL_ROUTING_DESTINATION}}"; dest="${dest#EMAIL_ROUTING_DESTINATION=}"; if [ -n "$dest" ]; then export EMAIL_ROUTING_DESTINATION="$dest"; fi; \
+        mise exec -- uv run python -m scripts.cloudflare.setup --skip-pages --skip-dns
+
+[group('cloudflare')]
+cloudflare-deploy BRANCH='master':
+    branch="{{BRANCH}}"; branch="${branch#BRANCH=}"; \
+        mise exec -- just web-build; \
+        mise exec -- wrangler pages deploy .build/web --project-name "${CLOUDFLARE_PAGES_PROJECT:-wechore}" --branch "$branch"
 
 [group('cloudkit')]
 cloudkit-doctor:

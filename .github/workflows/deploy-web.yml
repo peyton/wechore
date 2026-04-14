@@ -1,0 +1,77 @@
+---
+name: Deploy Web
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "web/**"
+      - "scripts/cloudflare/**"
+      - "scripts/web/**"
+      - "justfile"
+      - "mise.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/deploy-web.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "web/**"
+      - "scripts/cloudflare/**"
+      - "scripts/web/**"
+      - "justfile"
+      - "mise.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  production:
+    name: Deploy Production Web
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: web-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - name: Install tools
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
+        with:
+          cache: true
+      - name: Deploy production Pages site
+        run: mise exec -- just cloudflare-deploy BRANCH=master
+
+  preview:
+    name: Deploy Preview Web
+    if: >-
+      ${{
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      }}
+    runs-on: ubuntu-latest
+    environment: web-preview
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - name: Install tools
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
+        with:
+          cache: true
+      - name: Deploy preview Pages site
+        run: mise exec -- just cloudflare-deploy BRANCH=pr-${{ github.event.number }}

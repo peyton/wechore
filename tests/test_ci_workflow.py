@@ -32,6 +32,51 @@ def test_release_web_workflow_packages_wechore_site() -> None:
     assert "wechore-web-${{ env.WEB_VERSION }}.tar.gz" in workflow
 
 
+def test_preview_release_workflow_uses_non_semver_prerelease_tags() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "preview-release.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "branches: [master]" in workflow
+    assert 'preview_version="master-${GITHUB_RUN_NUMBER}-${short_sha}"' in workflow
+    assert "PREVIEW_TAG=preview/$preview_version" in workflow
+    assert "mise exec -- just preview-package" in workflow
+    assert "--prerelease" in workflow
+    assert "--latest=false" in workflow
+
+
+def test_testflight_workflow_uploads_from_master_with_environment_secrets() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "testflight.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "branches: [master]" in workflow
+    assert "environment: testflight" in workflow
+    assert "APP_STORE_CONNECT_API_KEY_ID" in workflow
+    assert "APP_STORE_CONNECT_API_ISSUER_ID" in workflow
+    assert "APP_STORE_CONNECT_API_KEY_P8_BASE64" in workflow
+    assert "mise exec -- just appstore-check" in workflow
+    assert "mise exec -- just testflight-upload" in workflow
+
+
+def test_deploy_web_workflow_separates_production_and_preview() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "deploy-web.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "branches: [master]" in workflow
+    assert "environment: web-production" in workflow
+    assert "environment: web-preview" in workflow
+    assert "mise exec -- just cloudflare-deploy BRANCH=master" in workflow
+    assert (
+        "mise exec -- just cloudflare-deploy BRANCH=pr-${{ github.event.number }}"
+        in (workflow)
+    )
+    assert "github.event.pull_request.head.repo.full_name == github.repository" in (
+        workflow
+    )
+
+
 def test_renovate_low_risk_updates_are_gated_by_required_checks() -> None:
     renovate = json.loads((REPO_ROOT / "renovate.json").read_text(encoding="utf-8"))
 

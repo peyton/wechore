@@ -93,13 +93,11 @@ def resolve_build_number(
     if explicit:
         return explicit
     moment = now or datetime.now(UTC)
-    if github_release_tag(environment) is not None and environment.get(
-        "GITHUB_RUN_NUMBER"
-    ):
-        run_number = environment["GITHUB_RUN_NUMBER"]
-        attempt = environment.get("GITHUB_RUN_ATTEMPT", "1")
-        return f"{moment:%Y%m%d}.{run_number}.{attempt}"
-    return f"{moment:%Y%m%d}.{moment:%H%M%S}.0"
+    if environment.get("GITHUB_RUN_NUMBER"):
+        run_number = int(environment["GITHUB_RUN_NUMBER"])
+        attempt = int(environment.get("GITHUB_RUN_ATTEMPT", "1"))
+        return str((run_number * 100) + min(attempt, 99))
+    return f"{moment:%y%m%d%H%M}"
 
 
 def resolve_versions(

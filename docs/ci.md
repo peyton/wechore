@@ -7,6 +7,9 @@ GitHub Actions should call the same repo-local commands used by developers.
 ```text
 just bootstrap
 just generate
+just appstore-check
+just testflight-archive
+just testflight-upload
 just lint
 just test-python
 just test-unit
@@ -15,6 +18,8 @@ just test-ui
 just test-ui-ipad
 just build
 just web-check
+just cloudflare-setup
+just cloudflare-deploy
 just ci
 ```
 
@@ -24,5 +29,11 @@ just ci
 - `test-python` runs `mise exec -- just ci-python` on Ubuntu.
 - `test-ios` runs unit, integration, iPhone UI, and iPad UI tests on macOS.
 - `build` runs `mise exec -- just ci-build` on macOS.
+- `preview-release` creates non-semver GitHub prereleases from every push to
+  `master`.
+- `testflight` uploads production iOS archives to TestFlight for app/tooling
+  changes on `master`.
+- `deploy-web` deploys `web/` to Cloudflare Pages production from `master` and
+  same-repo preview URLs from pull requests.
 
 The workflows pin action versions by SHA and install tools through `jdx/mise-action`.

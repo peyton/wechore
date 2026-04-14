@@ -1,0 +1,48 @@
+---
+name: TestFlight
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: Upload To TestFlight
+    runs-on: macos-latest
+    environment: testflight
+    timeout-minutes: 90
+    env:
+      APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      WECHORE_CLOUD_KIT_ENVIRONMENT: Production
+      WECHORE_DISABLE_SWIFT_COMPILE_CACHE: "1"
+      WECHORE_FLAVOR: prod
+    steps:
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
+        with:
+          xcode-version: latest
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install tools
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
+        with:
+          cache: true
+      - name: Set build metadata
+        shell: bash
+        run: mise exec -- uv run python -m scripts.tooling.resolve_versions --format github-env >> "$GITHUB_ENV"
+      - name: Verify App Store Connect app
+        run: mise exec -- just appstore-check
+      - name: Archive and upload
+        run: mise exec -- just testflight-upload
