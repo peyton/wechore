@@ -663,6 +663,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
     public var widgetFavoriteThreadIDs: [String]
     public var widgetFavoriteTaskIDs: [String]
     public var recentlyCompletedTaskID: String?
+    public var mutedThreadIDs: Set<String>
 
     public init(
         hasCompletedOnboarding: Bool = false,
@@ -671,7 +672,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         cloudKitEnabled: Bool = true,
         widgetFavoriteThreadIDs: [String] = [],
         widgetFavoriteTaskIDs: [String] = [],
-        recentlyCompletedTaskID: String? = nil
+        recentlyCompletedTaskID: String? = nil,
+        mutedThreadIDs: Set<String> = []
     ) {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.selectedParticipantID = selectedParticipantID
@@ -680,6 +682,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         self.widgetFavoriteThreadIDs = widgetFavoriteThreadIDs
         self.widgetFavoriteTaskIDs = widgetFavoriteTaskIDs
         self.recentlyCompletedTaskID = recentlyCompletedTaskID
+        self.mutedThreadIDs = mutedThreadIDs
     }
 
     public var selectedMemberID: String? {
@@ -696,6 +699,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         case widgetFavoriteThreadIDs
         case widgetFavoriteTaskIDs
         case recentlyCompletedTaskID
+        case mutedThreadIDs
     }
 
     public init(from decoder: Decoder) throws {
@@ -716,6 +720,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
             forKey: .widgetFavoriteTaskIDs
         ) ?? []
         recentlyCompletedTaskID = try container.decodeIfPresent(String.self, forKey: .recentlyCompletedTaskID)
+        mutedThreadIDs = try container.decodeIfPresent(Set<String>.self, forKey: .mutedThreadIDs) ?? []
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -727,6 +732,7 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         try container.encode(widgetFavoriteThreadIDs, forKey: .widgetFavoriteThreadIDs)
         try container.encode(widgetFavoriteTaskIDs, forKey: .widgetFavoriteTaskIDs)
         try container.encodeIfPresent(recentlyCompletedTaskID, forKey: .recentlyCompletedTaskID)
+        try container.encode(mutedThreadIDs, forKey: .mutedThreadIDs)
     }
 }
 
@@ -1075,3 +1081,27 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
         return ids.filter { seen.insert($0).inserted }
     }
 }
+
+#if canImport(ActivityKit)
+import ActivityKit
+
+public struct TaskActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var taskTitle: String
+        public var startedAt: Date
+
+        public init(taskTitle: String, startedAt: Date) {
+            self.taskTitle = taskTitle
+            self.startedAt = startedAt
+        }
+    }
+
+    public var taskID: String
+    public var threadTitle: String
+
+    public init(taskID: String, threadTitle: String) {
+        self.taskID = taskID
+        self.threadTitle = threadTitle
+    }
+}
+#endif

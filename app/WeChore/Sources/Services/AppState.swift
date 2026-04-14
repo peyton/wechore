@@ -1,3 +1,6 @@
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 import Foundation
 import UserNotifications
 
@@ -440,6 +443,11 @@ final class AppState {
         case .archived: .completed
         }
         recordActivity(for: chore, kind: activityKind, at: now)
+        if status == .inProgress {
+            startLiveActivity(for: choreID)
+        } else if status == .done || status == .archived {
+            endLiveActivity(for: choreID)
+        }
         if status == .done, let recurrence = chore.recurrence {
             let calendar = Calendar.current
             let nextDue: Date? = switch recurrence {
@@ -870,6 +878,49 @@ final class AppState {
             snapshot.settings.widgetFavoriteThreadIDs.removeAll { $0 == threadID }
             save("Widget favorite removed.")
         }
+    }
+
+    // MARK: - Thread muting
+
+    func isThreadMuted(threadID: String) -> Bool {
+        snapshot.settings.mutedThreadIDs.contains(threadID)
+    }
+
+    func toggleThreadMute(threadID: String) {
+        if snapshot.settings.mutedThreadIDs.contains(threadID) {
+            snapshot.settings.mutedThreadIDs.remove(threadID)
+            save("Notifications unmuted.")
+        } else {
+            snapshot.settings.mutedThreadIDs.insert(threadID)
+            save("Notifications muted.")
+        }
+    }
+
+    // MARK: - Live Activities
+
+    func startLiveActivity(for choreID: String) {
+        #if canImport(ActivityKit)
+        guard let chore = snapshot.chores.first(where: { $0.id == choreID }) else { return }
+        let threadTitle = thread(for: chore.threadID)?.title ?? "WeChore"
+        if #available(iOS 16.2, *), ActivityAuthorizationInfo().areActivitiesEnabled {
+            let attributes = TaskActivityAttributes(taskID: choreID, threadTitle: threadTitle)
+            let state = TaskActivityAttributes.ContentState(taskTitle: chore.title, startedAt: clock.now())
+            _ = try? Activity.request(attributes: attributes, content: .init(state: state, staleDate: nil))
+        }
+        #endif
+    }
+
+    func endLiveActivity(for choreID: String) {
+        #if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            let activities = Activity<TaskActivityAttributes>.activities
+            for activity in activities where activity.attributes.taskID == choreID {
+                Task {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+            }
+        }
+        #endif
     }
 
     private func createTask(from draft: TaskDraft, sourceMessage: ChoreMessage, at now: Date) -> Chore? {
