@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import tarfile
 from pathlib import Path
 
@@ -55,6 +56,32 @@ def test_static_site_validator_rejects_missing_contact_and_broken_links(
     assert any("missing contact@wechore.peyton.app" in error for error in errors)
     assert any("broken internal" in error for error in errors)
     assert any("robots.txt" in error for error in errors)
+
+
+def test_static_site_validator_rejects_missing_license_notice(tmp_path: Path) -> None:
+    site_root = tmp_path / "web"
+    shutil.copytree(REPO_ROOT / "web", site_root)
+    license_page = site_root / "license" / "index.html"
+    license_page.write_text(
+        license_page.read_text(encoding="utf-8").replace("No license is granted", ""),
+        encoding="utf-8",
+    )
+    index_page = site_root / "index.html"
+    index_page.write_text(
+        index_page.read_text(encoding="utf-8").replace(
+            '<a href="/license/">License</a>', ""
+        ),
+        encoding="utf-8",
+    )
+
+    errors = validate_site(site_root)
+
+    assert any(
+        "index.html: missing /license/ footer link." in error for error in errors
+    )
+    assert any(
+        "missing license phrase 'no license is granted'" in error for error in errors
+    )
 
 
 def test_static_site_package_contains_relative_site_files(tmp_path: Path) -> None:
