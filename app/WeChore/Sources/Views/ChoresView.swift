@@ -69,7 +69,7 @@ struct ChoresView: View {
                 chores: unblocked.filter { chore in
                     chore.dueDate.map { Calendar.current.isDate($0, inSameDayAs: today) } ?? false
                 },
-                emptyText: "Nothing due today."
+                emptyText: "Nothing due today. Send a message like \"Take out the trash tonight\" and WeChore will create the task."
             ),
             TaskListSection(
                 title: "Upcoming",
