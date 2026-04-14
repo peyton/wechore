@@ -305,6 +305,28 @@ final class AppState {
         await postMessage(transcript, in: threadID, kind: .voice, voiceAttachment: attachment)
     }
 
+    func postImageMessage(imageData: Data, in threadID: String) async -> Bool {
+        let filename = UUID().uuidString + ".jpg"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        do {
+            try imageData.write(to: url)
+        } catch {
+            lastStatusMessage = "Could not save image."
+            return false
+        }
+        let now = clock.now()
+        let message = ChoreMessage(
+            threadID: threadID,
+            authorMemberID: currentParticipant.id,
+            body: "\u{1f4f7} Photo",
+            imageFilename: filename,
+            createdAt: now
+        )
+        snapshot.messages.append(message)
+        touchThread(threadID, at: now)
+        return save("Photo sent.")
+    }
+
     @discardableResult
     func addChore(
         title: String,

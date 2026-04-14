@@ -23,7 +23,31 @@ public enum ReminderPlanner {
         calendar: Calendar = .current
     ) -> ReminderPlan {
         let fallback = calendar.date(byAdding: .hour, value: 1, to: now) ?? now
-        let fireDate = chore.dueDate.map { max($0, now) } ?? fallback
+        var fireDate = chore.dueDate.map { max($0, now) } ?? fallback
+
+        // Smart timing: don't fire between 10pm and 8am
+        let hour = calendar.component(.hour, from: fireDate)
+        if hour >= 22 || hour < 8 {
+            var components = calendar.dateComponents([.year, .month, .day], from: fireDate)
+            if hour >= 22 {
+                if let nextDay = calendar.date(byAdding: .day, value: 1, to: fireDate) {
+                    components = calendar.dateComponents([.year, .month, .day], from: nextDay)
+                }
+            }
+            components.hour = 8
+            components.minute = 0
+            fireDate = calendar.date(from: components) ?? fireDate
+        }
+
+        // If due date is more than 1 hour away, remind 1 hour before
+        if let dueDate = chore.dueDate, dueDate.timeIntervalSince(now) > 3600 {
+            let hourBefore = dueDate.addingTimeInterval(-3600)
+            let reminderHour = calendar.component(.hour, from: hourBefore)
+            if reminderHour >= 8 && reminderHour < 22 {
+                fireDate = hourBefore
+            }
+        }
+
         return ReminderPlan(
             identifier: "wechore.thread.\(chore.threadID).task.\(chore.id)",
             title: "WeChore task",

@@ -1,4 +1,5 @@
 import Foundation
+import PhotosUI
 import SwiftUI
 
 struct ConversationView: View {
@@ -8,6 +9,7 @@ struct ConversationView: View {
     @State private var draft = ""
     @State private var isVoiceMode = false
     @State private var isActionPanelOpen = false
+    @State private var selectedPhoto: PhotosPickerItem?
     @State private var invitePayload: InvitePayload?
     @State private var isInviteQRPresented = false
     @FocusState private var isDraftFocused: Bool
@@ -33,6 +35,7 @@ struct ConversationView: View {
                     draft: $draft,
                     isVoiceMode: $isVoiceMode,
                     isActionPanelOpen: $isActionPanelOpen,
+                    selectedPhoto: $selectedPhoto,
                     isDraftFocused: $isDraftFocused,
                     send: sendTextMessage,
                     startVoice: startVoiceRecording,
@@ -57,6 +60,14 @@ struct ConversationView: View {
         .onDisappear {
             if appState.isRecordingVoiceMessage {
                 appState.cancelVoiceMessageRecording()
+            }
+        }
+        .onChange(of: selectedPhoto) { _, newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                    await sendPhotoMessage(data)
+                }
+                selectedPhoto = nil
             }
         }
         .sheet(isPresented: $isInviteQRPresented) {
@@ -124,6 +135,10 @@ struct ConversationView: View {
         }
         isActionPanelOpen = false
         isInviteQRPresented = invitePayload != nil
+    }
+
+    private func sendPhotoMessage(_ data: Data) async {
+        await appState.postImageMessage(imageData: data, in: threadID)
     }
 }
 
@@ -607,6 +622,17 @@ private struct MessageBubble: View {
                             .foregroundStyle(AppPalette.muted)
                     }
                     VStack(alignment: .leading, spacing: 8) {
+                        if let filename = message.imageFilename,
+                           let image = UIImage(
+                               contentsOfFile: FileManager.default.temporaryDirectory
+                                   .appendingPathComponent(filename).path
+                           ) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: 200, maxHeight: 200)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
                         if message.kind == .voice {
                             VoicePlaybackButton(message: message)
                         }
@@ -695,6 +721,7 @@ private struct ChatComposer: View {
     @Binding var draft: String
     @Binding var isVoiceMode: Bool
     @Binding var isActionPanelOpen: Bool
+    @Binding var selectedPhoto: PhotosPickerItem?
     @FocusState.Binding var isDraftFocused: Bool
     let send: () -> Void
     let startVoice: () -> Void
@@ -743,6 +770,15 @@ private struct ChatComposer: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .accessibilityIdentifier("message.input")
             }
+
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Label("Photo", systemImage: "photo")
+                    .labelStyle(.iconOnly)
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("message.photo")
 
             Button {
                 isActionPanelOpen.toggle()

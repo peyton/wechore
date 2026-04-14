@@ -358,6 +358,8 @@ private struct TaskEditorSheet: View {
     @State private var hasDueDate = false
     @State private var dueDate = Date()
     @State private var status: ChoreStatus = .open
+    @State private var originalUpdatedAt = Date()
+    @State private var showConflictAlert = false
 
     var body: some View {
         Form {
@@ -399,6 +401,12 @@ private struct TaskEditorSheet: View {
             }
         }
         .onAppear(perform: load)
+        .alert("Task was modified", isPresented: $showConflictAlert) {
+            Button("Overwrite") { forceSave() }
+            Button("Discard my changes", role: .cancel) { dismiss() }
+        } message: {
+            Text("Someone else changed this task while you were editing. Overwrite with your changes?")
+        }
     }
 
     private var canSave: Bool {
@@ -407,6 +415,7 @@ private struct TaskEditorSheet: View {
     }
 
     private func load() {
+        originalUpdatedAt = chore.updatedAt
         title = chore.title
         selectedMemberID = chore.assigneeID
         notes = chore.notes
@@ -416,6 +425,15 @@ private struct TaskEditorSheet: View {
     }
 
     private func save() {
+        if let current = appState.chores.first(where: { $0.id == chore.id }),
+           current.updatedAt > originalUpdatedAt {
+            showConflictAlert = true
+            return
+        }
+        forceSave()
+    }
+
+    private func forceSave() {
         guard appState.updateChore(
             choreID: chore.id,
             title: title,

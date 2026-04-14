@@ -424,6 +424,7 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
     public var body: String
     public var kind: ChoreMessageKind
     public var voiceAttachment: VoiceAttachment?
+    public var imageFilename: String?
     public var createdAt: Date
 
     public init(
@@ -433,6 +434,7 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         body: String,
         kind: ChoreMessageKind = .text,
         voiceAttachment: VoiceAttachment? = nil,
+        imageFilename: String? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -441,6 +443,7 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         self.body = body
         self.kind = kind
         self.voiceAttachment = voiceAttachment
+        self.imageFilename = imageFilename
         self.createdAt = createdAt
     }
 
@@ -451,6 +454,7 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         case body
         case kind
         case voiceAttachment
+        case imageFilename
         case createdAt
     }
 
@@ -462,6 +466,7 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
         body = try container.decode(String.self, forKey: .body)
         kind = try container.decodeIfPresent(ChoreMessageKind.self, forKey: .kind) ?? .text
         voiceAttachment = try container.decodeIfPresent(VoiceAttachment.self, forKey: .voiceAttachment)
+        imageFilename = try container.decodeIfPresent(String.self, forKey: .imageFilename)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
 }
