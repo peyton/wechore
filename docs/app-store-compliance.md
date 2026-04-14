@@ -6,6 +6,13 @@ WeChore targets iOS 18.7 and later on iPhone and iPad.
 
 WeChore stores app data locally with SwiftData. Shared chat and task data uses Apple CloudKit sharing through user iCloud accounts. The app does not operate a third-party server for sync and does not include ads, analytics SDKs, or cross-app tracking.
 
+## Encryption
+
+`app/WeChore/Info.plist` sets `ITSAppUsesNonExemptEncryption` to `false`. The
+app uses Apple's platform networking, CloudKit, and local device APIs and does
+not include custom or non-exempt encryption. This lets App Store Connect answer
+the export compliance encryption prompt from the uploaded binary metadata.
+
 ## Messaging Boundary
 
 WeChore does not read Messages app conversations. Task extraction runs only on text typed inside WeChore or voice transcripts recorded inside WeChore. Clear requests can create tasks automatically with undo/edit affordances; ambiguous requests stay as reviewable drafts until the user confirms them.

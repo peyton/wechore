@@ -28,6 +28,10 @@ Open `app/WeChore.xcworkspace` after generation if you prefer Xcode.
 | Lint                     | `just lint`         |
 | Format                   | `just fmt`          |
 | Web check                | `just web-check`    |
+| App Store check          | `just appstore-check` |
+| TestFlight upload        | `just testflight-upload` |
+| Cloudflare setup         | `just cloudflare-setup` |
+| Cloudflare web deploy    | `just cloudflare-deploy` |
 
 ## Layout
 
@@ -42,3 +46,5 @@ docs/         Product, CloudKit, CI, App Store, and ExecPlan documentation
 ## Product Boundaries
 
 WeChore does not run a third-party server, does not read iMessage conversations, and does not build in-app VoIP. Collaboration uses CloudKit conversation sharing, invite links, invite codes, and nearby exchange through public Apple APIs. Voice and message reminders hand off to Apple system apps such as FaceTime, Phone, AirDrop, and Messages.
+
+Release and hosting steps are documented in `docs/release-and-distribution.md`.

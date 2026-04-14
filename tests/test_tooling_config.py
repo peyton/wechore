@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from datetime import UTC, datetime
+
 from scripts.tooling.resolve_versions import parse_release_tag, resolve_build_number
 
 
@@ -16,6 +18,12 @@ def test_justfile_exposes_required_commands() -> None:
         "generate:",
         "build:",
         "run:",
+        "appstore-create-app:",
+        "appstore-check:",
+        "testflight-archive:",
+        "testflight-upload:",
+        "preview-package",
+        "preview-release",
         "test-unit:",
         "test-integration:",
         "test-ui:",
@@ -25,6 +33,11 @@ def test_justfile_exposes_required_commands() -> None:
         "fmt:",
         "web-check:",
         "web-build:",
+        "cloudflare-setup",
+        "cloudflare-pages-setup:",
+        "cloudflare-dns-setup:",
+        "cloudflare-email-setup",
+        "cloudflare-deploy",
         "cloudkit-doctor:",
         "cloudkit-export-schema:",
         "cloudkit-validate-schema:",
@@ -42,6 +55,7 @@ def test_mise_pins_project_tools() -> None:
     assert "hk =" in mise
     assert 'python = "3.14"' in mise
     assert '"npm:prettier"' in mise
+    assert '"npm:wrangler"' in mise
 
 
 def test_editorconfig_declares_clean_checkout_prettier_width() -> None:
@@ -71,3 +85,10 @@ def test_hk_config_runs_linting_steps() -> None:
 def test_release_tag_and_build_number_helpers() -> None:
     assert parse_release_tag("v1.2.3") == "1.2.3"
     assert resolve_build_number({"WECHORE_BUILD_NUMBER": "42"}) == "42"
+    assert (
+        resolve_build_number({"GITHUB_RUN_NUMBER": "123", "GITHUB_RUN_ATTEMPT": "2"})
+        == "12302"
+    )
+    assert resolve_build_number({}, now=datetime(2026, 4, 14, 11, 30, tzinfo=UTC)) == (
+        "2604141130"
+    )

@@ -1,0 +1,49 @@
+---
+name: Preview Release
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: preview-release-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  preview-release:
+    name: Cut Preview Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install tools
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
+        with:
+          cache: true
+      - name: Resolve preview version
+        shell: bash
+        run: |
+          short_sha="${GITHUB_SHA::12}"
+          preview_version="master-${GITHUB_RUN_NUMBER}-${short_sha}"
+          echo "PREVIEW_VERSION=$preview_version" >> "$GITHUB_ENV"
+          echo "PREVIEW_TAG=preview/$preview_version" >> "$GITHUB_ENV"
+      - name: Build preview package
+        run: mise exec -- just preview-package VERSION="$PREVIEW_VERSION"
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$PREVIEW_TAG" \
+            .build/releases/wechore-web-"$PREVIEW_VERSION".tar.gz \
+            .build/releases/wechore-web-"$PREVIEW_VERSION".tar.gz.sha256 \
+            --generate-notes \
+            --latest=false \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "WeChore preview $PREVIEW_VERSION"
