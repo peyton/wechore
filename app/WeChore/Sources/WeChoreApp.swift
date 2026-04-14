@@ -81,7 +81,7 @@ struct WeChoreApp: App {
             guard let threadID = appState.threadID(forTaskID: taskID) else { return nil }
             return .thread(threadID)
         case let .join(payload):
-            let threadID = appState.acceptInvite(payload)
+            guard let threadID = appState.acceptInvite(payload) else { return nil }
             return .thread(threadID)
         }
     }

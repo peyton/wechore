@@ -119,3 +119,12 @@ def test_dependabot_security_auto_merge_is_narrowly_gated() -> None:
     assert "version-update:semver-minor" in workflow
     assert "--auto --squash" in workflow
     assert "dependabot-auto-merge.yml" in zizmor
+
+
+def test_contributing_docs_name_repo_local_validation_commands() -> None:
+    contributing = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+    assert "just bootstrap" in contributing
+    assert "just generate" in contributing
+    assert "mise exec -- just lint" in contributing
+    assert "mise exec -- just ci" in contributing

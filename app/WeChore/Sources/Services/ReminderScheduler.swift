@@ -59,6 +59,7 @@ public struct LocalReminderScheduler: ReminderScheduling {
         let interval = max(plan.fireDate.timeIntervalSinceNow, 1)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(identifier: plan.identifier, content: content, trigger: trigger)
+        center.removePendingNotificationRequests(withIdentifiers: [plan.identifier])
         try await center.add(request)
     }
 }
@@ -75,6 +76,7 @@ public final class CapturingReminderScheduler: ReminderScheduling {
     }
 
     public func schedule(plan: ReminderPlan) async throws {
+        scheduledPlans.removeAll { $0.identifier == plan.identifier }
         scheduledPlans.append(plan)
     }
 }

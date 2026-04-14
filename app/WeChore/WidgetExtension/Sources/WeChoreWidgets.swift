@@ -1,15 +1,37 @@
 import AppIntents
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 import WidgetKit
 
 private enum WeChoreWidgetPalette {
     static let green = Color(red: 0.027, green: 0.757, blue: 0.376)
-    static let ink = Color(red: 0.075, green: 0.094, blue: 0.118)
-    static let muted = Color(red: 0.404, green: 0.455, blue: 0.506)
-    static let surface = Color(red: 0.965, green: 0.973, blue: 0.969)
+    static let ink = dynamicColor(
+        light: UIColor(red: 0.075, green: 0.094, blue: 0.118, alpha: 1),
+        dark: UIColor(red: 0.940, green: 0.970, blue: 0.950, alpha: 1)
+    )
+    static let muted = dynamicColor(
+        light: UIColor(red: 0.404, green: 0.455, blue: 0.506, alpha: 1),
+        dark: UIColor(red: 0.660, green: 0.720, blue: 0.680, alpha: 1)
+    )
+    static let surface = dynamicColor(
+        light: UIColor(red: 0.965, green: 0.973, blue: 0.969, alpha: 1),
+        dark: UIColor(red: 0.100, green: 0.130, blue: 0.110, alpha: 1)
+    )
+    static let background = dynamicColor(
+        light: UIColor.white,
+        dark: UIColor(red: 0.050, green: 0.070, blue: 0.060, alpha: 1)
+    )
     static let warning = Color(red: 0.788, green: 0.180, blue: 0.080)
     static let blocked = Color(red: 0.596, green: 0.290, blue: 0.725)
     static let done = Color(red: 0.165, green: 0.580, blue: 0.392)
+
+    private static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? dark : light
+        })
+    }
 }
 
 private enum WeChoreWidgetEnvironment {
@@ -567,7 +589,7 @@ struct WeChoreConversationWidget: Widget {
         ) { entry in
             ConversationWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    Color.white
+                    WeChoreWidgetPalette.background
                 }
         }
         .configurationDisplayName("WeChore Conversation")

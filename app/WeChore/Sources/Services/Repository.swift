@@ -73,9 +73,14 @@ public final class CompositeChoreRepository: ChoreRepository {
         self.sharedStore = sharedStore
     }
 
+    /// Loads from both app-local storage and shared widget storage, then mirrors
+    /// the newest snapshot back to the stale side. The newest snapshot is chosen
+    /// by the latest timestamp in the snapshot contents. This is deliberately a
+    /// simple last-write-wins strategy; CloudKit is responsible for richer
+    /// shared-conversation conflict handling.
     public func loadSnapshot() throws -> ChoreSnapshot {
         let primarySnapshot = try? primary.loadSnapshot()
-        let sharedSnapshot = try? sharedStore.loadSnapshot()
+        let sharedSnapshot = try loadSharedSnapshotIfPresent()
 
         switch (primarySnapshot, sharedSnapshot) {
         case let (storedPrimary?, shared?):
@@ -83,14 +88,14 @@ public final class CompositeChoreRepository: ChoreRepository {
                 ? shared
                 : storedPrimary
             if newest != storedPrimary {
-                try? self.primary.saveSnapshot(newest)
+                try primary.saveSnapshot(newest)
             }
             if newest != shared {
-                try? sharedStore.saveSnapshot(newest)
+                try sharedStore.saveSnapshot(newest)
             }
             return newest
         case let (storedPrimary?, nil):
-            try? sharedStore.saveSnapshot(storedPrimary)
+            try sharedStore.saveSnapshot(storedPrimary)
             return storedPrimary
         case let (nil, shared?):
             try primary.saveSnapshot(shared)
@@ -102,7 +107,15 @@ public final class CompositeChoreRepository: ChoreRepository {
 
     public func saveSnapshot(_ snapshot: ChoreSnapshot) throws {
         try primary.saveSnapshot(snapshot)
-        try? sharedStore.saveSnapshot(snapshot)
+        try sharedStore.saveSnapshot(snapshot)
+    }
+
+    private func loadSharedSnapshotIfPresent() throws -> ChoreSnapshot? {
+        do {
+            return try sharedStore.loadSnapshot()
+        } catch SharedSnapshotStoreError.missingSnapshot {
+            return nil
+        }
     }
 
     private static func snapshotLastUpdatedAt(_ snapshot: ChoreSnapshot) -> Date {

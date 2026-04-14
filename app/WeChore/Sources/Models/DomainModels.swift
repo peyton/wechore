@@ -260,7 +260,14 @@ public struct InvitePayload: Hashable, Codable, Sendable {
             URLQueryItem(name: "code", value: code),
             URLQueryItem(name: "expires", value: String(Int(expiresAt.timeIntervalSince1970)))
         ]
-        return components.url ?? URL(string: "wechore://join")!
+        return components.url ?? Self.fallbackJoinURL()
+    }
+
+    private static func fallbackJoinURL() -> URL {
+        var components = URLComponents()
+        components.scheme = "wechore"
+        components.host = "join"
+        return components.url ?? URL(fileURLWithPath: "/join")
     }
 }
 
@@ -910,7 +917,7 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
         )
     }
 
-    public mutating func normalizeConversationState() {
+    public mutating func normalizeConversationState(now: Date? = nil) {
         if participants.isEmpty {
             let participant = ChatParticipant(id: "participant-current", displayName: "Me", isCurrentUser: true)
             participants = [participant]
@@ -946,6 +953,9 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
         if let recentlyCompletedTaskID = settings.recentlyCompletedTaskID,
            !choreIDs.contains(recentlyCompletedTaskID) {
             settings.recentlyCompletedTaskID = nil
+        }
+        if let now {
+            invites = invites.filter { $0.expiresAt >= now && threadIDs.contains($0.threadID) }
         }
 
         for index in threads.indices {
