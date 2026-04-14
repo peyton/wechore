@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title>WeChore app preview</title>
+  <desc>A green chat-forward chore app preview with assignments, reminders, and suggestion chips.</desc>
+  <rect width="1200" height="900" fill="#eef8f1" />
+  <rect x="642" y="90" width="312" height="670" rx="48" fill="#111814" />
+  <rect x="662" y="120" width="272" height="610" rx="34" fill="#f8fff9" />
+  <rect x="686" y="156" width="118" height="16" rx="8" fill="#121814" opacity=".28" />
+  <text x="686" y="222" fill="#121814" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="38" font-weight="800">Chores</text>
+  <rect x="686" y="260" width="216" height="94" rx="12" fill="#fff" stroke="#d8eadc" />
+  <text x="706" y="298" fill="#121814" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="700">Unload dishwasher</text>
+  <text x="706" y="328" fill="#5e6a62" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17">Sam · Due tomorrow</text>
+  <rect x="686" y="372" width="216" height="94" rx="12" fill="#fff" stroke="#d8eadc" />
+  <text x="706" y="410" fill="#121814" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="700">Take out trash</text>
+  <text x="706" y="440" fill="#5e6a62" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17">Peyton · In progress</text>
+  <rect x="686" y="498" width="216" height="78" rx="12" fill="#07c160" />
+  <text x="720" y="547" fill="#07130b" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="23" font-weight="800">Add Chore</text>
+  <rect x="130" y="184" width="450" height="92" rx="28" fill="#07c160" />
+  <text x="164" y="242" fill="#07130b" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="28" font-weight="800">Sam, clean bathroom tonight?</text>
+  <rect x="206" y="306" width="344" height="86" rx="28" fill="#fff" stroke="#d8eadc" />
+  <text x="234" y="358" fill="#121814" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="24" font-weight="700">Suggested: Clean bathroom</text>
+  <rect x="272" y="422" width="236" height="62" rx="12" fill="#121814" />
+  <text x="316" y="462" fill="#f8fff9" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="800">Accept suggestion</text>
+  <circle cx="992" cy="214" r="60" fill="#07c160" opacity=".22" />
+  <circle cx="222" cy="664" r="86" fill="#07c160" opacity=".16" />
+</svg>

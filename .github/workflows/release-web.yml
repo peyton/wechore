@@ -1,0 +1,49 @@
+---
+name: Release Web
+
+on:
+  push:
+    tags:
+      - "web/v*.*.*"
+
+concurrency:
+  group: release-web-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish Web Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install tools
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
+        with:
+          cache: false
+          cache_save: false
+      - name: Resolve web release version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#web/v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "WEB_VERSION=$version" >> "$GITHUB_ENV"
+      - name: Build and package static site
+        env:
+          WEB_VERSION: ${{ env.WEB_VERSION }}
+        run: |
+          mise exec -- just web-build
+          mise exec -- uv run python -m scripts.web.package_static_site --version "$WEB_VERSION"
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
+        with:
+          name: WeChore Web ${{ env.WEB_VERSION }}
+          files: |
+            .build/releases/wechore-web-${{ env.WEB_VERSION }}.tar.gz
+            .build/releases/wechore-web-${{ env.WEB_VERSION }}.tar.gz.sha256
+          generate_release_notes: true
