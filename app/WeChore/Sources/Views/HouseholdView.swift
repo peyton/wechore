@@ -70,7 +70,11 @@ struct HouseholdView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("iCloud sharing")
                         .font(.title2.bold())
-                    Text(appState.settings.cloudKitEnabled ? "Ready for CKShare invitation flow in signed builds." : "CloudKit disabled for this run.")
+                    Text(
+                        appState.settings.cloudKitEnabled
+                            ? "Ready for CKShare invitation flow in signed builds."
+                            : "CloudKit disabled for this run."
+                    )
                         .foregroundStyle(AppPalette.muted)
                     Button("Prepare iCloud Share") {
                         appState.lastStatusMessage = "CloudKit share metadata prepared for \(appState.household.name)."

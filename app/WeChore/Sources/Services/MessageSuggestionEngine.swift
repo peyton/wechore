@@ -66,9 +66,14 @@ public struct OnDeviceMessageSuggestionEngine: MessageSuggestionGenerating {
     }
 
     private func bestMemberMatch(in text: String, members: [Member]) -> Member? {
-        members.first { member in
+        let normalized = text.components(separatedBy: .punctuationCharacters)
+            .joined(separator: " ")
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        return members.first { member in
             let candidate = member.displayName.lowercased()
-            return text == candidate || text.contains("\(candidate) ") || text.contains("@\(candidate)")
+            return normalized == candidate
+                || normalized.contains("\(candidate) ")
+                || text.contains("@\(candidate)")
         }
     }
 

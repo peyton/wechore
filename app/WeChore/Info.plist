@@ -41,6 +41,10 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>WeChore records voice messages so chores can be dictated in household chat.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>WeChore transcribes your voice messages on device so they can become chore suggestions.</string>
 	<key>NSSupportsLiveActivities</key>
 	<false/>
 	<key>UIApplicationSceneManifest</key>

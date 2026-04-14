@@ -153,44 +153,69 @@ private struct ChoreRow: View {
                 StatusBadge(status: chore.status)
             }
 
-            HStack {
-                Button("Start") {
-                    appState.updateStatus(choreID: chore.id, status: .inProgress)
-                }
-                .buttonStyle(SecondaryActionButtonStyle())
-                .accessibilityIdentifier("chore.start.\(chore.id)")
-
-                Button("Done") {
-                    appState.updateStatus(choreID: chore.id, status: .done)
-                }
-                .buttonStyle(SecondaryActionButtonStyle())
-                .accessibilityIdentifier("chore.done.\(chore.id)")
-
-                Button("Remind") {
-                    Task { await appState.scheduleReminder(for: chore) }
-                }
-                .buttonStyle(SecondaryActionButtonStyle())
-                .accessibilityIdentifier("chore.remind.\(chore.id)")
-
-                Button("Message") {
-                    appState.prepareTextReminder(for: chore)
-                }
-                .buttonStyle(SecondaryActionButtonStyle())
-                .accessibilityIdentifier("chore.message.\(chore.id)")
-
-                Button("Voice") {
-                    Task { await appState.startVoiceHandoff(for: chore) }
-                }
-                .buttonStyle(SecondaryActionButtonStyle())
-                .accessibilityIdentifier("chore.voice.\(chore.id)")
-            }
-            .buttonStyle(.plain)
+            ChoreActionGroup(chore: chore)
         }
         .padding(14)
         .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("chore.row.\(chore.id)")
+    }
+}
+
+private struct ChoreActionGroup: View {
+    @Environment(AppState.self) private var appState
+    let chore: Chore
+
+    private let gridColumns = [
+        GridItem(.adaptive(minimum: 92), spacing: 8, alignment: .leading)
+    ]
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                actionButtons
+            }
+
+            LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 8) {
+                actionButtons
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        ChoreControlButton(title: "Start", identifier: "chore.start.\(chore.id)") {
+            appState.updateStatus(choreID: chore.id, status: .inProgress)
+        }
+        ChoreControlButton(title: "Done", identifier: "chore.done.\(chore.id)") {
+            appState.updateStatus(choreID: chore.id, status: .done)
+        }
+        ChoreControlButton(title: "Remind", identifier: "chore.remind.\(chore.id)") {
+            Task { await appState.scheduleReminder(for: chore) }
+        }
+        ChoreControlButton(title: "Message", identifier: "chore.message.\(chore.id)") {
+            appState.prepareTextReminder(for: chore)
+        }
+        ChoreControlButton(title: "Voice", identifier: "chore.voice.\(chore.id)") {
+            Task { await appState.startVoiceHandoff(for: chore) }
+        }
+    }
+}
+
+private struct ChoreControlButton: View {
+    let title: String
+    let identifier: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(SecondaryActionButtonStyle())
+        .accessibilityIdentifier(identifier)
     }
 }
 

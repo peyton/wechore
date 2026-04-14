@@ -34,4 +34,15 @@ enum RuntimeEnvironment {
         }
         return String(argument.dropFirst("UITEST_MEMBER=".count))
     }
+
+    static var fakeVoiceTranscript: String {
+        guard let argument = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("UITEST_FAKE_VOICE_TRANSCRIPT=") }) else {
+            return "Sam please sweep the floor tomorrow"
+        }
+        return String(argument.dropFirst("UITEST_FAKE_VOICE_TRANSCRIPT=".count))
+    }
+
+    static var shouldUseLargeText: Bool {
+        ProcessInfo.processInfo.arguments.contains("UITEST_LARGE_TEXT")
+    }
 }

@@ -17,7 +17,10 @@ struct OnboardingView: View {
                             .font(.largeTitle.bold())
                             .foregroundStyle(AppPalette.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("WeChore uses CloudKit sharing, local reminders, and on-device suggestions. It never needs a WeChore server account.")
+                        Text(
+                            "WeChore uses CloudKit sharing, local reminders, and on-device suggestions. "
+                                + "It never needs a WeChore server account."
+                        )
                             .foregroundStyle(AppPalette.muted)
                     }
 
