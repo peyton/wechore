@@ -46,6 +46,10 @@ def test_info_plist_declares_communication_schemes_and_no_non_exempt_encryption(
 
     assert info["ITSAppUsesNonExemptEncryption"] is False
     assert set(info["LSApplicationQueriesSchemes"]) >= {"facetime-audio", "tel", "sms"}
+    assert (
+        info["NSHumanReadableCopyright"]
+        == "Copyright © 2026 Peyton Randolph. All rights reserved."
+    )
     assert info["WeChoreICloudContainerIdentifier"] == "$(WECHORE_ICLOUD_CONTAINER)"
 
 
