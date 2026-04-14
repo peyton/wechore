@@ -131,6 +131,8 @@ struct OnboardingView: View {
 
                 OnboardingFooter(
                     step: step,
+                    canStart: canCompleteProfile,
+                    validationMessage: profileValidationMessage,
                     next: advance,
                     back: goBack,
                     start: completeOnboarding
@@ -166,6 +168,19 @@ struct OnboardingView: View {
         }
     }
 
+    private var canCompleteProfile: Bool {
+        !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !firstChatName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var profileValidationMessage: String? {
+        guard step == .profile, !canCompleteProfile else { return nil }
+        if displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Add your name to open the first chat."
+        }
+        return "Name the first chat to continue."
+    }
+
     private func advance() {
         guard let next = step.next else { return }
         step = next
@@ -177,6 +192,7 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
+        guard canCompleteProfile else { return }
         appState.completeOnboarding(
             displayName: displayName,
             householdName: firstChatName,
@@ -435,6 +451,8 @@ private struct DiscoveryOptionButton: View {
 
 private struct OnboardingFooter: View {
     let step: OnboardingStep
+    let canStart: Bool
+    let validationMessage: String?
     let next: () -> Void
     let back: () -> Void
     let start: () -> Void
@@ -444,7 +462,16 @@ private struct OnboardingFooter: View {
             if step == .profile {
                 Button("Open Chat", action: start)
                     .buttonStyle(PrimaryActionButtonStyle())
+                    .disabled(!canStart)
                     .accessibilityIdentifier("onboarding.start")
+                if let validationMessage {
+                    Text(validationMessage)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(AppPalette.muted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("onboarding.validation")
+                }
             } else {
                 Button(step == .chat ? "Next" : "Set Up Profile", action: next)
                     .buttonStyle(PrimaryActionButtonStyle())

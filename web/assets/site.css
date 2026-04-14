@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   --green: #07c160;
   --ink: #111814;
   --muted: #5d6b62;
@@ -11,6 +11,40 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #eff8f1;
+    --muted: #a7b8ad;
+    --paper: #0c120f;
+    --wash: #121c16;
+    --line: #203229;
+  }
+
+  .site-header {
+    border-bottom-color: rgba(239, 248, 241, 0.12);
+    background: rgba(12, 18, 15, 0.92);
+  }
+
+  .hero {
+    background:
+      linear-gradient(90deg, rgba(12, 18, 15, 0.94), rgba(12, 18, 15, 0.32)),
+      url("/assets/app-preview.svg") right center / min(70vw, 940px) auto no-repeat,
+      var(--wash);
+  }
+
+  .button.primary {
+    color: #031108;
+  }
+
+  .preview {
+    background: #101813;
+  }
+
+  .site-footer {
+    background: #0f1712;
+  }
 }
 
 * {
@@ -304,5 +338,14 @@ ul {
   .section,
   .content {
     padding: 58px 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) and (max-width: 760px) {
+  .hero {
+    background:
+      linear-gradient(180deg, rgba(12, 18, 15, 0.94), rgba(12, 18, 15, 0.68)),
+      url("/assets/app-preview.svg") center bottom / 980px auto no-repeat,
+      var(--wash);
   }
 }

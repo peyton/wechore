@@ -15,6 +15,14 @@ def test_committed_static_site_is_review_ready() -> None:
     assert validate_site(REPO_ROOT / "web") == []
 
 
+def test_static_site_declares_dark_mode_palette() -> None:
+    css = (REPO_ROOT / "web" / "assets" / "site.css").read_text(encoding="utf-8")
+
+    assert "color-scheme: light dark" in css
+    assert "@media (prefers-color-scheme: dark)" in css
+    assert "--paper: #0c120f" in css
+
+
 def test_static_site_validator_rejects_missing_contact_and_broken_links(
     tmp_path: Path,
 ) -> None:

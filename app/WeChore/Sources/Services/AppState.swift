@@ -279,6 +279,7 @@ final class AppState {
         await postMessage(transcript, in: threadID, kind: .voice, voiceAttachment: attachment)
     }
 
+    @discardableResult
     func addChore(
         title: String,
         assigneeID: String,
@@ -286,11 +287,23 @@ final class AppState {
         notes: String = "",
         threadID: String? = nil,
         sourceMessageID: String? = nil
-    ) {
+    ) -> Bool {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else { return false }
         let now = clock.now()
         let resolvedThreadID = threadID ?? defaultThreadID
+        guard snapshot.threads.contains(where: { $0.id == resolvedThreadID }) else {
+            lastStatusMessage = "Choose a valid chat before adding a task."
+            return false
+        }
+        guard snapshot.participants.contains(where: { $0.id == assigneeID }) else {
+            lastStatusMessage = "Choose a valid assignee before adding a task."
+            return false
+        }
+        guard !hasActiveDuplicateTask(title: trimmed, assigneeID: assigneeID, threadID: resolvedThreadID) else {
+            lastStatusMessage = "\(trimmed) is already active for \(assigneeName(for: assigneeID))."
+            return false
+        }
         let chore = Chore(
             threadID: resolvedThreadID,
             title: trimmed,
@@ -305,6 +318,7 @@ final class AppState {
         snapshot.chores.append(chore)
         recordActivity(for: chore, kind: .assigned, at: now)
         save("Added \(trimmed).")
+        return true
     }
 
     func confirmDraft(_ draft: TaskDraft, assigneeID: String? = nil) {
@@ -369,7 +383,7 @@ final class AppState {
         recentlyCompletedTaskID = nil
         snapshot.settings.recentlyCompletedTaskID = nil
         do {
-            snapshot.normalizeConversationState()
+            snapshot.normalizeConversationState(now: clock.now())
             try repository.saveSnapshot(snapshot)
             widgetTimelineReloader.reloadAllTimelines()
         } catch {
@@ -447,7 +461,11 @@ final class AppState {
     }
 
     func assigneeName(for chore: Chore) -> String {
-        participants.first(where: { $0.id == chore.assigneeID })?.displayName ?? "Unassigned"
+        assigneeName(for: chore.assigneeID)
+    }
+
+    func assigneeName(for assigneeID: String) -> String {
+        participants.first(where: { $0.id == assigneeID })?.displayName ?? "Unassigned"
     }
 
     func participantName(for id: String) -> String {
@@ -455,6 +473,7 @@ final class AppState {
     }
 
     func createInvite(for threadID: String) -> InvitePayload? {
+        pruneExpiredInvites()
         guard let thread = thread(for: threadID) else { return nil }
         let now = clock.now()
         let code = makeInviteCode()
@@ -490,6 +509,7 @@ final class AppState {
 
     @discardableResult
     func acceptInviteCode(_ code: String) -> String? {
+        pruneExpiredInvites()
         let normalized = code
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
@@ -511,7 +531,12 @@ final class AppState {
     }
 
     @discardableResult
-    func acceptInvite(_ payload: InvitePayload) -> String {
+    func acceptInvite(_ payload: InvitePayload) -> String? {
+        pruneExpiredInvites()
+        guard payload.expiresAt >= clock.now() else {
+            lastStatusMessage = "That invite has expired."
+            return nil
+        }
         if snapshot.threads.contains(where: { $0.id == payload.threadID }) {
             lastStatusMessage = "Opened \(payload.threadTitle)."
             return payload.threadID
@@ -652,6 +677,26 @@ final class AppState {
         return chore
     }
 
+    private func hasActiveDuplicateTask(title: String, assigneeID: String, threadID: String) -> Bool {
+        let normalizedTitle = Self.normalizedTaskTitle(title)
+        return snapshot.chores.contains { chore in
+            chore.isActive
+                && chore.threadID == threadID
+                && chore.assigneeID == assigneeID
+                && Self.normalizedTaskTitle(chore.title) == normalizedTitle
+        }
+    }
+
+    private static func normalizedTaskTitle(_ title: String) -> String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+    }
+
+    private func pruneExpiredInvites() {
+        snapshot.normalizeConversationState(now: clock.now())
+    }
+
     private func draftForAssignment(
         _ draft: TaskDraft,
         in thread: ChatThread?,
@@ -739,7 +784,7 @@ final class AppState {
         shouldAnnounceRecentCompletion: Bool
     ) {
         snapshot = loadedSnapshot
-        snapshot.normalizeConversationState()
+        snapshot.normalizeConversationState(now: clock.now())
         recentlyCompletedTaskID = snapshot.settings.recentlyCompletedTaskID
         guard shouldAnnounceRecentCompletion,
               let recentlyCompletedTaskID,
@@ -753,7 +798,7 @@ final class AppState {
 
     private func save(_ message: String) {
         do {
-            snapshot.normalizeConversationState()
+            snapshot.normalizeConversationState(now: clock.now())
             try repository.saveSnapshot(snapshot)
             lastStatusMessage = message
             widgetTimelineReloader.reloadAllTimelines()

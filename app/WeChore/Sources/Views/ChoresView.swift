@@ -15,6 +15,7 @@ struct ChoresView: View {
                     title: $title,
                     selectedMemberID: $selectedMemberID,
                     dueTomorrow: $dueTomorrow,
+                    canAdd: canAddChore,
                     add: addChore
                 )
 
@@ -53,6 +54,10 @@ struct ChoresView: View {
                 selectedMemberID = appState.members.first?.id ?? ""
             }
         }
+        .onChange(of: appState.members) { _, members in
+            guard !members.contains(where: { $0.id == selectedMemberID }) else { return }
+            selectedMemberID = members.first?.id ?? ""
+        }
         .sheet(isPresented: Binding(
             get: { appState.shouldPresentMessageComposer },
             set: { _ in appState.shouldPresentMessageComposer = false }
@@ -69,12 +74,19 @@ struct ChoresView: View {
 
     private func addChore() {
         let dueDate = dueTomorrow ? Calendar.current.date(byAdding: .day, value: 1, to: Date()) : nil
-        appState.addChore(
+        let didAdd = appState.addChore(
             title: title,
             assigneeID: selectedMemberID.isEmpty ? appState.currentMember.id : selectedMemberID,
             dueDate: dueDate
         )
-        title = ""
+        if didAdd {
+            title = ""
+        }
+    }
+
+    private var canAddChore: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !appState.members.isEmpty
     }
 }
 
@@ -100,6 +112,7 @@ private struct AddChorePanel: View {
     @Binding var title: String
     @Binding var selectedMemberID: String
     @Binding var dueTomorrow: Bool
+    let canAdd: Bool
     let add: () -> Void
 
     var body: some View {
@@ -120,6 +133,7 @@ private struct AddChorePanel: View {
                 .accessibilityIdentifier("chore.dueTomorrow")
             Button("Add Task", action: add)
                 .buttonStyle(PrimaryActionButtonStyle())
+                .disabled(!canAdd)
                 .accessibilityIdentifier("chore.add")
         }
         .padding(14)

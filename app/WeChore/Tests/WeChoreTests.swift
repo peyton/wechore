@@ -193,6 +193,24 @@ final class WeChoreTests: XCTestCase {
         XCTAssertTrue(payload.shareText.contains("PINE123"))
     }
 
+    func testExpiredInvitesArePrunedDuringNormalization() {
+        let now = Date(timeIntervalSince1970: 2_000)
+        var snapshot = ChoreSnapshot.seededForUITests(now: now)
+        snapshot.invites.append(ThreadInvite(
+            id: "invite-expired",
+            threadID: "thread-pine",
+            inviterParticipantID: "participant-peyton",
+            code: "OLD123",
+            expiresAt: Date(timeIntervalSince1970: 1_000),
+            createdAt: Date(timeIntervalSince1970: 900)
+        ))
+
+        snapshot.normalizeConversationState(now: now)
+
+        XCTAssertFalse(snapshot.invites.contains { $0.id == "invite-expired" })
+        XCTAssertTrue(snapshot.invites.contains { $0.id == "invite-pine" })
+    }
+
     func testQRCodeRendererCreatesImageForInviteURL() {
         let payload = InvitePayload(
             inviteID: "invite-1",
@@ -485,6 +503,114 @@ final class WeChoreTests: XCTestCase {
         XCTAssertNil(state.recentlyCompletedTaskID)
         XCTAssertTrue(state.activeChores(in: "thread-pine").contains { $0.id == "task-dishes" })
         XCTAssertEqual(state.snapshot.chores.first { $0.id == "task-dishes" }?.status, .open)
+    }
+
+    func testAddChoreRejectsInvalidThreadAndAssigneeIDs() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        XCTAssertFalse(state.addChore(
+            title: "Clean sink",
+            assigneeID: "participant-missing",
+            dueDate: nil,
+            threadID: "thread-pine"
+        ))
+        XCTAssertFalse(state.addChore(
+            title: "Clean sink",
+            assigneeID: "participant-sam",
+            dueDate: nil,
+            threadID: "thread-missing"
+        ))
+
+        XCTAssertFalse(state.chores.contains { $0.title == "Clean sink" })
+    }
+
+    func testAddChoreRejectsDuplicateActiveTaskForSameThreadAndAssignee() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        XCTAssertTrue(state.addChore(
+            title: "Clean sink",
+            assigneeID: "participant-sam",
+            dueDate: nil,
+            threadID: "thread-pine"
+        ))
+        XCTAssertFalse(state.addChore(
+            title: "  clean   sink  ",
+            assigneeID: "participant-sam",
+            dueDate: nil,
+            threadID: "thread-pine"
+        ))
+
+        XCTAssertEqual(state.chores.filter { $0.title == "Clean sink" }.count, 1)
+    }
+
+    func testExpiredInvitePayloadDoesNotOpenThread() {
+        let now = Date(timeIntervalSince1970: 2_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+        let expired = InvitePayload(
+            inviteID: "invite-expired",
+            threadID: "thread-new",
+            threadTitle: "Old Chat",
+            inviterParticipantID: "participant-peyton",
+            code: "OLD123",
+            expiresAt: Date(timeIntervalSince1970: 1_000)
+        )
+
+        XCTAssertNil(state.acceptInvite(expired))
+        XCTAssertFalse(state.threads.contains { $0.id == "thread-new" })
+        XCTAssertEqual(state.lastStatusMessage, "That invite has expired.")
+    }
+
+    func testCompositeRepositoryPropagatesSharedStoreSaveFailures() throws {
+        let blockedDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        _ = FileManager.default.createFile(atPath: blockedDirectory.path, contents: Data())
+        let repository = CompositeChoreRepository(
+            primary: InMemoryChoreRepository(snapshot: .seededForUITests()),
+            sharedStore: SharedSnapshotStore(
+                appGroupIdentifier: nil,
+                fallbackDirectory: blockedDirectory
+            )
+        )
+
+        XCTAssertThrowsError(try repository.saveSnapshot(.seededForUITests()))
+    }
+
+    func testCapturingReminderSchedulerReplacesDuplicatePlan() async throws {
+        let scheduler = CapturingReminderScheduler()
+        let first = ReminderPlan(
+            identifier: "wechore.thread.thread-pine.task.task-1",
+            title: "WeChore task",
+            body: "Sam, check dishes.",
+            fireDate: Date(timeIntervalSince1970: 1_000)
+        )
+        let second = ReminderPlan(
+            identifier: first.identifier,
+            title: first.title,
+            body: "Sam, check dishes later.",
+            fireDate: Date(timeIntervalSince1970: 2_000)
+        )
+
+        try await scheduler.schedule(plan: first)
+        try await scheduler.schedule(plan: second)
+
+        XCTAssertEqual(scheduler.scheduledPlans, [second])
     }
 
     func testWidgetMetadataDeclaresTargetsFamiliesAndAppIntents() throws {
