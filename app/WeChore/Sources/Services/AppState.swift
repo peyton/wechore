@@ -305,6 +305,19 @@ final class AppState {
         await postMessage(transcript, in: threadID, kind: .voice, voiceAttachment: attachment)
     }
 
+    func toggleReaction(emoji: String, messageID: String) {
+        guard let index = snapshot.messages.firstIndex(where: { $0.id == messageID }) else { return }
+        let participantID = currentParticipant.id
+        if let existingIndex = snapshot.messages[index].reactions.firstIndex(where: {
+            $0.emoji == emoji && $0.participantID == participantID
+        }) {
+            snapshot.messages[index].reactions.remove(at: existingIndex)
+        } else {
+            snapshot.messages[index].reactions.append(MessageReaction(emoji: emoji, participantID: participantID))
+        }
+        save(nil)
+    }
+
     @discardableResult
     func addChore(
         title: String,

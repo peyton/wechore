@@ -6,6 +6,7 @@ struct ConversationView: View {
     let threadID: String
 
     @State private var draft = ""
+    @State private var searchText = ""
     @State private var isVoiceMode = false
     @State private var isActionPanelOpen = false
     @State private var invitePayload: InvitePayload?
@@ -24,7 +25,7 @@ struct ConversationView: View {
             )
             AppStatusBanner(allowsUndo: true)
             FloatingTaskTile(threadID: threadID)
-            ConversationScroll(threadID: threadID, bottomID: bottomID)
+            ConversationScroll(threadID: threadID, bottomID: bottomID, searchText: searchText)
         }
         .background(AppPalette.chatCanvas)
         .safeAreaInset(edge: .bottom) {
@@ -54,6 +55,7 @@ struct ConversationView: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(appState.thread(for: threadID)?.title ?? "Chat")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic))
         .onDisappear {
             if appState.isRecordingVoiceMessage {
                 appState.cancelVoiceMessageRecording()
@@ -510,16 +512,31 @@ private struct ConversationScroll: View {
     @Environment(AppState.self) private var appState
     let threadID: String
     let bottomID: String
+    var searchText: String = ""
+
+    private var filteredMessages: [ChoreMessage] {
+        let all = appState.messages(in: threadID)
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return all }
+        return all.filter { $0.body.localizedCaseInsensitiveContains(query) }
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    if appState.messages(in: threadID).isEmpty {
-                        EmptyConversationState()
+                    if filteredMessages.isEmpty {
+                        if searchText.isEmpty {
+                            EmptyConversationState()
+                        } else {
+                            Text("No messages matching \"\(searchText)\"")
+                                .font(.subheadline)
+                                .foregroundStyle(AppPalette.muted)
+                                .padding(18)
+                        }
                     }
-                    ForEach(appState.messages(in: threadID)) { message in
-                        MessageBubble(message: message)
+                    ForEach(filteredMessages) { message in
+                        MessageBubble(message: message, highlightText: searchText)
                     }
                     Color.clear
                         .frame(height: 1)
@@ -573,6 +590,7 @@ private struct EmptyConversationState: View {
 private struct MessageBubble: View {
     @Environment(AppState.self) private var appState
     let message: ChoreMessage
+    var highlightText: String = ""
 
     private var isCurrentUser: Bool {
         message.authorMemberID == appState.currentParticipant.id
@@ -610,16 +628,45 @@ private struct MessageBubble: View {
                         if message.kind == .voice {
                             VoicePlaybackButton(message: message)
                         }
-                        Text(message.kind == .voice ? "Transcript: \(message.body)" : message.body)
-                            .font(.body)
-                            .foregroundStyle(isCurrentUser ? AppPalette.onAccent : AppPalette.ink)
-                            .fixedSize(horizontal: false, vertical: true)
+                        highlightedText(
+                            message.kind == .voice ? "Transcript: \(message.body)" : message.body
+                        )
+                        .font(.body)
+                        .foregroundStyle(isCurrentUser ? AppPalette.onAccent : AppPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        ForEach(MessageLinkDetector.urls(in: message.body), id: \.absoluteString) { url in
+                            Link(destination: url) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "link")
+                                    Text(url.absoluteString)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                                .font(.caption)
+                                .foregroundStyle(isCurrentUser ? AppPalette.onAccent.opacity(0.85) : AppPalette.weChatGreen)
+                            }
+                        }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(isCurrentUser ? AppPalette.sentBubble : AppPalette.receivedBubble)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .frame(maxWidth: 560, alignment: isCurrentUser ? .trailing : .leading)
+                    .contextMenu {
+                        ForEach(["👍", "❤️", "😂", "✅"], id: \.self) { emoji in
+                            Button {
+                                appState.toggleReaction(emoji: emoji, messageID: message.id)
+                            } label: {
+                                Text(emoji)
+                            }
+                        }
+                    }
+
+                    if !message.reactions.isEmpty {
+                        ReactionPills(reactions: message.reactions)
+                    }
+
                     Text(message.createdAt.weChoreShortTimeText)
                         .font(.caption2)
                         .foregroundStyle(AppPalette.muted)
@@ -637,6 +684,78 @@ private struct MessageBubble: View {
 
     private var authorName: String {
         appState.participantName(for: message.authorMemberID)
+    }
+
+    @ViewBuilder
+    private func highlightedText(_ text: String) -> some View {
+        let query = highlightText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
+            Text(text)
+        } else {
+            Text(Self.highlighted(text, matching: query))
+        }
+    }
+
+    private static func highlighted(_ text: String, matching query: String) -> AttributedString {
+        var result = AttributedString(text)
+        let lowered = text.lowercased()
+        let queryLowered = query.lowercased()
+        var offset = lowered.startIndex
+        while let range = lowered[offset...].range(of: queryLowered) {
+            let startDist = lowered.distance(from: lowered.startIndex, to: range.lowerBound)
+            let endDist = lowered.distance(from: lowered.startIndex, to: range.upperBound)
+            let attrStart = result.index(result.startIndex, offsetByCharacters: startDist)
+            let attrEnd = result.index(result.startIndex, offsetByCharacters: endDist)
+            result[attrStart ..< attrEnd].backgroundColor = .yellow.opacity(0.35)
+            offset = range.upperBound
+        }
+        return result
+    }
+}
+
+private struct ReactionPills: View {
+    let reactions: [MessageReaction]
+
+    private var grouped: [(emoji: String, count: Int)] {
+        var counts: [(emoji: String, count: Int)] = []
+        for reaction in reactions {
+            if let idx = counts.firstIndex(where: { $0.emoji == reaction.emoji }) {
+                counts[idx].count += 1
+            } else {
+                counts.append((emoji: reaction.emoji, count: 1))
+            }
+        }
+        return counts
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(grouped, id: \.emoji) { item in
+                HStack(spacing: 2) {
+                    Text(item.emoji)
+                    if item.count > 1 {
+                        Text("\(item.count)")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppPalette.muted)
+                    }
+                }
+                .font(.caption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(AppPalette.surface)
+                .clipShape(Capsule())
+            }
+        }
+    }
+}
+
+private enum MessageLinkDetector {
+    static func urls(in text: String) -> [URL] {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
+            return []
+        }
+        let range = NSRange(text.startIndex..., in: text)
+        return detector.matches(in: text, range: range).compactMap(\.url)
     }
 }
 
