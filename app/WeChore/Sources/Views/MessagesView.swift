@@ -838,6 +838,7 @@ private struct ChatComposer: View {
                         .background(canSend ? AppPalette.weChatGreen : AppPalette.receivedBubble)
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
+                .keyboardShortcut(.return, modifiers: .command)
                 .accessibilityIdentifier("message.post")
                 .disabled(!canSend)
             }

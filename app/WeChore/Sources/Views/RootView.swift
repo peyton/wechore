@@ -164,6 +164,17 @@ struct ChatTreeView: View {
             }
         }
         .background(AppPalette.canvas)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    open(.tasks)
+                } label: {
+                    Label("New Task", systemImage: "plus")
+                }
+                .keyboardShortcut("n", modifiers: .command)
+                .accessibilityIdentifier("chatTree.newTask")
+            }
+        }
         .accessibilityIdentifier("chat.tree")
     }
 
