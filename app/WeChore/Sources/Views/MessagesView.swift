@@ -1,7 +1,4 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
 
 struct ConversationView: View {
     @Environment(AppState.self) private var appState
@@ -24,7 +21,7 @@ struct ConversationView: View {
                 createInvite: createInvite,
                 showInviteQR: showInviteQR
             )
-            StatusToast()
+            AppStatusBanner(allowsUndo: true)
             FloatingTaskTile(threadID: threadID)
             ConversationScroll(threadID: threadID, bottomID: bottomID)
         }
@@ -56,6 +53,11 @@ struct ConversationView: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(appState.thread(for: threadID)?.title ?? "Chat")
+        .onDisappear {
+            if appState.isRecordingVoiceMessage {
+                appState.cancelVoiceMessageRecording()
+            }
+        }
         .sheet(isPresented: $isInviteQRPresented) {
             if let invitePayload {
                 NavigationStack {
@@ -81,7 +83,14 @@ struct ConversationView: View {
         isDraftFocused = false
         let body = draft
         draft = ""
-        Task { await appState.postMessage(body, in: threadID) }
+        Task {
+            let posted = await appState.postMessage(body, in: threadID)
+            if !posted {
+                await MainActor.run {
+                    draft = body
+                }
+            }
+        }
     }
 
     private func startVoiceRecording() {
@@ -105,12 +114,14 @@ struct ConversationView: View {
 
     private func createInvite() {
         invitePayload = appState.createInvite(for: threadID)
+        isActionPanelOpen = false
     }
 
     private func showInviteQR() {
         if invitePayload == nil {
             createInvite()
         }
+        isActionPanelOpen = false
         isInviteQRPresented = invitePayload != nil
     }
 }
@@ -187,6 +198,7 @@ private struct ConversationHeader: View {
 
 private struct FloatingTaskTile: View {
     @Environment(AppState.self) private var appState
+    @Environment(AppRouter.self) private var router
     let threadID: String
 
     private var activeTasks: [Chore] {
@@ -227,6 +239,16 @@ private struct FloatingTaskTile: View {
                 }
                 ForEach(activeTasks.prefix(3)) { chore in
                     ActiveTaskRow(chore: chore)
+                }
+                if activeTasks.count > 3 {
+                    Button {
+                        router.openOnPhone(.tasks)
+                        router.selectOnIPad(.tasks)
+                    } label: {
+                        Label("\(activeTasks.count - 3) more in Tasks", systemImage: "arrow.right.circle.fill")
+                    }
+                    .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                    .accessibilityIdentifier("taskTile.viewAll")
                 }
             }
         }
@@ -557,14 +579,18 @@ private struct MessageBubble: View {
 
     var body: some View {
         if message.kind == .system {
-            Text(message.body)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppPalette.muted)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(AppPalette.chrome)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .frame(maxWidth: .infinity)
+            VStack(spacing: 3) {
+                Text(message.body)
+                    .font(.caption.weight(.semibold))
+                Text(message.createdAt.weChoreShortTimeText)
+                    .font(.caption2)
+            }
+            .foregroundStyle(AppPalette.muted)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(AppPalette.chrome)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .frame(maxWidth: .infinity)
         } else {
             HStack(alignment: .bottom, spacing: 8) {
                 if isCurrentUser {
@@ -593,6 +619,9 @@ private struct MessageBubble: View {
                     .background(isCurrentUser ? AppPalette.sentBubble : AppPalette.receivedBubble)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .frame(maxWidth: 560, alignment: isCurrentUser ? .trailing : .leading)
+                    Text(message.createdAt.weChoreShortTimeText)
+                        .font(.caption2)
+                        .foregroundStyle(AppPalette.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: isCurrentUser ? .trailing : .leading)
 
@@ -660,59 +689,6 @@ private struct Avatar: View {
     }
 }
 
-private struct StatusToast: View {
-    @Environment(AppState.self) private var appState
-
-    var body: some View {
-        if let message = appState.lastStatusMessage {
-            HStack(alignment: .center, spacing: 10) {
-                Text(message)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppPalette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if appState.recentlyCompletedTaskID != nil {
-                    Button {
-                        appState.reopenRecentlyCompletedTask()
-                    } label: {
-                        Text("Undo")
-                    }
-                    .buttonStyle(TaskActionButtonStyle(isPrimary: false))
-                    .accessibilityHint("Reopens the task that was just completed.")
-                    .accessibilityAction(named: "Reopen") {
-                        appState.reopenRecentlyCompletedTask()
-                    }
-                    .accessibilityIdentifier("status.undo")
-                }
-                Button {
-                    appState.dismissStatusMessage()
-                } label: {
-                    Label("Dismiss", systemImage: "xmark")
-                        .labelStyle(.iconOnly)
-                }
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("status.dismiss")
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(AppPalette.surface)
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("status.message")
-            #if canImport(UIKit)
-            .onAppear {
-                UIAccessibility.post(notification: .announcement, argument: message)
-            }
-            .onChange(of: appState.lastStatusMessage) { _, newMessage in
-                guard let newMessage else { return }
-                UIAccessibility.post(notification: .announcement, argument: newMessage)
-            }
-            #endif
-        }
-    }
-}
-
 private struct ChatComposer: View {
     @Environment(AppState.self) private var appState
     @Binding var draft: String
@@ -731,7 +707,12 @@ private struct ChatComposer: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             Button {
-                isVoiceMode.toggle()
+                if appState.isRecordingVoiceMessage {
+                    cancelVoice()
+                    isVoiceMode = false
+                } else {
+                    isVoiceMode.toggle()
+                }
                 isActionPanelOpen = false
                 isDraftFocused = !isVoiceMode
             } label: {
@@ -779,6 +760,7 @@ private struct ChatComposer: View {
 
             if !isVoiceMode {
                 Button {
+                    guard canSend else { return }
                     isDraftFocused = false
                     Task { @MainActor in
                         await Task.yield()
@@ -794,6 +776,7 @@ private struct ChatComposer: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .accessibilityIdentifier("message.post")
+                .disabled(!canSend)
             }
         }
         .padding(.horizontal, 10)
@@ -1010,6 +993,7 @@ struct JoinStartView: View {
                         groupTitle = ""
                     }
                     .buttonStyle(PrimaryActionButtonStyle())
+                    .disabled(!canStartGroup)
                     .accessibilityIdentifier("join.startGroup")
                 }
 
@@ -1045,6 +1029,7 @@ struct JoinStartView: View {
                         dmContact = ""
                     }
                     .buttonStyle(PrimaryActionButtonStyle())
+                    .disabled(!canStartDM)
                     .accessibilityIdentifier("join.startDM")
                 }
 
@@ -1061,6 +1046,7 @@ struct JoinStartView: View {
                         }
                     }
                     .buttonStyle(PrimaryActionButtonStyle())
+                    .disabled(!canJoinCode)
                     .accessibilityIdentifier("join.code")
                 }
 
@@ -1081,6 +1067,11 @@ struct JoinStartView: View {
         }
         .background(AppPalette.canvas)
         .navigationTitle("Join or Start")
+        .safeAreaInset(edge: .bottom) {
+            AppStatusBanner()
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+        }
         .sheet(isPresented: $isDMContactPickerPresented) {
             ContactPicker { selection in
                 dmName = selection.displayName
@@ -1092,7 +1083,20 @@ struct JoinStartView: View {
         }
     }
 
-    private func openThread(_ threadID: String) {
+    private var canStartGroup: Bool {
+        !groupTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var canStartDM: Bool {
+        !dmName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var canJoinCode: Bool {
+        inviteCode.contains(where: \.isLetterOrNumber)
+    }
+
+    private func openThread(_ threadID: String?) {
+        guard let threadID else { return }
         let destination = ChatDestination.thread(threadID)
         router.phonePath = [destination]
         router.selectedDestination = destination

@@ -87,7 +87,7 @@ final class WeChoreIntegrationTests: XCTestCase {
         let store = CloudKitConversationStore(database: FakeCloudKitDatabaseClient())
 
         let payload = store.invitePayload(
-            for: "PINE123",
+            for: "pine-123",
             in: snapshot,
             now: Date(timeIntervalSince1970: 123)
         )

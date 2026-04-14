@@ -924,8 +924,11 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
             settings.selectedParticipantID = participant.id
         }
 
-        if settings.selectedParticipantID == nil {
-            settings.selectedParticipantID = participants.first(where: \.isCurrentUser)?.id ?? participants.first?.id
+        let participantIDs = Set(participants.map(\.id))
+        let currentParticipantID = participants.first(where: \.isCurrentUser)?.id ?? participants.first?.id
+
+        if settings.selectedParticipantID == nil || !participantIDs.contains(settings.selectedParticipantID ?? "") {
+            settings.selectedParticipantID = currentParticipantID
         }
 
         if threads.isEmpty {
@@ -933,20 +936,64 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
         }
 
         let fallbackThreadID = threads.first?.id ?? ChatThread.legacyDefaultID
-        for index in chores.indices where chores[index].threadID == ChatThread.legacyDefaultID {
-            chores[index].threadID = fallbackThreadID
-        }
-        for index in messages.indices where messages[index].threadID == ChatThread.legacyDefaultID {
-            messages[index].threadID = fallbackThreadID
-        }
-        for index in reminderLogs.indices where reminderLogs[index].threadID == ChatThread.legacyDefaultID {
-            reminderLogs[index].threadID = fallbackThreadID
-        }
-        for index in suggestions.indices where suggestions[index].threadID == ChatThread.legacyDefaultID {
-            suggestions[index].threadID = fallbackThreadID
+        for index in threads.indices {
+            var repairedIDs = Self.uniqueOrderedIDs(
+                threads[index].participantIDs.filter { participantIDs.contains($0) }
+            )
+            if let currentParticipantID, !repairedIDs.contains(currentParticipantID) {
+                repairedIDs.insert(currentParticipantID, at: 0)
+            }
+            threads[index].participantIDs = repairedIDs.isEmpty
+                ? currentParticipantID.map { [$0] } ?? []
+                : repairedIDs
         }
 
         let threadIDs = Set(threads.map(\.id))
+        for index in chores.indices {
+            if !threadIDs.contains(chores[index].threadID) || chores[index].threadID == ChatThread.legacyDefaultID {
+                chores[index].threadID = fallbackThreadID
+            }
+            if !participantIDs.contains(chores[index].assigneeID), let currentParticipantID {
+                chores[index].assigneeID = currentParticipantID
+            }
+            if !participantIDs.contains(chores[index].createdByMemberID), let currentParticipantID {
+                chores[index].createdByMemberID = currentParticipantID
+            }
+        }
+        for index in messages.indices {
+            if !threadIDs.contains(messages[index].threadID) || messages[index].threadID == ChatThread.legacyDefaultID {
+                messages[index].threadID = fallbackThreadID
+            }
+            if !participantIDs.contains(messages[index].authorMemberID), let currentParticipantID {
+                messages[index].authorMemberID = currentParticipantID
+            }
+        }
+        for index in reminderLogs.indices {
+            if !threadIDs.contains(reminderLogs[index].threadID) || reminderLogs[index].threadID == ChatThread.legacyDefaultID {
+                reminderLogs[index].threadID = fallbackThreadID
+            }
+            if !participantIDs.contains(reminderLogs[index].memberID), let currentParticipantID {
+                reminderLogs[index].memberID = currentParticipantID
+            }
+        }
+        for index in suggestions.indices {
+            if !threadIDs.contains(suggestions[index].threadID) || suggestions[index].threadID == ChatThread.legacyDefaultID {
+                suggestions[index].threadID = fallbackThreadID
+            }
+            if let assigneeID = suggestions[index].assigneeID, !participantIDs.contains(assigneeID) {
+                suggestions[index].assigneeID = nil
+                suggestions[index].needsConfirmation = true
+                suggestions[index].assignmentState = .needsAssignee
+            }
+        }
+        for index in taskActivities.indices {
+            if !threadIDs.contains(taskActivities[index].threadID) || taskActivities[index].threadID == ChatThread.legacyDefaultID {
+                taskActivities[index].threadID = fallbackThreadID
+            }
+            if !participantIDs.contains(taskActivities[index].actorParticipantID), let currentParticipantID {
+                taskActivities[index].actorParticipantID = currentParticipantID
+            }
+        }
         settings.widgetFavoriteThreadIDs = settings.widgetFavoriteThreadIDs.filter { threadIDs.contains($0) }
         let choreIDs = Set(chores.map(\.id))
         settings.widgetFavoriteTaskIDs = settings.widgetFavoriteTaskIDs.filter { choreIDs.contains($0) }
@@ -954,8 +1001,8 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
            !choreIDs.contains(recentlyCompletedTaskID) {
             settings.recentlyCompletedTaskID = nil
         }
-        if let now {
-            invites = invites.filter { $0.expiresAt >= now && threadIDs.contains($0.threadID) }
+        invites = invites.filter { invite in
+            threadIDs.contains(invite.threadID) && now.map { invite.expiresAt >= $0 } ?? true
         }
 
         for index in threads.indices {
@@ -988,5 +1035,10 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
             updatedAt: household.updatedAt,
             lastActivityAt: now
         )
+    }
+
+    private static func uniqueOrderedIDs(_ ids: [String]) -> [String] {
+        var seen: Set<String> = []
+        return ids.filter { seen.insert($0).inserted }
     }
 }

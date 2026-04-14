@@ -15,11 +15,13 @@ enum RuntimeEnvironment {
             return .joinStart
         case "myQR", "qr":
             return .myQRCode
+        case "tasks", "today", "chores":
+            return .tasks
         case "me", "settings":
             return .settings
         case "dm":
             return .thread("thread-dm-sam")
-        case "group", "messages", "chats", "chores", "household":
+        case "group", "messages", "chats", "household":
             return .thread("thread-pine")
         default:
             if raw.hasPrefix("thread:") {

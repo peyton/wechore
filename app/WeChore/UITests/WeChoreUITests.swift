@@ -41,6 +41,7 @@ final class WeChoreUITests: XCTestCase {
 
         XCTAssertTrue(waitForChatTree(in: app, timeout: 10))
         XCTAssertTrue(chatTreeThread("thread-pine", title: "Pine Chat", in: app).exists)
+        XCTAssertTrue(chatTreeAction("chatTree.tasks", title: "Tasks", in: app).exists)
         XCTAssertTrue(chatTreeAction("chatTree.joinStart", title: "Join or Start", in: app).exists)
         XCTAssertTrue(chatTreeAction("chatTree.myQR", title: "My QR", in: app).exists)
         XCTAssertTrue(chatTreeAction("chatTree.me", title: "Me", in: app).exists)
@@ -152,6 +153,17 @@ final class WeChoreUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["My QR"].exists)
         XCTAssertTrue(app.staticTexts["Widget Favorites"].waitForExistence(timeout: 5))
         XCTAssertTrue(element("settings.widgetFavorite.thread-pine", in: app).exists)
+    }
+
+    func testTasksViewIsReachableFromTree() {
+        let app = seededApp()
+        XCTAssertTrue(waitForChatTree(in: app, timeout: 10))
+
+        chatTreeAction("chatTree.tasks", title: "Tasks", in: app).tap()
+
+        XCTAssertTrue(app.staticTexts["Tasks"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element("chore.row.task-dishes.title", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("tasks.scope", in: app).exists)
     }
 
     func testLargeTextKeepsTaskTileComposerAndJoinActionsUsable() {

@@ -44,6 +44,7 @@ public struct RuleBasedTaskExtractionEngine: TaskExtractionEngine {
         guard containsActionSignal(lowercased) else { return [] }
 
         let assignee = bestParticipantMatch(in: lowercased, participants: participants)
+            ?? selfAssignmentMatch(in: lowercased, participants: participants)
         let title = choreTitle(from: trimmed, assignee: assignee)
         guard !title.isEmpty else { return [] }
 
@@ -67,10 +68,10 @@ public struct RuleBasedTaskExtractionEngine: TaskExtractionEngine {
         let lowered = text.lowercased()
         let calendar = Calendar.current
         if lowered.contains("tomorrow") {
-            return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+            return calendar.endOfDay(afterAdding: 1, to: now)
         }
         if lowered.contains("tonight") || lowered.contains("today") {
-            return calendar.startOfDay(for: now)
+            return calendar.endOfDay(afterAdding: 0, to: now)
         }
 
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else {
@@ -122,6 +123,21 @@ public struct RuleBasedTaskExtractionEngine: TaskExtractionEngine {
         }
     }
 
+    private func selfAssignmentMatch(in text: String, participants: [ChatParticipant]) -> ChatParticipant? {
+        let selfSignals = [
+            "i'll ",
+            "i’ll ",
+            "i will ",
+            "i can ",
+            "i can do ",
+            "i got ",
+            "i've got ",
+            "i’ve got "
+        ]
+        guard selfSignals.contains(where: { text.contains($0) }) else { return nil }
+        return participants.first(where: \.isCurrentUser)
+    }
+
     private func choreTitle(from raw: String, assignee: ChatParticipant?) -> String {
         var text = raw
         if let assignee {
@@ -140,6 +156,14 @@ public struct RuleBasedTaskExtractionEngine: TaskExtractionEngine {
             "remind",
             "needs to",
             "need to",
+            "i'll",
+            "i’ll",
+            "i will",
+            "i can do",
+            "i can",
+            "i got",
+            "i've got",
+            "i’ve got",
             "by tomorrow",
             "tomorrow",
             "tonight",
@@ -201,6 +225,16 @@ public struct RuleBasedTaskExtractionEngine: TaskExtractionEngine {
             return "daily"
         }
         return nil
+    }
+}
+
+private extension Calendar {
+    func endOfDay(afterAdding dayCount: Int, to date: Date) -> Date? {
+        guard let targetDay = self.date(byAdding: .day, value: dayCount, to: startOfDay(for: date)),
+              let nextDay = self.date(byAdding: .day, value: 1, to: targetDay) else {
+            return nil
+        }
+        return self.date(byAdding: .second, value: -1, to: nextDay)
     }
 }
 
