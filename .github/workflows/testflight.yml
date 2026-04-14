@@ -56,9 +56,33 @@ jobs:
           cache: true
       - name: Set build metadata
         run: mise exec -- uv run python -m scripts.tooling.resolve_versions --format github-env >> "$GITHUB_ENV"
+      - name: Check TestFlight credentials
+        id: testflight-credentials
+        run: |
+          missing=()
+          for name in \
+            TEAM_ID \
+            APP_STORE_CONNECT_API_KEY_ID \
+            APP_STORE_CONNECT_API_ISSUER_ID \
+            APP_STORE_CONNECT_API_KEY_P8_BASE64
+          do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            printf '::notice::Skipping TestFlight upload because required testflight environment values are missing: %s\n' "$(IFS=', '; echo "${missing[*]}")"
+          fi
       - name: Validate release metadata
+        if: steps.testflight-credentials.outputs.available == 'true'
         run: mise exec -- just appstore-preflight
       - name: Verify App Store Connect app
+        if: steps.testflight-credentials.outputs.available == 'true'
         run: mise exec -- just appstore-check
       - name: Archive and upload
+        if: steps.testflight-credentials.outputs.available == 'true'
         run: mise exec -- just testflight-upload

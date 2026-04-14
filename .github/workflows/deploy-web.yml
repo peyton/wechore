@@ -50,7 +50,28 @@ jobs:
         uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
         with:
           cache: true
+      - name: Check Cloudflare credentials
+        id: cloudflare-credentials
+        shell: bash
+        run: |
+          missing=()
+          for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            printf '::notice::Skipping production Cloudflare deploy because required web-production environment values are missing: %s\n' "$(IFS=', '; echo "${missing[*]}")"
+          fi
+      - name: Validate production web site
+        if: steps.cloudflare-credentials.outputs.available != 'true'
+        run: mise exec -- just web-build
       - name: Deploy production Pages site
+        if: steps.cloudflare-credentials.outputs.available == 'true'
         run: mise exec -- just cloudflare-deploy BRANCH=master
 
   preview:
@@ -73,5 +94,26 @@ jobs:
         uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
         with:
           cache: true
+      - name: Check Cloudflare credentials
+        id: cloudflare-credentials
+        shell: bash
+        run: |
+          missing=()
+          for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            printf '::notice::Skipping preview Cloudflare deploy because required web-preview environment values are missing: %s\n' "$(IFS=', '; echo "${missing[*]}")"
+          fi
+      - name: Validate preview web site
+        if: steps.cloudflare-credentials.outputs.available != 'true'
+        run: mise exec -- just web-build
       - name: Deploy preview Pages site
+        if: steps.cloudflare-credentials.outputs.available == 'true'
         run: mise exec -- just cloudflare-deploy BRANCH=pr-${{ github.event.number }}
