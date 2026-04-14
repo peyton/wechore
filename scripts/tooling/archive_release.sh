@@ -54,6 +54,7 @@ WECHORE_CLOUD_KIT_ENVIRONMENT="${WECHORE_CLOUD_KIT_ENVIRONMENT:-Production}"
 export WECHORE_FLAVOR APP_SCHEME APP_IDENTIFIER WECHORE_CLOUD_KIT_ENVIRONMENT
 resolve_version_metadata
 export_tuist_manifest_env
+run_repo_python_module scripts.app_store_connect.preflight --require-credentials
 
 api_key_path="$("$TOOLING_DIR/appstore_api_key.sh")"
 

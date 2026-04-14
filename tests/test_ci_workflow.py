@@ -13,6 +13,12 @@ def test_ci_workflow_uses_mise_and_just_shards() -> None:
     )
 
     assert "jdx/mise-action@1648a7812b9aeae629881980618f079932869151" in workflow
+    assert "timeout-minutes: 20" in workflow
+    assert "timeout-minutes: 15" in workflow
+    assert "timeout-minutes: 90" in workflow
+    assert "timeout-minutes: 45" in workflow
+    assert 'xcode-version: "26.5"' in workflow
+    assert "WECHORE_CLOUD_KIT_ENVIRONMENT: Production" in workflow
     assert "mise exec -- just ci-lint" in workflow
     assert "mise exec -- just ci-python" in workflow
     assert "mise exec -- just test-unit" in workflow
@@ -51,10 +57,16 @@ def test_testflight_workflow_uploads_from_master_with_environment_secrets() -> N
     )
 
     assert "branches: [master]" in workflow
+    assert "paths:" in workflow
+    assert '"app/**"' in workflow
+    assert '"scripts/app_store_connect/**"' in workflow
+    assert '"scripts/tooling/**"' in workflow
     assert "environment: testflight" in workflow
+    assert 'xcode-version: "26.5"' in workflow
     assert "APP_STORE_CONNECT_API_KEY_ID" in workflow
     assert "APP_STORE_CONNECT_API_ISSUER_ID" in workflow
     assert "APP_STORE_CONNECT_API_KEY_P8_BASE64" in workflow
+    assert "mise exec -- just appstore-preflight" in workflow
     assert "mise exec -- just appstore-check" in workflow
     assert "mise exec -- just testflight-upload" in workflow
 
@@ -126,5 +138,6 @@ def test_contributing_docs_name_repo_local_validation_commands() -> None:
 
     assert "just bootstrap" in contributing
     assert "just generate" in contributing
+    assert "mise exec -- just appstore-preflight" in contributing
     assert "mise exec -- just lint" in contributing
     assert "mise exec -- just ci" in contributing

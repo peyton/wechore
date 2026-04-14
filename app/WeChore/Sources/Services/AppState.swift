@@ -789,7 +789,7 @@ final class AppState {
         guard shouldAnnounceRecentCompletion,
               let recentlyCompletedTaskID,
               let chore = snapshot.chores.first(where: {
-                  $0.id == recentlyCompletedTaskID && $0.status == .done
+                $0.id == recentlyCompletedTaskID && $0.status == .done
               }) else {
             return
         }

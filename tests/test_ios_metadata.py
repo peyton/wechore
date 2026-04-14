@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import plistlib
 from pathlib import Path
 
@@ -9,6 +10,7 @@ PROJECT_SWIFT = REPO_ROOT / "app" / "WeChore" / "Project.swift"
 INFO_PLIST = REPO_ROOT / "app" / "WeChore" / "Info.plist"
 ENTITLEMENTS = REPO_ROOT / "app" / "WeChore" / "WeChore.entitlements"
 PRIVACY = REPO_ROOT / "app" / "WeChore" / "Resources" / "PrivacyInfo.xcprivacy"
+AASA = REPO_ROOT / "web" / ".well-known" / "apple-app-site-association"
 
 
 def load_plist(path: Path) -> dict:
@@ -70,3 +72,13 @@ def test_privacy_manifest_disables_tracking() -> None:
 
     assert privacy["NSPrivacyTracking"] is False
     assert privacy["NSPrivacyCollectedDataTypes"] == []
+
+
+def test_universal_link_association_matches_release_bundle_id() -> None:
+    association = json.loads(AASA.read_text(encoding="utf-8"))
+
+    details = association["applinks"]["details"]
+    assert any(
+        entry["appID"] == "3VDQ4656LX.app.peyton.wechore" and "/join*" in entry["paths"]
+        for entry in details
+    )

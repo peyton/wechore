@@ -12,6 +12,8 @@ from typing import Mapping
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SEMVER_TAG_PATTERN = re.compile(r"^v(?P<version>\d+\.\d+\.\d+)$")
+MARKETING_VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
+BUILD_NUMBER_PATTERN = re.compile(r"^[1-9]\d{0,17}$")
 
 
 class VersionResolutionError(ValueError):
@@ -31,6 +33,23 @@ def parse_release_tag(tag: str) -> str:
             f"Release tag must match vX.Y.Z; received {tag!r}."
         )
     return match.group("version")
+
+
+def validate_marketing_version(version: str) -> str:
+    if MARKETING_VERSION_PATTERN.fullmatch(version) is None:
+        raise VersionResolutionError(
+            f"Marketing version must match X.Y.Z; received {version!r}."
+        )
+    return version
+
+
+def validate_build_number(build_number: str) -> str:
+    if BUILD_NUMBER_PATTERN.fullmatch(build_number) is None:
+        raise VersionResolutionError(
+            "Build number must be a positive integer string with at most 18 digits; "
+            f"received {build_number!r}."
+        )
+    return build_number
 
 
 def github_release_tag(environment: Mapping[str, str]) -> str | None:
@@ -76,7 +95,7 @@ def resolve_marketing_version(
 ) -> str:
     explicit = environment.get("WECHORE_MARKETING_VERSION")
     if explicit:
-        return explicit
+        return validate_marketing_version(explicit)
     release_tag = github_release_tag(environment)
     if release_tag is not None:
         return parse_release_tag(release_tag)
@@ -91,13 +110,22 @@ def resolve_build_number(
 ) -> str:
     explicit = environment.get("WECHORE_BUILD_NUMBER")
     if explicit:
-        return explicit
+        return validate_build_number(explicit)
     moment = now or datetime.now(UTC)
     if environment.get("GITHUB_RUN_NUMBER"):
-        run_number = int(environment["GITHUB_RUN_NUMBER"])
-        attempt = int(environment.get("GITHUB_RUN_ATTEMPT", "1"))
-        return str((run_number * 100) + min(attempt, 99))
-    return f"{moment:%y%m%d%H%M}"
+        try:
+            run_number = int(environment["GITHUB_RUN_NUMBER"])
+            attempt = int(environment.get("GITHUB_RUN_ATTEMPT", "1"))
+        except ValueError as error:
+            raise VersionResolutionError(
+                "GITHUB_RUN_NUMBER and GITHUB_RUN_ATTEMPT must be integers."
+            ) from error
+        if run_number < 1 or attempt < 1:
+            raise VersionResolutionError(
+                "GITHUB_RUN_NUMBER and GITHUB_RUN_ATTEMPT must be positive integers."
+            )
+        return validate_build_number(str((run_number * 100) + min(attempt, 99)))
+    return validate_build_number(f"{moment:%y%m%d%H%M}")
 
 
 def resolve_versions(
@@ -153,7 +181,11 @@ def main() -> int:
         help="Output format.",
     )
     args = parser.parse_args()
-    resolved = resolve_versions(os.environ, REPO_ROOT)
+    try:
+        resolved = resolve_versions(os.environ, REPO_ROOT)
+    except VersionResolutionError as error:
+        print(f"Error: {error}")
+        return 2
     if args.format == "shell":
         print(shell_exports(resolved))
     elif args.format == "github-env":

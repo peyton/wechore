@@ -15,6 +15,15 @@ def test_committed_static_site_is_review_ready() -> None:
     assert validate_site(REPO_ROOT / "web") == []
 
 
+def test_static_site_declares_universal_link_association() -> None:
+    association = (
+        REPO_ROOT / "web" / ".well-known" / "apple-app-site-association"
+    ).read_text(encoding="utf-8")
+
+    assert "3VDQ4656LX.app.peyton.wechore" in association
+    assert '"/join*"' in association
+
+
 def test_static_site_declares_dark_mode_palette() -> None:
     css = (REPO_ROOT / "web" / "assets" / "site.css").read_text(encoding="utf-8")
 
@@ -38,6 +47,11 @@ def test_static_site_validator_rejects_missing_contact_and_broken_links(
     )
     (site_root / "assets" / "app-preview.svg").write_text(
         "<svg></svg>\n", encoding="utf-8"
+    )
+    (site_root / ".well-known").mkdir()
+    (site_root / ".well-known" / "apple-app-site-association").write_text(
+        "{}\n",
+        encoding="utf-8",
     )
     (site_root / "robots.txt").write_text("User-agent: *\nAllow: /\n", encoding="utf-8")
     (site_root / "sitemap.xml").write_text("<urlset></urlset>\n", encoding="utf-8")

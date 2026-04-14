@@ -30,10 +30,10 @@ struct SettingsView: View {
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()
 
-                Link("Support", destination: URL(string: "https://wechore.peyton.app/support/")!)
+                Link("Support", destination: SettingsLinks.support)
                     .buttonStyle(SecondaryActionButtonStyle())
                     .accessibilityIdentifier("settings.support")
-                Link("Privacy", destination: URL(string: "https://wechore.peyton.app/privacy/")!)
+                Link("Privacy", destination: SettingsLinks.privacy)
                     .buttonStyle(SecondaryActionButtonStyle())
                     .accessibilityIdentifier("settings.privacy")
             }
@@ -42,6 +42,13 @@ struct SettingsView: View {
         }
         .background(AppPalette.canvas)
     }
+}
+
+private enum SettingsLinks {
+    static let support = URL(string: "https://wechore.peyton.app/support/")
+        ?? URL(fileURLWithPath: "/support")
+    static let privacy = URL(string: "https://wechore.peyton.app/privacy/")
+        ?? URL(fileURLWithPath: "/privacy")
 }
 
 private struct SettingsQRCodeSection: View {

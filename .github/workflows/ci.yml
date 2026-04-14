@@ -14,10 +14,15 @@ concurrency:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -33,6 +38,7 @@ jobs:
     name: Python Tests
     runs-on: ubuntu-latest
     needs: lint
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -48,13 +54,14 @@ jobs:
     name: iOS Tests
     runs-on: macos-latest
     needs: lint
+    timeout-minutes: 90
     env:
       WECHORE_FLAVOR: prod
       WECHORE_DISABLE_SWIFT_COMPILE_CACHE: "1"
     steps:
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
         with:
-          xcode-version: latest
+          xcode-version: "26.5"
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
@@ -75,13 +82,15 @@ jobs:
     name: Build iOS
     runs-on: macos-latest
     needs: lint
+    timeout-minutes: 45
     env:
+      WECHORE_CLOUD_KIT_ENVIRONMENT: Production
       WECHORE_FLAVOR: prod
       WECHORE_DISABLE_SWIFT_COMPILE_CACHE: "1"
     steps:
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
         with:
-          xcode-version: latest
+          xcode-version: "26.5"
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false

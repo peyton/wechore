@@ -46,6 +46,10 @@ appstore-api-key:
 appstore-check:
     WECHORE_FLAVOR=prod mise exec -- uv run python -m scripts.app_store_connect.check
 
+[group('appstore')]
+appstore-preflight:
+    WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production mise exec -- uv run python -m scripts.app_store_connect.preflight --require-credentials
+
 [group('release')]
 testflight-archive:
     WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production bash scripts/tooling/archive_release.sh

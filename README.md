@@ -14,24 +14,25 @@ Open `app/WeChore.xcworkspace` after generation if you prefer Xcode.
 
 ## Common Commands
 
-| Task                     | Command             |
-| ------------------------ | ------------------- |
-| Bootstrap tools          | `just bootstrap`    |
-| Generate Xcode workspace | `just generate`     |
-| Build app                | `just build`        |
-| Run app                  | `just run`          |
-| Unit tests               | `just test-unit`    |
-| UI tests on iPhone       | `just test-ui`      |
-| UI tests on iPad         | `just test-ui-ipad` |
-| Python/tooling tests     | `just test-python`  |
-| All validation           | `just ci`           |
-| Lint                     | `just lint`         |
-| Format                   | `just fmt`          |
-| Web check                | `just web-check`    |
-| App Store check          | `just appstore-check` |
-| TestFlight upload        | `just testflight-upload` |
-| Cloudflare setup         | `just cloudflare-setup` |
-| Cloudflare web deploy    | `just cloudflare-deploy` |
+| Task                     | Command                   |
+| ------------------------ | ------------------------- |
+| Bootstrap tools          | `just bootstrap`          |
+| Generate Xcode workspace | `just generate`           |
+| Build app                | `just build`              |
+| Run app                  | `just run`                |
+| Unit tests               | `just test-unit`          |
+| UI tests on iPhone       | `just test-ui`            |
+| UI tests on iPad         | `just test-ui-ipad`       |
+| Python/tooling tests     | `just test-python`        |
+| All validation           | `just ci`                 |
+| Lint                     | `just lint`               |
+| Format                   | `just fmt`                |
+| Web check                | `just web-check`          |
+| App Store preflight      | `just appstore-preflight` |
+| App Store check          | `just appstore-check`     |
+| TestFlight upload        | `just testflight-upload`  |
+| Cloudflare setup         | `just cloudflare-setup`   |
+| Cloudflare web deploy    | `just cloudflare-deploy`  |
 
 ## Layout
 

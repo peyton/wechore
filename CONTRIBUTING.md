@@ -37,3 +37,6 @@ mise exec -- just test-ui-ipad
 Run `mise exec -- just ci` before cutting release branches or archives. Keep new
 automation behind the existing `just` recipes instead of adding one-off global
 tool requirements.
+
+Before TestFlight work, run `mise exec -- just appstore-preflight` with the same
+App Store Connect and Apple team environment used by the upload job.

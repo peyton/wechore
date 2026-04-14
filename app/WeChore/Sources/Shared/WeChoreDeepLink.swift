@@ -48,6 +48,13 @@ public enum WeChoreDeepLink: Equatable, Sendable {
         case let .join(payload):
             return payload.appURL(scheme: scheme)
         }
-        return components.url ?? URL(string: "\(scheme)://thread")!
+        return components.url ?? fallbackURL(scheme: scheme)
+    }
+
+    private func fallbackURL(scheme: String) -> URL {
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = "thread"
+        return components.url ?? URL(fileURLWithPath: "/thread")
     }
 }
