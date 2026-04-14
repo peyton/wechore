@@ -105,7 +105,18 @@ public struct CloudKitHouseholdStore: HouseholdSyncing {
         )
         record["authorMemberID"] = message.authorMemberID as CKRecordValue
         record["body"] = message.body as CKRecordValue
+        record["kind"] = message.kind.rawValue as CKRecordValue
         record["createdAt"] = message.createdAt as CKRecordValue
+        if let attachment = message.voiceAttachment {
+            record["voiceDuration"] = attachment.duration as CKRecordValue
+            if let confidence = attachment.transcriptConfidence {
+                record["transcriptConfidence"] = confidence as CKRecordValue
+            }
+            if let audioURL = try? VoiceMessageFiles.fileURL(for: attachment.localAudioFilename),
+               FileManager.default.fileExists(atPath: audioURL.path) {
+                record["voiceAudio"] = CKAsset(fileURL: audioURL)
+            }
+        }
         return record
     }
 }

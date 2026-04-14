@@ -18,6 +18,16 @@ enum AppPalette {
             ? UIColor(red: 0.05, green: 0.07, blue: 0.06, alpha: 1)
             : UIColor(red: 0.94, green: 0.98, blue: 0.95, alpha: 1)
     })
+    static let chatCanvas = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.06, green: 0.07, blue: 0.06, alpha: 1)
+            : UIColor(red: 0.93, green: 0.94, blue: 0.93, alpha: 1)
+    })
+    static let chrome = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.12, green: 0.13, blue: 0.12, alpha: 1)
+            : UIColor(red: 0.96, green: 0.97, blue: 0.96, alpha: 1)
+    })
     static let surface = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.10, green: 0.13, blue: 0.11, alpha: 1)

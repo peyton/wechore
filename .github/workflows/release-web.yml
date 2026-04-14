@@ -40,10 +40,16 @@ jobs:
           mise exec -- just web-build
           mise exec -- uv run python -m scripts.web.package_static_site --version "$WEB_VERSION"
       - name: Create GitHub release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
-        with:
-          name: WeChore Web ${{ env.WEB_VERSION }}
-          files: |
-            .build/releases/wechore-web-${{ env.WEB_VERSION }}.tar.gz
-            .build/releases/wechore-web-${{ env.WEB_VERSION }}.tar.gz.sha256
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ARCHIVE: .build/releases/wechore-web-${{ env.WEB_VERSION }}.tar.gz
+          RELEASE_CHECKSUM: .build/releases/wechore-web-${{ env.WEB_VERSION }}.tar.gz.sha256
+          RELEASE_TITLE: WeChore Web ${{ env.WEB_VERSION }}
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "$RELEASE_ARCHIVE" \
+            "$RELEASE_CHECKSUM" \
+            --generate-notes \
+            --title "$RELEASE_TITLE" \
+            --verify-tag

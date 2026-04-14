@@ -21,7 +21,22 @@ struct WeChoreApp: App {
         let reminderScheduler: ReminderScheduling = RuntimeEnvironment.isRunningUITests
             ? CapturingReminderScheduler()
             : LocalReminderScheduler()
-        _appState = State(initialValue: AppState(repository: repository, reminderScheduler: reminderScheduler))
+        let voiceRecorder: VoiceMessageRecording = RuntimeEnvironment.isRunningUITests
+            ? FakeVoiceMessageRecorder()
+            : AppleVoiceMessageRecorder()
+        let voiceTranscriber: VoiceMessageTranscribing = RuntimeEnvironment.isRunningUITests
+            ? FakeVoiceMessageTranscriber(transcript: RuntimeEnvironment.fakeVoiceTranscript)
+            : AppleSpeechVoiceMessageTranscriber()
+        let voicePlayer: VoiceMessagePlaying = RuntimeEnvironment.isRunningUITests
+            ? FakeVoiceMessagePlayer()
+            : AppleVoiceMessagePlayer()
+        _appState = State(initialValue: AppState(
+            repository: repository,
+            reminderScheduler: reminderScheduler,
+            voiceRecorder: voiceRecorder,
+            voiceTranscriber: voiceTranscriber,
+            voicePlayer: voicePlayer
+        ))
     }
 
     var body: some Scene {
@@ -31,11 +46,22 @@ struct WeChoreApp: App {
                 .environment(router)
                 .modelContainer(container)
                 .tint(AppPalette.weChatGreen)
+                .modifier(UITestDynamicTypeModifier())
                 .onAppear {
                     if let preferredRoute = RuntimeEnvironment.preferredRoute {
                         router.selectedRoute = preferredRoute
                     }
                 }
+        }
+    }
+}
+
+private struct UITestDynamicTypeModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if RuntimeEnvironment.shouldUseLargeText {
+            content.dynamicTypeSize(.accessibility3)
+        } else {
+            content
         }
     }
 }

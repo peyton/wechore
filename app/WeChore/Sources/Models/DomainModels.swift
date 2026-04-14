@@ -28,6 +28,29 @@ public enum SuggestionUrgency: String, Codable, CaseIterable, Identifiable, Send
     public var id: String { rawValue }
 }
 
+public enum ChoreMessageKind: String, Codable, CaseIterable, Identifiable, Sendable {
+    case text
+    case voice
+
+    public var id: String { rawValue }
+}
+
+public struct VoiceAttachment: Hashable, Codable, Sendable {
+    public var localAudioFilename: String
+    public var duration: TimeInterval
+    public var transcriptConfidence: Double?
+
+    public init(
+        localAudioFilename: String,
+        duration: TimeInterval,
+        transcriptConfidence: Double? = nil
+    ) {
+        self.localAudioFilename = localAudioFilename
+        self.duration = duration
+        self.transcriptConfidence = transcriptConfidence
+    }
+}
+
 public struct Household: Identifiable, Hashable, Codable, Sendable {
     public var id: String
     public var name: String
@@ -144,18 +167,53 @@ public struct ChoreMessage: Identifiable, Hashable, Codable, Sendable {
     public var id: String
     public var authorMemberID: String
     public var body: String
+    public var kind: ChoreMessageKind
+    public var voiceAttachment: VoiceAttachment?
     public var createdAt: Date
 
     public init(
         id: String = UUID().uuidString,
         authorMemberID: String,
         body: String,
+        kind: ChoreMessageKind = .text,
+        voiceAttachment: VoiceAttachment? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
         self.authorMemberID = authorMemberID
         self.body = body
+        self.kind = kind
+        self.voiceAttachment = voiceAttachment
         self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case authorMemberID
+        case body
+        case kind
+        case voiceAttachment
+        case createdAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        authorMemberID = try container.decode(String.self, forKey: .authorMemberID)
+        body = try container.decode(String.self, forKey: .body)
+        kind = try container.decodeIfPresent(ChoreMessageKind.self, forKey: .kind) ?? .text
+        voiceAttachment = try container.decodeIfPresent(VoiceAttachment.self, forKey: .voiceAttachment)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(authorMemberID, forKey: .authorMemberID)
+        try container.encode(body, forKey: .body)
+        try container.encode(kind, forKey: .kind)
+        try container.encodeIfPresent(voiceAttachment, forKey: .voiceAttachment)
+        try container.encode(createdAt, forKey: .createdAt)
     }
 }
 

@@ -8,24 +8,38 @@ final class AppState {
     private let reminderScheduler: ReminderScheduling
     private let communicationOpener: SystemCommunicationOpening
     private let clock: ClockProviding
+    private let voiceRecorder: VoiceMessageRecording
+    private let voiceTranscriber: VoiceMessageTranscribing
+    private let voiceStorage: VoiceMessageStorage
+    private let voicePlayer: VoiceMessagePlaying
 
     private(set) var snapshot: ChoreSnapshot
     var lastStatusMessage: String?
     var preparedMessageMember: Member?
     var preparedMessageBody = ""
     var shouldPresentMessageComposer = false
+    var isRecordingVoiceMessage = false
+    private var currentVoiceRecordingURL: URL?
 
     init(
         repository: ChoreRepository,
         suggestionEngine: MessageSuggestionGenerating = OnDeviceMessageSuggestionEngine(),
         reminderScheduler: ReminderScheduling = LocalReminderScheduler(),
         communicationOpener: SystemCommunicationOpening = AppleSystemCommunicationOpener(),
+        voiceRecorder: VoiceMessageRecording = AppleVoiceMessageRecorder(),
+        voiceTranscriber: VoiceMessageTranscribing = AppleSpeechVoiceMessageTranscriber(),
+        voiceStorage: VoiceMessageStorage = LocalVoiceMessageStorage(),
+        voicePlayer: VoiceMessagePlaying = AppleVoiceMessagePlayer(),
         clock: ClockProviding = SystemClock()
     ) {
         self.repository = repository
         self.suggestionEngine = suggestionEngine
         self.reminderScheduler = reminderScheduler
         self.communicationOpener = communicationOpener
+        self.voiceRecorder = voiceRecorder
+        self.voiceTranscriber = voiceTranscriber
+        self.voiceStorage = voiceStorage
+        self.voicePlayer = voicePlayer
         self.clock = clock
         do {
             snapshot = try repository.loadSnapshot()
@@ -108,14 +122,91 @@ final class AppState {
         save("\(snapshot.chores[index].title) is \(status.displayName.lowercased()).")
     }
 
-    func postMessage(_ body: String) {
+    func postMessage(
+        _ body: String,
+        kind: ChoreMessageKind = .text,
+        voiceAttachment: VoiceAttachment? = nil
+    ) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let message = ChoreMessage(authorMemberID: currentMember.id, body: trimmed, createdAt: clock.now())
+        let message = ChoreMessage(
+            authorMemberID: currentMember.id,
+            body: trimmed,
+            kind: kind,
+            voiceAttachment: voiceAttachment,
+            createdAt: clock.now()
+        )
         snapshot.messages.append(message)
         let newSuggestions = suggestionEngine.suggestions(from: message, members: members, now: clock.now())
         snapshot.suggestions.append(contentsOf: newSuggestions)
         save(newSuggestions.isEmpty ? "Message posted." : "Suggested \(newSuggestions[0].title).")
+    }
+
+    func postVoiceMessage(transcript: String, attachment: VoiceAttachment) {
+        postMessage(transcript, kind: .voice, voiceAttachment: attachment)
+    }
+
+    func startVoiceMessageRecording() async {
+        guard !isRecordingVoiceMessage else { return }
+        do {
+            let url = try voiceStorage.makeRecordingURL()
+            currentVoiceRecordingURL = url
+            try await voiceRecorder.startRecording(to: url)
+            isRecordingVoiceMessage = true
+            lastStatusMessage = "Recording voice message."
+        } catch {
+            currentVoiceRecordingURL = nil
+            isRecordingVoiceMessage = false
+            lastStatusMessage = "Voice recording could not start."
+        }
+    }
+
+    func finishVoiceMessageRecording() async {
+        guard isRecordingVoiceMessage, let url = currentVoiceRecordingURL else {
+            lastStatusMessage = "No voice message is recording."
+            return
+        }
+
+        do {
+            let duration = try await voiceRecorder.stopRecording()
+            isRecordingVoiceMessage = false
+            currentVoiceRecordingURL = nil
+            let transcript = try await voiceTranscriber.transcript(for: url)
+            let attachment = voiceStorage.attachment(
+                for: url,
+                duration: duration,
+                transcriptConfidence: transcript.confidence
+            )
+            postVoiceMessage(transcript: transcript.text, attachment: attachment)
+        } catch {
+            voiceRecorder.cancelRecording()
+            isRecordingVoiceMessage = false
+            currentVoiceRecordingURL = nil
+            lastStatusMessage = "Voice message could not be posted."
+        }
+    }
+
+    func cancelVoiceMessageRecording() {
+        guard isRecordingVoiceMessage else { return }
+        voiceRecorder.cancelRecording()
+        isRecordingVoiceMessage = false
+        currentVoiceRecordingURL = nil
+        lastStatusMessage = "Voice message canceled."
+    }
+
+    func playVoiceMessage(_ message: ChoreMessage) {
+        guard let attachment = message.voiceAttachment else {
+            lastStatusMessage = "Voice message audio is unavailable."
+            return
+        }
+
+        do {
+            let url = try voiceStorage.fileURL(for: attachment)
+            let duration = try voicePlayer.play(url: url)
+            lastStatusMessage = "Playing voice message (\(Self.voiceDurationText(duration)))."
+        } catch {
+            lastStatusMessage = "Voice message audio is unavailable."
+        }
     }
 
     func acceptSuggestion(_ suggestion: ChoreSuggestion) {
@@ -221,5 +312,10 @@ final class AppState {
             break
         }
         return lhs.updatedAt > rhs.updatedAt
+    }
+
+    static func voiceDurationText(_ duration: TimeInterval) -> String {
+        let seconds = max(1, Int(duration.rounded()))
+        return "\(seconds)s"
     }
 }
