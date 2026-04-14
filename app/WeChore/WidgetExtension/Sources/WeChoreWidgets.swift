@@ -620,10 +620,160 @@ struct WeChoreConversationWidget: Widget {
     }
 }
 
+// MARK: - My Tasks Widget
+
+struct MyTasksWidgetEntry: TimelineEntry {
+    let date: Date
+    let tasks: [WidgetTaskSummary]
+    let currentUserName: String
+}
+
+struct MyTasksWidgetProvider: TimelineProvider {
+    func placeholder(in _: Context) -> MyTasksWidgetEntry {
+        entry(at: Date(), snapshot: .previewForWidgets)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (MyTasksWidgetEntry) -> Void) {
+        completion(entry(at: Date(), snapshot: context.isPreview ? .previewForWidgets : loadSnapshot()))
+    }
+
+    func getTimeline(in _: Context, completion: @escaping (Timeline<MyTasksWidgetEntry>) -> Void) {
+        let now = Date()
+        let entry = entry(at: now, snapshot: loadSnapshot())
+        completion(Timeline(entries: [entry], policy: .after(now.addingTimeInterval(15 * 60))))
+    }
+
+    private func entry(at date: Date, snapshot: ChoreSnapshot) -> MyTasksWidgetEntry {
+        let currentUser = snapshot.participants.first(where: \.isCurrentUser)
+            ?? snapshot.participants.first
+        let currentUserID = currentUser?.id
+        let tasks = snapshot.chores
+            .filter { $0.isActive && $0.assigneeID == currentUserID }
+            .sorted { lhs, rhs in
+                switch (lhs.dueDate, rhs.dueDate) {
+                case let (left?, right?): return left < right
+                case (_?, nil): return true
+                case (nil, _?): return false
+                case (nil, nil): return lhs.updatedAt > rhs.updatedAt
+                }
+            }
+            .map { WidgetProjection.taskSummary(for: $0, in: snapshot, now: date) }
+        return MyTasksWidgetEntry(
+            date: date,
+            tasks: tasks,
+            currentUserName: currentUser?.displayName ?? "Me"
+        )
+    }
+
+    private func loadSnapshot() -> ChoreSnapshot {
+        (try? SharedSnapshotStore().loadSnapshot()) ?? .previewForWidgets
+    }
+}
+
+struct MyTasksWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: MyTasksWidgetEntry
+
+    var body: some View {
+        Group {
+            switch family {
+            case .systemSmall:
+                SmallMyTasksView(entry: entry)
+            default:
+                MediumMyTasksView(entry: entry)
+            }
+        }
+    }
+}
+
+private struct SmallMyTasksView: View {
+    let entry: MyTasksWidgetEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("My Tasks")
+                .font(.headline)
+                .foregroundStyle(WeChoreWidgetPalette.ink)
+            if entry.tasks.isEmpty {
+                Spacer(minLength: 2)
+                Text("All caught up!")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(WeChoreWidgetPalette.done)
+            } else {
+                Text("\(entry.tasks.count) task\(entry.tasks.count == 1 ? "" : "s")")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(WeChoreWidgetPalette.muted)
+                Spacer(minLength: 2)
+                if let task = entry.tasks.first {
+                    TaskStatusPill(task: task)
+                    Text(task.title)
+                        .font(.headline)
+                        .foregroundStyle(WeChoreWidgetPalette.ink)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.78)
+                    Text(task.statusLabel)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(WeChoreWidgetPalette.muted)
+                }
+            }
+        }
+        .padding()
+    }
+}
+
+private struct MediumMyTasksView: View {
+    let entry: MyTasksWidgetEntry
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("My Tasks")
+                    .font(.headline)
+                    .foregroundStyle(WeChoreWidgetPalette.ink)
+                Text("\(entry.tasks.count) task\(entry.tasks.count == 1 ? "" : "s")")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(WeChoreWidgetPalette.muted)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                if entry.tasks.isEmpty {
+                    Text("All caught up!")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(WeChoreWidgetPalette.done)
+                } else {
+                    ForEach(entry.tasks.prefix(3)) { task in
+                        WidgetTaskRow(task: task, allowsDone: task.id == entry.tasks.first?.id)
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+}
+
+struct MyTasksWidget: Widget {
+    private let kind = "MyTasksWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(
+            kind: kind,
+            provider: MyTasksWidgetProvider()
+        ) { entry in
+            MyTasksWidgetView(entry: entry)
+                .containerBackground(for: .widget) {
+                    WeChoreWidgetPalette.background
+                }
+        }
+        .configurationDisplayName("My Tasks")
+        .description("Your assigned tasks across all conversations, sorted by due date.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
 @main
 struct WeChoreWidgetsBundle: WidgetBundle {
     var body: some Widget {
         WeChoreConversationWidget()
+        MyTasksWidget()
     }
 }
 

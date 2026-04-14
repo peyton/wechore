@@ -174,6 +174,11 @@ private struct ChatThreadRow: View {
                             .font(.headline)
                             .foregroundStyle(AppPalette.ink)
                             .lineLimit(1)
+                        if appState.isThreadMuted(threadID: thread.id) {
+                            Image(systemName: "bell.slash.fill")
+                                .font(.caption2)
+                                .foregroundStyle(AppPalette.muted)
+                        }
                         Spacer()
                         Text(thread.lastActivityAt.weChoreShortDueText)
                             .font(.caption2)
@@ -194,6 +199,16 @@ private struct ChatThreadRow: View {
             .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                appState.toggleThreadMute(threadID: thread.id)
+            } label: {
+                Label(
+                    appState.isThreadMuted(threadID: thread.id) ? "Unmute" : "Mute",
+                    systemImage: appState.isThreadMuted(threadID: thread.id) ? "bell.fill" : "bell.slash.fill"
+                )
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens chat.")
