@@ -50,6 +50,14 @@ appstore-check:
 appstore-preflight:
     WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production mise exec -- uv run python -m scripts.app_store_connect.preflight --require-credentials
 
+[group('appstore')]
+appstore-provisioning-plan:
+    WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production mise exec -- uv run python -m scripts.app_store_connect.provisioning --dry-run
+
+[group('appstore')]
+appstore-ensure-provisioning:
+    WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production mise exec -- uv run python -m scripts.app_store_connect.provisioning
+
 [group('release')]
 testflight-archive:
     WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production bash scripts/tooling/archive_release.sh

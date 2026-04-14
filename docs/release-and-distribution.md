@@ -109,6 +109,26 @@ record exists.
    `appstore-check` also supports an authenticated local `asc` profile, but CI
    uses the App Store Connect environment variables above.
 
+7. Ensure signing resources exist before the first TestFlight archive:
+
+   ```text
+   mise exec -- just appstore-provisioning-plan
+   mise exec -- just appstore-ensure-provisioning
+   ```
+
+   The ensure command creates or verifies the production app and widget bundle
+   identifiers, enables the app-group, associated-domains, and iCloud/CloudKit
+   capabilities required by the entitlements, and creates missing
+   `IOS_APP_STORE` provisioning profiles when an active Apple Distribution
+   certificate is available. It does not revoke, delete, or replace existing
+   certificates or profiles.
+
+   If the command reports that no distribution certificate exists, create or
+   renew an Apple Distribution certificate in the Developer portal, then rerun
+   the command. The archive still uses Xcode's `-allowProvisioningUpdates` path,
+   but this command catches missing identifiers and stale profile setup before
+   the slower archive step.
+
 ## TestFlight Upload
 
 Local upload uses the same scripts as GitHub Actions:
@@ -119,6 +139,7 @@ export APP_STORE_CONNECT_API_ISSUER_ID=<issuer id>
 export APP_STORE_CONNECT_API_KEY_PATH=/absolute/path/AuthKey_<KEY_ID>.p8
 export TEAM_ID=3VDQ4656LX
 mise exec -- just appstore-preflight
+mise exec -- just appstore-ensure-provisioning
 mise exec -- just testflight-upload
 ```
 
