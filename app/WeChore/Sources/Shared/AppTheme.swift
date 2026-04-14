@@ -111,6 +111,15 @@ struct AppStatusBanner: View {
                 guard let newMessage else { return }
                 UIAccessibility.post(notification: .announcement, argument: newMessage)
             }
+            .task(id: appState.lastStatusMessage) {
+                guard appState.lastStatusMessage != nil else { return }
+                guard appState.recentlyCompletedTaskID == nil else { return }
+                try? await Task.sleep(for: .seconds(4))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.3)) {
+                    appState.dismissStatusMessage()
+                }
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ChoresView: View {
     @Environment(AppState.self) private var appState
@@ -356,6 +357,7 @@ private struct ChoreActionGroup: View {
         ChoreControlButton(title: "Edit", identifier: "chore.edit.\(chore.id)", action: edit)
         if chore.status == .done {
             ChoreControlButton(title: "Reopen", identifier: "chore.reopen.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .open)
             }
             ChoreControlButton(title: "Archive", identifier: "chore.archive.\(chore.id)") {
@@ -363,17 +365,21 @@ private struct ChoreActionGroup: View {
             }
             .confirmationDialog("Archive this task?", isPresented: $showArchiveConfirmation) {
                 Button("Archive", role: .destructive) {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     appState.updateStatus(choreID: chore.id, status: .archived)
                 }
             }
         } else {
             ChoreControlButton(title: "Start", identifier: "chore.start.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .inProgress)
             }
             ChoreControlButton(title: "Blocked", identifier: "chore.blocked.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .blocked)
             }
             ChoreControlButton(title: "Done", identifier: "chore.done.\(chore.id)") {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 appState.updateStatus(choreID: chore.id, status: .done)
             }
             ChoreControlButton(title: "Remind", identifier: "chore.remind.\(chore.id)") {

@@ -1,6 +1,7 @@
 import Foundation
 import PhotosUI
 import SwiftUI
+import UIKit
 
 struct ConversationView: View {
     @Environment(AppState.self) private var appState
@@ -319,12 +320,14 @@ private struct DraftTaskRow: View {
                         participants: appState.participants(in: threadID),
                         selectedID: draft.assigneeID
                     ) { participantID in
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         appState.confirmDraft(draft, assigneeID: participantID)
                     }
                 }
             } else {
                 ResponsiveTaskActions {
                     Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         appState.confirmDraft(draft)
                     } label: {
                         Label("Add task", systemImage: "plus.circle.fill")
