@@ -75,10 +75,16 @@ struct WeChoreApp: App {
         guard let deepLink = WeChoreDeepLink(url: url) else { return nil }
         switch deepLink {
         case let .thread(threadID):
-            guard appState.thread(for: threadID) != nil else { return nil }
+            guard appState.thread(for: threadID) != nil else {
+                appState.lastStatusMessage = "That chat is not on this device."
+                return nil
+            }
             return .thread(threadID)
         case let .task(taskID):
-            guard let threadID = appState.threadID(forTaskID: taskID) else { return nil }
+            guard let threadID = appState.threadID(forTaskID: taskID) else {
+                appState.lastStatusMessage = "That task is not on this device."
+                return nil
+            }
             return .thread(threadID)
         case let .join(payload):
             guard let threadID = appState.acceptInvite(payload) else { return nil }

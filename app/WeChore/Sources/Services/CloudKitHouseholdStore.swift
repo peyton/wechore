@@ -63,9 +63,9 @@ public struct CloudKitConversationStore: ConversationSyncing {
     }
 
     public func invitePayload(for code: String, in snapshot: ChoreSnapshot, now: Date) -> InvitePayload? {
-        let normalized = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let normalized = Self.normalizedInviteCode(code)
         guard let invite = snapshot.invites.first(where: {
-            $0.code == normalized && $0.expiresAt >= now
+            Self.normalizedInviteCode($0.code) == normalized && $0.expiresAt >= now
         }), let thread = snapshot.threads.first(where: { $0.id == invite.threadID }) else {
             return nil
         }
@@ -77,6 +77,10 @@ public struct CloudKitConversationStore: ConversationSyncing {
             code: invite.code,
             expiresAt: invite.expiresAt
         )
+    }
+
+    private static func normalizedInviteCode(_ code: String) -> String {
+        String(code.uppercased().filter { $0.isLetter || $0.isNumber })
     }
 
     private func recordID(recordType: String, id: String) -> CKRecord.ID {

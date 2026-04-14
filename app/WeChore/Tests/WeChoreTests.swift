@@ -391,6 +391,27 @@ final class WeChoreTests: XCTestCase {
         }
     }
 
+    func testEmptyVoiceTranscriptReportsClearStatus() async {
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests()),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            voiceRecorder: FakeVoiceMessageRecorder(duration: 3),
+            voiceTranscriber: FakeVoiceMessageTranscriber(transcript: "   "),
+            voicePlayer: FakeVoiceMessagePlayer()
+        )
+
+        await state.startVoiceMessageRecording(in: "thread-dm-sam")
+        await state.finishVoiceMessageRecording()
+
+        XCTAssertFalse(state.messages(in: "thread-dm-sam").contains { $0.kind == .voice })
+        XCTAssertEqual(state.lastStatusMessage, VoiceMessageError.emptyTranscript.localizedDescription)
+    }
+
+    func testVoiceDurationTextUsesMinutesWhenNeeded() {
+        XCTAssertEqual(AppState.voiceDurationText(3), "3s")
+        XCTAssertEqual(AppState.voiceDurationText(75), "1m 15s")
+    }
+
     func testSwiftDataRepositoryRoundTripsConversationSnapshot() throws {
         let container = try WeChoreModelContainerFactory.makeSharedContainer(isStoredInMemoryOnly: true)
         let repository = SwiftDataChoreRepository(context: ModelContext(container))
@@ -621,6 +642,271 @@ final class WeChoreTests: XCTestCase {
         XCTAssertEqual(scheduler.scheduledPlans, [second])
     }
 
+    func testBlankGroupAndDMCreationAreRejected() {
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests()),
+            extractionEngine: RuleBasedTaskExtractionEngine()
+        )
+
+        XCTAssertNil(state.createGroupChat(title: "   "))
+        XCTAssertNil(state.startDM(displayName: "   "))
+
+        XCTAssertFalse(state.threads.contains { $0.title == "New Group" })
+        XCTAssertFalse(state.threads.contains { $0.kind == .dm && $0.participantIDs.count == 1 })
+        XCTAssertEqual(state.lastStatusMessage, "Add a name before starting a DM.")
+    }
+
+    func testCreateGroupChatPreservesParticipantOrderAndReusesDuplicateTitle() {
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests()),
+            extractionEngine: RuleBasedTaskExtractionEngine()
+        )
+
+        let threadID = state.createGroupChat(title: "School", participantIDs: [
+            "participant-sam",
+            "participant-peyton",
+            "participant-sam"
+        ])
+        let duplicateID = state.createGroupChat(title: "school")
+        let thread = state.thread(for: threadID ?? "")
+
+        XCTAssertEqual(thread?.participantIDs, ["participant-peyton", "participant-sam"])
+        XCTAssertEqual(duplicateID, threadID)
+    }
+
+    func testInviteCodeAcceptsPastedSeparatorsAndCreateInviteReusesActiveInvite() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests(now: now)),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        let first = state.createInvite(for: "thread-pine")
+        let second = state.createInvite(for: "thread-pine")
+        let opened = state.acceptInviteCode(" pine-123 ")
+
+        XCTAssertEqual(first, second)
+        XCTAssertEqual(opened, "thread-pine")
+        XCTAssertEqual(state.snapshot.invites.filter { $0.threadID == "thread-pine" }.count, 1)
+    }
+
+    func testDuplicateExtractedDMTaskDoesNotCreateSecondChore() async {
+        let now = Date(timeIntervalSince1970: 1_000)
+        var snapshot = ChoreSnapshot.seededForUITests(now: now)
+        snapshot.chores.append(Chore(
+            id: "task-dm-clean",
+            threadID: "thread-dm-sam",
+            title: "Clean bathroom",
+            createdByMemberID: "participant-peyton",
+            assigneeID: "participant-sam",
+            createdAt: now,
+            updatedAt: now
+        ))
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: snapshot),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        await state.postMessage("Please clean bathroom tomorrow", in: "thread-dm-sam")
+
+        XCTAssertEqual(
+            state.chores.filter { $0.threadID == "thread-dm-sam" && $0.title == "Clean bathroom" }.count,
+            1
+        )
+        XCTAssertEqual(state.lastStatusMessage, "Clean bathroom is already active.")
+    }
+
+    func testSelfAssignmentInDMStaysAssignedToCurrentParticipant() async {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests(now: now)),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        await state.postMessage("I'll clean bathroom tomorrow", in: "thread-dm-sam")
+
+        let chore = state.chores.first { $0.threadID == "thread-dm-sam" && $0.title == "Clean bathroom" }
+        XCTAssertEqual(chore?.assigneeID, "participant-peyton")
+    }
+
+    func testRelativeDueDatesResolveToEndOfDay() async throws {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let calendar = Calendar.current
+        let sam = ChatParticipant(id: "participant-sam", displayName: "Sam")
+        let message = ChoreMessage(
+            id: "message-1",
+            threadID: "thread-1",
+            authorMemberID: "participant-me",
+            body: "Sam please unload dishwasher today"
+        )
+
+        let draft = try XCTUnwrap(await RuleBasedTaskExtractionEngine().extractTasks(
+            from: message,
+            participants: [sam],
+            now: now
+        ).first)
+        let expected = try XCTUnwrap(calendar.date(
+            byAdding: .second,
+            value: -1,
+            to: try XCTUnwrap(calendar.date(
+                byAdding: .day,
+                value: 1,
+                to: calendar.startOfDay(for: now)
+            ))
+        ))
+
+        XCTAssertEqual(draft.dueDate, expected)
+    }
+
+    func testReminderIsNotScheduledForCompletedTask() async {
+        let scheduler = CapturingReminderScheduler()
+        var snapshot = ChoreSnapshot.seededForUITests()
+        snapshot.chores[0].status = .done
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: snapshot),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            reminderScheduler: scheduler
+        )
+
+        await state.scheduleReminder(for: state.chores[0])
+
+        XCTAssertTrue(scheduler.scheduledPlans.isEmpty)
+        XCTAssertEqual(state.lastStatusMessage, "Only active tasks can be reminded.")
+    }
+
+    func testDeniedReminderAuthorizationMarksTaskFailed() async {
+        let scheduler = DenyingReminderScheduler()
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests()),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            reminderScheduler: scheduler
+        )
+
+        await state.scheduleReminder(for: state.chores[0])
+
+        XCTAssertTrue(scheduler.scheduledPlans.isEmpty)
+        XCTAssertEqual(state.snapshot.chores[0].notificationState, .failed)
+        XCTAssertEqual(state.lastStatusMessage, "Notifications are not allowed yet.")
+    }
+
+    func testCurrentParticipantProfileCanBeUpdated() {
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: .seededForUITests()),
+            extractionEngine: RuleBasedTaskExtractionEngine()
+        )
+
+        XCTAssertTrue(state.updateCurrentParticipant(displayName: "Peyton R", contact: "(555) 123-9999"))
+
+        XCTAssertEqual(state.currentParticipant.displayName, "Peyton R")
+        XCTAssertEqual(state.currentParticipant.phoneNumber, "5551239999")
+        XCTAssertNil(state.currentParticipant.faceTimeHandle)
+    }
+
+    func testTaskDetailsCanBeUpdatedWithoutCreatingDuplicateActiveTask() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        var snapshot = ChoreSnapshot.seededForUITests(now: now)
+        snapshot.chores.append(Chore(
+            id: "task-clean",
+            threadID: "thread-pine",
+            title: "Clean sink",
+            createdByMemberID: "participant-peyton",
+            assigneeID: "participant-sam",
+            createdAt: now,
+            updatedAt: now
+        ))
+        let state = AppState(
+            repository: InMemoryChoreRepository(snapshot: snapshot),
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        XCTAssertFalse(state.updateChore(
+            choreID: "task-clean",
+            title: "Load dishwasher",
+            assigneeID: "participant-sam",
+            dueDate: nil,
+            notes: "duplicate"
+        ))
+        XCTAssertTrue(state.updateChore(
+            choreID: "task-clean",
+            title: "Clean sink",
+            assigneeID: "participant-peyton",
+            dueDate: Date(timeIntervalSince1970: 2_000),
+            notes: "Use the small brush"
+        ))
+
+        let updated = state.snapshot.chores.first { $0.id == "task-clean" }
+        XCTAssertEqual(updated?.assigneeID, "participant-peyton")
+        XCTAssertEqual(updated?.notes, "Use the small brush")
+        XCTAssertEqual(updated?.dueDate, Date(timeIntervalSince1970: 2_000))
+    }
+
+    func testSaveFailureRestoresPersistedSnapshotAndReportsFailure() {
+        let repository = FailingSaveRepository(snapshot: .seededForUITests())
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine()
+        )
+
+        XCTAssertFalse(state.addChore(
+            title: "Clean sink",
+            assigneeID: "participant-sam",
+            dueDate: nil,
+            threadID: "thread-pine"
+        ))
+
+        XCTAssertFalse(state.chores.contains { $0.title == "Clean sink" })
+        XCTAssertEqual(state.lastStatusMessage, "WeChore could not save the latest change.")
+    }
+
+    func testStartDMStopsWhenNewParticipantCannotBeSaved() {
+        let snapshot = ChoreSnapshot.seededForUITests()
+        let repository = FailingSaveRepository(snapshot: snapshot)
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine()
+        )
+
+        XCTAssertNil(state.startDM(displayName: "Jordan"))
+
+        XCTAssertEqual(state.snapshot.participants, snapshot.participants)
+        XCTAssertEqual(state.snapshot.threads, snapshot.threads)
+        XCTAssertEqual(state.lastStatusMessage, "WeChore could not save the latest change.")
+    }
+
+    func testSnapshotNormalizationRepairsOrphanReferences() {
+        var snapshot = ChoreSnapshot.seededForUITests(now: Date(timeIntervalSince1970: 123))
+        snapshot.settings.selectedParticipantID = "missing"
+        snapshot.threads[0].participantIDs = ["participant-sam", "missing", "participant-sam"]
+        snapshot.chores[0].threadID = "missing-thread"
+        snapshot.chores[0].assigneeID = "missing-person"
+        snapshot.messages.append(ChoreMessage(
+            threadID: "missing-thread",
+            authorMemberID: "missing-person",
+            body: "hello"
+        ))
+        snapshot.suggestions.append(TaskDraft(
+            threadID: "missing-thread",
+            sourceMessageID: "message-1",
+            title: "Water plants",
+            assigneeID: "missing-person"
+        ))
+
+        snapshot.normalizeConversationState(now: Date(timeIntervalSince1970: 123))
+
+        XCTAssertEqual(snapshot.settings.selectedParticipantID, "participant-peyton")
+        XCTAssertEqual(snapshot.threads[0].participantIDs, ["participant-peyton", "participant-sam"])
+        XCTAssertEqual(snapshot.chores[0].threadID, "thread-pine")
+        XCTAssertEqual(snapshot.chores[0].assigneeID, "participant-peyton")
+        XCTAssertEqual(snapshot.messages.last?.threadID, "thread-pine")
+        XCTAssertEqual(snapshot.messages.last?.authorMemberID, "participant-peyton")
+        XCTAssertNil(snapshot.suggestions.last?.assigneeID)
+        XCTAssertEqual(snapshot.suggestions.last?.assignmentState, .needsAssignee)
+    }
+
     func testWidgetMetadataDeclaresTargetsFamiliesAndAppIntents() throws {
         let appRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -686,5 +972,35 @@ final class WeChoreTests: XCTestCase {
         XCTAssertEqual(green, 0.757, accuracy: 0.01)
         XCTAssertEqual(blue, 0.376, accuracy: 0.01)
         XCTAssertEqual(alpha, 1, accuracy: 0.01)
+    }
+}
+
+@MainActor
+private final class DenyingReminderScheduler: ReminderScheduling {
+    private(set) var scheduledPlans: [ReminderPlan] = []
+
+    func requestAuthorization() async throws -> Bool {
+        false
+    }
+
+    func schedule(plan: ReminderPlan) async throws {
+        scheduledPlans.append(plan)
+    }
+}
+
+@MainActor
+private final class FailingSaveRepository: ChoreRepository {
+    private let snapshot: ChoreSnapshot
+
+    init(snapshot: ChoreSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func loadSnapshot() throws -> ChoreSnapshot {
+        snapshot
+    }
+
+    func saveSnapshot(_ snapshot: ChoreSnapshot) throws {
+        throw NSError(domain: "FailingSaveRepository", code: 1)
     }
 }

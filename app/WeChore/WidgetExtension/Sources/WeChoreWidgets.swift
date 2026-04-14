@@ -1,4 +1,5 @@
 import AppIntents
+import Foundation
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
@@ -165,10 +166,23 @@ struct MarkTaskDoneIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         var snapshot = try SharedSnapshotStore().loadSnapshot()
-        _ = WidgetSnapshotMutator.markTaskDone(taskID: task.id, in: &snapshot)
+        guard WidgetSnapshotMutator.markTaskDone(taskID: task.id, in: &snapshot) else {
+            throw WeChoreWidgetIntentError.taskUnavailable
+        }
         try SharedSnapshotStore().saveSnapshot(snapshot)
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
+    }
+}
+
+private enum WeChoreWidgetIntentError: LocalizedError {
+    case taskUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .taskUnavailable:
+            "This task is no longer active."
+        }
     }
 }
 

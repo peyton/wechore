@@ -29,6 +29,11 @@ struct InviteQRCodeCard: View {
                 .foregroundStyle(AppPalette.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Text("Expires \(payload.expiresAt.weChoreShortDueText)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppPalette.muted)
+                .accessibilityIdentifier("invite.expires")
+
             HStack(spacing: 10) {
                 Text("Code \(payload.code)")
                     .font(.callout.monospacedDigit().weight(.semibold))
@@ -119,7 +124,7 @@ struct MyQRCodeView: View {
             invitePayload = nil
             return
         }
-        invitePayload = appState.createInvite(for: threadID)
+        invitePayload = appState.activeInvitePayload(for: threadID) ?? appState.createInvite(for: threadID)
     }
 }
 

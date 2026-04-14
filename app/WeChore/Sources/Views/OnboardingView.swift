@@ -200,11 +200,12 @@ struct OnboardingView: View {
         )
         if let selectedContact {
             let contactValue = selectedContact.contactValue
-            let destination = ChatDestination.thread(appState.startDM(
+            guard let threadID = appState.startDM(
                 displayName: selectedContact.displayName,
                 phoneNumber: contactValue.contains("@") ? "" : contactValue,
                 faceTimeHandle: contactValue.contains("@") ? contactValue : ""
-            ))
+            ) else { return }
+            let destination = ChatDestination.thread(threadID)
             router.phonePath = [destination]
             router.selectedDestination = destination
             return

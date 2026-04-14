@@ -68,11 +68,65 @@ struct SecondaryActionButtonStyle: ButtonStyle {
     }
 }
 
+struct AppStatusBanner: View {
+    @Environment(AppState.self) private var appState
+    var allowsUndo = false
+
+    var body: some View {
+        if let message = appState.lastStatusMessage {
+            HStack(alignment: .center, spacing: 10) {
+                Text(message)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppPalette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if allowsUndo, appState.recentlyCompletedTaskID != nil {
+                    Button("Undo") {
+                        appState.reopenRecentlyCompletedTask()
+                    }
+                    .buttonStyle(SecondaryActionButtonStyle())
+                    .accessibilityHint("Reopens the task that was just completed.")
+                    .accessibilityIdentifier("status.undo")
+                }
+                Button {
+                    appState.dismissStatusMessage()
+                } label: {
+                    Label("Dismiss", systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("status.dismiss")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(AppPalette.surface)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("status.message")
+            .onAppear {
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
+            .onChange(of: appState.lastStatusMessage) { _, newMessage in
+                guard let newMessage else { return }
+                UIAccessibility.post(notification: .announcement, argument: newMessage)
+            }
+        }
+    }
+}
+
 extension Date {
     var weChoreShortDueText: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
+        return formatter.string(from: self)
+    }
+
+    var weChoreShortTimeText: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
         return formatter.string(from: self)
     }
 }

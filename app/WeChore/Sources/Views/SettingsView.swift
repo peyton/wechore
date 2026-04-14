@@ -27,8 +27,10 @@ struct SettingsView: View {
                     detail: "QR codes, Camera scanning, share links, AirDrop, and nearby join"
                 )
 
+                SettingsProfileSection()
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()
+                SettingsDiagnosticsSection()
 
                 Link("Support", destination: SettingsLinks.support)
                     .buttonStyle(SecondaryActionButtonStyle())
@@ -41,6 +43,11 @@ struct SettingsView: View {
             .frame(maxWidth: 760, alignment: .leading)
         }
         .background(AppPalette.canvas)
+        .safeAreaInset(edge: .bottom) {
+            AppStatusBanner()
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+        }
     }
 }
 
@@ -68,8 +75,8 @@ private struct SettingsQRCodeSection: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Button("Refresh") {
-                    refreshInvite()
+                Button(invitePayload == nil ? "Create QR" : "Refresh") {
+                    createOrRefreshInvite()
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
                 .accessibilityIdentifier("settings.myQR.refresh")
@@ -86,17 +93,68 @@ private struct SettingsQRCodeSection: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .task {
             if invitePayload == nil {
-                refreshInvite()
+                loadExistingInvite()
             }
         }
     }
 
-    private func refreshInvite() {
+    private func loadExistingInvite() {
+        guard let threadID = appState.groupThreads.first?.id ?? appState.threads.first?.id else {
+            invitePayload = nil
+            return
+        }
+        invitePayload = appState.activeInvitePayload(for: threadID)
+    }
+
+    private func createOrRefreshInvite() {
         guard let threadID = appState.groupThreads.first?.id ?? appState.threads.first?.id else {
             invitePayload = nil
             return
         }
         invitePayload = appState.createInvite(for: threadID)
+    }
+}
+
+private struct SettingsProfileSection: View {
+    @Environment(AppState.self) private var appState
+    @State private var displayName = ""
+    @State private var contact = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Profile")
+                .font(.headline)
+                .foregroundStyle(AppPalette.ink)
+            TextField("Name", text: $displayName)
+                .textContentType(.name)
+                .textInputAutocapitalization(.words)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("settings.profile.name")
+            TextField("Phone or email", text: $contact)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.emailAddress)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("settings.profile.contact")
+            Button("Save Profile") {
+                _ = appState.updateCurrentParticipant(displayName: displayName, contact: contact)
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .disabled(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("settings.profile.save")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(AppPalette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .onAppear(perform: load)
+        .onChange(of: appState.currentParticipant) { _, _ in
+            load()
+        }
+    }
+
+    private func load() {
+        displayName = appState.currentParticipant.displayName
+        contact = appState.currentParticipant.faceTimeHandle ?? appState.currentParticipant.phoneNumber ?? ""
     }
 }
 
@@ -135,6 +193,40 @@ private struct WidgetFavoritesSection: View {
         .padding(14)
         .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private struct SettingsDiagnosticsSection: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Diagnostics")
+                .font(.headline)
+                .foregroundStyle(AppPalette.ink)
+            diagnosticLine("Chats", value: appState.threads.count)
+            diagnosticLine("Active tasks", value: appState.activeChores.count)
+            diagnosticLine("Drafts waiting", value: appState.suggestions.count)
+            Text("No ads. No third-party server. WeChore only extracts tasks from messages recorded inside WeChore.")
+                .font(.caption)
+                .foregroundStyle(AppPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(AppPalette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func diagnosticLine(_ label: String, value: Int) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text("\(value)")
+                .font(.body.monospacedDigit().weight(.semibold))
+        }
+        .font(.subheadline)
+        .foregroundStyle(AppPalette.ink)
     }
 }
 

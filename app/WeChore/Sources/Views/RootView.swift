@@ -77,6 +77,8 @@ private struct ChatDestinationView: View {
         switch destination {
         case let .thread(threadID):
             ConversationView(threadID: threadID)
+        case .tasks:
+            ChoresView()
         case .joinStart:
             JoinStartView()
         case .myQRCode:
@@ -116,6 +118,13 @@ struct ChatTreeView: View {
 
                 Section {
                     Button {
+                        open(.tasks)
+                    } label: {
+                        Label(tasksLabel, systemImage: "checklist.checked")
+                    }
+                    .accessibilityIdentifier("chatTree.tasks")
+
+                    Button {
                         open(.joinStart)
                     } label: {
                         Label("Join or Start", systemImage: "plus.bubble.fill")
@@ -142,6 +151,11 @@ struct ChatTreeView: View {
         }
         .background(AppPalette.canvas)
         .accessibilityIdentifier("chat.tree")
+    }
+
+    private var tasksLabel: String {
+        let count = appState.activeChores.count
+        return count == 0 ? "Tasks" : "Tasks (\(count))"
     }
 }
 
