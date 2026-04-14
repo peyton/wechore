@@ -11,6 +11,7 @@ struct ConversationView: View {
     @State private var isVoiceMode = false
     @State private var isActionPanelOpen = false
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var isQuickAddPresented = false
     @State private var invitePayload: InvitePayload?
     @State private var isInviteQRPresented = false
     @FocusState private var isDraftFocused: Bool
@@ -46,7 +47,10 @@ struct ConversationView: View {
                 if isActionPanelOpen {
                     ConversationActionPanel(
                         invitePayload: invitePayload,
-                        newTask: prepareNewTaskPrompt,
+                        newTask: {
+                            isQuickAddPresented = true
+                            isActionPanelOpen = false
+                        },
                         createInvite: createInvite,
                         showInviteQR: showInviteQR
                     )
@@ -90,6 +94,9 @@ struct ConversationView: View {
                 }
             }
         }
+        .sheet(isPresented: $isQuickAddPresented) {
+            QuickAddTaskSheet(threadID: threadID)
+        }
     }
 
     private func sendTextMessage() {
@@ -116,13 +123,6 @@ struct ConversationView: View {
 
     private func cancelVoiceRecording() {
         appState.cancelVoiceMessageRecording()
-    }
-
-    private func prepareNewTaskPrompt() {
-        isVoiceMode = false
-        isActionPanelOpen = false
-        draft = "Please "
-        isDraftFocused = true
     }
 
     private func createInvite() {
@@ -295,6 +295,7 @@ private struct DraftTaskRow: View {
     @Environment(AppState.self) private var appState
     let draft: TaskDraft
     let threadID: String
+    @State private var hasAppeared = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -357,6 +358,19 @@ private struct DraftTaskRow: View {
         .padding(12)
         .background(AppPalette.receivedBubble)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(AppPalette.weChatGreen.opacity(hasAppeared ? 0 : 0.6), lineWidth: 2)
+                .animation(.easeOut(duration: 1.5).delay(0.5), value: hasAppeared)
+        )
+        .opacity(hasAppeared ? 1 : 0)
+        .scaleEffect(hasAppeared ? 1 : 0.8)
+        .offset(y: hasAppeared ? 0 : 20)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                hasAppeared = true
+            }
+        }
     }
 
     private var detailText: String {
@@ -649,6 +663,15 @@ private struct MessageBubble: View {
                     .background(isCurrentUser ? AppPalette.sentBubble : AppPalette.receivedBubble)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .frame(maxWidth: 560, alignment: isCurrentUser ? .trailing : .leading)
+                    .contextMenu {
+                        if isCurrentUser {
+                            Button(role: .destructive) {
+                                appState.deleteMessage(id: message.id)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
                     Text(message.createdAt.weChoreShortTimeText)
                         .font(.caption2)
                         .foregroundStyle(AppPalette.muted)
@@ -928,7 +951,7 @@ private struct ConversationActionPanel: View {
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 10) {
-            ChatActionButton(title: "New task", systemImage: "square.and.pencil", action: newTask)
+            ChatActionButton(title: "Add Task", systemImage: "plus.circle.fill", action: newTask)
                 .accessibilityIdentifier("chat.action.newTask")
             ChatActionButton(title: "Invite", systemImage: "person.badge.plus", action: createInvite)
                 .accessibilityIdentifier("chat.action.invite")
@@ -984,6 +1007,81 @@ private struct ChatActionButton: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private enum QuickDuePreset: String, CaseIterable, Identifiable {
+    case none = "No due date"
+    case today = "Today"
+    case tomorrow = "Tomorrow"
+
+    var id: String { rawValue }
+
+    func dueDate(now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        switch self {
+        case .none: return nil
+        case .today: return calendar.endOfDay(afterAdding: 0, to: now)
+        case .tomorrow: return calendar.endOfDay(afterAdding: 1, to: now)
+        }
+    }
+}
+
+private struct QuickAddTaskSheet: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
+    let threadID: String
+    @State private var title = ""
+    @State private var selectedMemberID = ""
+    @State private var duePreset: QuickDuePreset = .tomorrow
+
+    private var canAdd: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && appState.members.contains(where: { $0.id == selectedMemberID })
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Task name", text: $title)
+                    .accessibilityIdentifier("quickAdd.title")
+                Picker("Assign to", selection: $selectedMemberID) {
+                    ForEach(appState.members) { member in
+                        Text(member.displayName).tag(member.id)
+                    }
+                }
+                .accessibilityIdentifier("quickAdd.assignee")
+                Picker("Due", selection: $duePreset) {
+                    ForEach(QuickDuePreset.allCases) { preset in
+                        Text(preset.rawValue).tag(preset)
+                    }
+                }
+                .accessibilityIdentifier("quickAdd.duePreset")
+            }
+            .navigationTitle("Add Task")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        appState.addChore(
+                            title: title,
+                            assigneeID: selectedMemberID,
+                            dueDate: duePreset.dueDate(),
+                            threadID: threadID
+                        )
+                        dismiss()
+                    }
+                    .disabled(!canAdd)
+                }
+            }
+            .onAppear {
+                if selectedMemberID.isEmpty {
+                    selectedMemberID = appState.currentMember.id
+                }
+            }
+        }
     }
 }
 
@@ -1191,5 +1289,15 @@ private struct TaskActionButtonStyle: ButtonStyle {
             .background(isPrimary ? AppPalette.weChatGreen : AppPalette.surface)
             .opacity(configuration.isPressed ? 0.72 : 1)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private extension Calendar {
+    func endOfDay(afterAdding dayCount: Int, to date: Date) -> Date? {
+        guard let targetDay = self.date(byAdding: .day, value: dayCount, to: startOfDay(for: date)),
+              let nextDay = self.date(byAdding: .day, value: 1, to: targetDay) else {
+            return nil
+        }
+        return self.date(byAdding: .second, value: -1, to: nextDay)
     }
 }
