@@ -306,6 +306,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
     public var sourceMessageID: String?
     public var dueDate: Date?
     public var status: ChoreStatus
+    public var urgency: SuggestionUrgency
     public var reminderPolicy: TaskReminderPolicy
     public var notificationState: TaskNotificationState
     public var lastReminderAt: Date?
@@ -322,6 +323,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         sourceMessageID: String? = nil,
         dueDate: Date? = nil,
         status: ChoreStatus = .open,
+        urgency: SuggestionUrgency = .normal,
         reminderPolicy: TaskReminderPolicy = .smart,
         notificationState: TaskNotificationState = .notScheduled,
         lastReminderAt: Date? = nil,
@@ -337,6 +339,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         self.sourceMessageID = sourceMessageID
         self.dueDate = dueDate
         self.status = status
+        self.urgency = urgency
         self.reminderPolicy = reminderPolicy
         self.notificationState = notificationState
         self.lastReminderAt = lastReminderAt
@@ -363,6 +366,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         case sourceMessageID
         case dueDate
         case status
+        case urgency
         case reminderPolicy
         case notificationState
         case lastReminderAt
@@ -381,6 +385,7 @@ public struct Chore: Identifiable, Hashable, Codable, Sendable {
         sourceMessageID = try container.decodeIfPresent(String.self, forKey: .sourceMessageID)
         dueDate = try container.decodeIfPresent(Date.self, forKey: .dueDate)
         status = try container.decodeIfPresent(ChoreStatus.self, forKey: .status) ?? .open
+        urgency = try container.decodeIfPresent(SuggestionUrgency.self, forKey: .urgency) ?? .normal
         reminderPolicy = try container.decodeIfPresent(TaskReminderPolicy.self, forKey: .reminderPolicy) ?? .smart
         notificationState = try container.decodeIfPresent(
             TaskNotificationState.self,

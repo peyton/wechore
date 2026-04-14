@@ -807,6 +807,7 @@ final class AppState {
             sourceMessageID: sourceMessage.id,
             dueDate: draft.dueDate,
             status: .open,
+            urgency: draft.urgency,
             reminderPolicy: draft.dueDate == nil ? .smart : .dueDate,
             createdAt: now,
             updatedAt: now
