@@ -5,6 +5,7 @@ struct ChoresView: View {
     @State private var title = ""
     @State private var selectedMemberID = ""
     @State private var duePreset: DuePreset = .tomorrow
+    @State private var customDate = Date()
     @State private var scope: TaskScope = .all
 
     var body: some View {
@@ -17,6 +18,7 @@ struct ChoresView: View {
                     title: $title,
                     selectedMemberID: $selectedMemberID,
                     duePreset: $duePreset,
+                    customDate: $customDate,
                     canAdd: canAddChore,
                     add: addChore
                 )
@@ -86,7 +88,7 @@ struct ChoresView: View {
         let didAdd = appState.addChore(
             title: title,
             assigneeID: selectedMemberID.isEmpty ? appState.currentMember.id : selectedMemberID,
-            dueDate: duePreset.dueDate()
+            dueDate: duePreset.dueDate(customDate: customDate)
         )
         if didAdd {
             title = ""
@@ -120,10 +122,11 @@ private enum DuePreset: String, CaseIterable, Identifiable {
     case none = "No due date"
     case today = "Today"
     case tomorrow = "Tomorrow"
+    case custom = "Pick date"
 
     var id: String { rawValue }
 
-    func dueDate(now: Date = Date(), calendar: Calendar = .current) -> Date? {
+    func dueDate(customDate: Date = Date(), now: Date = Date(), calendar: Calendar = .current) -> Date? {
         switch self {
         case .none:
             return nil
@@ -131,6 +134,8 @@ private enum DuePreset: String, CaseIterable, Identifiable {
             return calendar.endOfDay(afterAdding: 0, to: now)
         case .tomorrow:
             return calendar.endOfDay(afterAdding: 1, to: now)
+        case .custom:
+            return calendar.endOfDay(afterAdding: 0, to: customDate)
         }
     }
 }
@@ -188,6 +193,7 @@ private struct AddChorePanel: View {
     @Binding var title: String
     @Binding var selectedMemberID: String
     @Binding var duePreset: DuePreset
+    @Binding var customDate: Date
     let canAdd: Bool
     let add: () -> Void
 
@@ -212,6 +218,10 @@ private struct AddChorePanel: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("chore.duePreset")
+            if duePreset == .custom {
+                DatePicker("Custom date", selection: $customDate, displayedComponents: .date)
+                    .accessibilityIdentifier("chore.customDate")
+            }
             Button("Add Task", action: add)
                 .buttonStyle(PrimaryActionButtonStyle())
                 .disabled(!canAdd)
@@ -227,24 +237,35 @@ private struct TaskSections: View {
     let sections: [TaskListSection]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        List {
             ForEach(sections) { section in
                 if !section.chores.isEmpty || section.emptyText != nil {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(section.title)
-                            .font(.title3.bold())
-                            .foregroundStyle(AppPalette.ink)
+                    Section {
                         if section.chores.isEmpty, let emptyText = section.emptyText {
                             EmptyState(text: emptyText)
+                                .listRowInsets(EdgeInsets())
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                         } else {
                             ForEach(section.chores) { chore in
                                 ChoreRow(chore: chore)
+                                    .listRowInsets(EdgeInsets())
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
                             }
                         }
+                    } header: {
+                        Text(section.title)
+                            .font(.title3.bold())
+                            .foregroundStyle(AppPalette.ink)
+                            .textCase(nil)
                     }
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        .frame(minHeight: 200)
     }
 }
 
@@ -285,6 +306,21 @@ private struct ChoreRow: View {
         .padding(14)
         .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .swipeActions(edge: .leading) {
+            Button {
+                appState.updateStatus(choreID: chore.id, status: .done)
+            } label: {
+                Label("Done", systemImage: "checkmark.circle")
+            }
+            .tint(.green)
+        }
+        .swipeActions(edge: .trailing) {
+            Button {
+                isEditorPresented = true
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+        }
         .sheet(isPresented: $isEditorPresented) {
             NavigationStack {
                 TaskEditorSheet(chore: chore)
@@ -295,6 +331,7 @@ private struct ChoreRow: View {
 
 private struct ChoreActionGroup: View {
     @Environment(AppState.self) private var appState
+    @State private var showArchiveConfirmation = false
     let chore: Chore
     let edit: () -> Void
 
@@ -322,7 +359,12 @@ private struct ChoreActionGroup: View {
                 appState.updateStatus(choreID: chore.id, status: .open)
             }
             ChoreControlButton(title: "Archive", identifier: "chore.archive.\(chore.id)") {
-                appState.updateStatus(choreID: chore.id, status: .archived)
+                showArchiveConfirmation = true
+            }
+            .confirmationDialog("Archive this task?", isPresented: $showArchiveConfirmation) {
+                Button("Archive", role: .destructive) {
+                    appState.updateStatus(choreID: chore.id, status: .archived)
+                }
             }
         } else {
             ChoreControlButton(title: "Start", identifier: "chore.start.\(chore.id)") {
