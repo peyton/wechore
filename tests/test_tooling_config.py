@@ -89,6 +89,20 @@ def test_hk_config_runs_linting_steps() -> None:
         assert f'["{step}"]' in hk
 
 
+def test_ios_test_wrapper_retries_simulator_launch_timeouts() -> None:
+    script = (REPO_ROOT / "scripts" / "tooling" / "test_ios.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Timed out while launching application via Xcode" in script
+    assert "Failed to send signal 19" in script
+    assert "if has_xctest_failure && ! is_simulator_launch_error; then" in script
+    assert (
+        'if [ "$attempt" -ge "$max_attempts" ] || ! is_simulator_launch_error; then'
+        in (script)
+    )
+
+
 def test_release_tag_and_build_number_helpers() -> None:
     assert parse_release_tag("v1.2.3") == "1.2.3"
     assert resolve_marketing_version({"WECHORE_MARKETING_VERSION": "2.3.4"}) == "2.3.4"
