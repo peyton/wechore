@@ -378,6 +378,11 @@ final class AppState {
         save("Draft removed.")
     }
 
+    func deleteMessage(id: String) {
+        snapshot.messages.removeAll { $0.id == id }
+        save("Message deleted.")
+    }
+
     func updateStatus(choreID: String, status: ChoreStatus) {
         guard let index = snapshot.chores.firstIndex(where: { $0.id == choreID }) else { return }
         guard snapshot.chores[index].status != status else { return }
