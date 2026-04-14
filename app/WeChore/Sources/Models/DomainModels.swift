@@ -78,6 +78,13 @@ public enum TaskActivityKind: String, Codable, CaseIterable, Identifiable, Senda
     public var id: String { rawValue }
 }
 
+public enum TaskDraftAssignmentState: String, Codable, CaseIterable, Identifiable, Sendable {
+    case ready
+    case needsAssignee
+
+    public var id: String { rawValue }
+}
+
 public struct VoiceAttachment: Hashable, Codable, Sendable {
     public var localAudioFilename: String
     public var duration: TimeInterval
@@ -512,6 +519,7 @@ public struct TaskDraft: Identifiable, Hashable, Codable, Sendable {
     public var reminderCadence: String?
     public var confidence: Double
     public var needsConfirmation: Bool
+    public var assignmentState: TaskDraftAssignmentState
     public var createdAt: Date
 
     public init(
@@ -525,6 +533,7 @@ public struct TaskDraft: Identifiable, Hashable, Codable, Sendable {
         reminderCadence: String? = nil,
         confidence: Double = 1,
         needsConfirmation: Bool = false,
+        assignmentState: TaskDraftAssignmentState = .ready,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -537,6 +546,7 @@ public struct TaskDraft: Identifiable, Hashable, Codable, Sendable {
         self.reminderCadence = reminderCadence
         self.confidence = confidence
         self.needsConfirmation = needsConfirmation
+        self.assignmentState = assignmentState
         self.createdAt = createdAt
     }
 
@@ -551,6 +561,7 @@ public struct TaskDraft: Identifiable, Hashable, Codable, Sendable {
         case reminderCadence
         case confidence
         case needsConfirmation
+        case assignmentState
         case createdAt
     }
 
@@ -566,6 +577,10 @@ public struct TaskDraft: Identifiable, Hashable, Codable, Sendable {
         reminderCadence = try container.decodeIfPresent(String.self, forKey: .reminderCadence)
         confidence = try container.decodeIfPresent(Double.self, forKey: .confidence) ?? 1
         needsConfirmation = try container.decodeIfPresent(Bool.self, forKey: .needsConfirmation) ?? false
+        assignmentState = try container.decodeIfPresent(
+            TaskDraftAssignmentState.self,
+            forKey: .assignmentState
+        ) ?? (assigneeID == nil && needsConfirmation ? .needsAssignee : .ready)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
     }
 }
@@ -605,17 +620,26 @@ public struct LocalSettings: Hashable, Codable, Sendable {
     public var selectedParticipantID: String?
     public var notificationsEnabled: Bool
     public var cloudKitEnabled: Bool
+    public var widgetFavoriteThreadIDs: [String]
+    public var widgetFavoriteTaskIDs: [String]
+    public var recentlyCompletedTaskID: String?
 
     public init(
         hasCompletedOnboarding: Bool = false,
         selectedParticipantID: String? = nil,
         notificationsEnabled: Bool = false,
-        cloudKitEnabled: Bool = true
+        cloudKitEnabled: Bool = true,
+        widgetFavoriteThreadIDs: [String] = [],
+        widgetFavoriteTaskIDs: [String] = [],
+        recentlyCompletedTaskID: String? = nil
     ) {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.selectedParticipantID = selectedParticipantID
         self.notificationsEnabled = notificationsEnabled
         self.cloudKitEnabled = cloudKitEnabled
+        self.widgetFavoriteThreadIDs = widgetFavoriteThreadIDs
+        self.widgetFavoriteTaskIDs = widgetFavoriteTaskIDs
+        self.recentlyCompletedTaskID = recentlyCompletedTaskID
     }
 
     public var selectedMemberID: String? {
@@ -629,6 +653,9 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         case selectedMemberID
         case notificationsEnabled
         case cloudKitEnabled
+        case widgetFavoriteThreadIDs
+        case widgetFavoriteTaskIDs
+        case recentlyCompletedTaskID
     }
 
     public init(from decoder: Decoder) throws {
@@ -640,6 +667,15 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         ) ?? container.decodeIfPresent(String.self, forKey: .selectedMemberID)
         notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? false
         cloudKitEnabled = try container.decodeIfPresent(Bool.self, forKey: .cloudKitEnabled) ?? true
+        widgetFavoriteThreadIDs = try container.decodeIfPresent(
+            [String].self,
+            forKey: .widgetFavoriteThreadIDs
+        ) ?? []
+        widgetFavoriteTaskIDs = try container.decodeIfPresent(
+            [String].self,
+            forKey: .widgetFavoriteTaskIDs
+        ) ?? []
+        recentlyCompletedTaskID = try container.decodeIfPresent(String.self, forKey: .recentlyCompletedTaskID)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -648,6 +684,9 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         try container.encodeIfPresent(selectedParticipantID, forKey: .selectedParticipantID)
         try container.encode(notificationsEnabled, forKey: .notificationsEnabled)
         try container.encode(cloudKitEnabled, forKey: .cloudKitEnabled)
+        try container.encode(widgetFavoriteThreadIDs, forKey: .widgetFavoriteThreadIDs)
+        try container.encode(widgetFavoriteTaskIDs, forKey: .widgetFavoriteTaskIDs)
+        try container.encodeIfPresent(recentlyCompletedTaskID, forKey: .recentlyCompletedTaskID)
     }
 }
 
@@ -898,6 +937,15 @@ public struct ChoreSnapshot: Hashable, Codable, Sendable {
         }
         for index in suggestions.indices where suggestions[index].threadID == ChatThread.legacyDefaultID {
             suggestions[index].threadID = fallbackThreadID
+        }
+
+        let threadIDs = Set(threads.map(\.id))
+        settings.widgetFavoriteThreadIDs = settings.widgetFavoriteThreadIDs.filter { threadIDs.contains($0) }
+        let choreIDs = Set(chores.map(\.id))
+        settings.widgetFavoriteTaskIDs = settings.widgetFavoriteTaskIDs.filter { choreIDs.contains($0) }
+        if let recentlyCompletedTaskID = settings.recentlyCompletedTaskID,
+           !choreIDs.contains(recentlyCompletedTaskID) {
+            settings.recentlyCompletedTaskID = nil
         }
 
         for index in threads.indices {

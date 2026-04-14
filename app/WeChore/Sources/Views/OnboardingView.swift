@@ -25,22 +25,28 @@ struct OnboardingView: View {
                     }
 
                     VStack(spacing: 14) {
-                        TextField("Your name", text: $displayName)
-                            .textContentType(.name)
-                            .textInputAutocapitalization(.words)
-                            .accessibilityIdentifier("onboarding.name")
-                            .textFieldStyle(.roundedBorder)
+                        LabeledInput(title: "Your name") {
+                            TextField("Your name", text: $displayName)
+                                .textContentType(.name)
+                                .textInputAutocapitalization(.words)
+                                .accessibilityIdentifier("onboarding.name")
+                                .textFieldStyle(.roundedBorder)
+                        }
 
-                        TextField("First group chat", text: $firstChatName)
-                            .textInputAutocapitalization(.words)
-                            .accessibilityIdentifier("onboarding.chatName")
-                            .textFieldStyle(.roundedBorder)
+                        LabeledInput(title: "First group chat") {
+                            TextField("First group chat", text: $firstChatName)
+                                .textInputAutocapitalization(.words)
+                                .accessibilityIdentifier("onboarding.chatName")
+                                .textFieldStyle(.roundedBorder)
+                        }
 
-                        TextField("FaceTime or phone", text: $contact)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .accessibilityIdentifier("onboarding.contact")
-                            .textFieldStyle(.roundedBorder)
+                        LabeledInput(title: "FaceTime or phone") {
+                            TextField("FaceTime or phone", text: $contact)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .accessibilityIdentifier("onboarding.contact")
+                                .textFieldStyle(.roundedBorder)
+                        }
                     }
 
                     Button("Start WeChore") {
@@ -57,6 +63,20 @@ struct OnboardingView: View {
                 .frame(maxWidth: 640, alignment: .leading)
             }
             .background(AppPalette.canvas)
+        }
+    }
+}
+
+private struct LabeledInput<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppPalette.ink)
+            content
         }
     }
 }

@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ConversationView: View {
     @Environment(AppState.self) private var appState
@@ -14,14 +17,18 @@ struct ConversationView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ConversationHeader(threadID: threadID, invitePayload: $invitePayload)
+            ConversationHeader(
+                threadID: threadID,
+                invitePayload: $invitePayload,
+                createInvite: createInvite
+            )
+            StatusToast()
             FloatingTaskTile(threadID: threadID)
             ConversationScroll(threadID: threadID, bottomID: bottomID)
         }
         .background(AppPalette.chatCanvas)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
-                StatusToast()
                 ChatComposer(
                     draft: $draft,
                     isVoiceMode: $isVoiceMode,
@@ -29,7 +36,8 @@ struct ConversationView: View {
                     isDraftFocused: $isDraftFocused,
                     send: sendTextMessage,
                     startVoice: startVoiceRecording,
-                    finishVoice: finishVoiceRecording
+                    finishVoice: finishVoiceRecording,
+                    cancelVoice: cancelVoiceRecording
                 )
                 if isActionPanelOpen {
                     ConversationActionPanel(
@@ -39,22 +47,18 @@ struct ConversationView: View {
                     )
                 }
             }
+            .padding(.bottom, 34)
             .background(AppPalette.chrome)
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(appState.thread(for: threadID)?.title ?? "Chat")
-        .onAppear {
-            if invitePayload == nil {
-                invitePayload = appState.createInvite(for: threadID)
-            }
-        }
     }
 
     private func sendTextMessage() {
+        isDraftFocused = false
         let body = draft
         draft = ""
-        isDraftFocused = false
         Task { await appState.postMessage(body, in: threadID) }
     }
 
@@ -64,6 +68,10 @@ struct ConversationView: View {
 
     private func finishVoiceRecording() {
         Task { await appState.finishVoiceMessageRecording() }
+    }
+
+    private func cancelVoiceRecording() {
+        appState.cancelVoiceMessageRecording()
     }
 
     private func prepareNewTaskPrompt() {
@@ -82,6 +90,7 @@ private struct ConversationHeader: View {
     @Environment(AppState.self) private var appState
     let threadID: String
     @Binding var invitePayload: InvitePayload?
+    let createInvite: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -99,10 +108,23 @@ private struct ConversationHeader: View {
             Spacer()
             if let payload = invitePayload {
                 ShareLink(item: payload.shareText) {
-                    Image(systemName: "square.and.arrow.up")
-                        .frame(width: 34, height: 34)
+                    Label("Share invite", systemImage: "square.and.arrow.up")
+                        .labelStyle(.iconOnly)
                 }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
                 .accessibilityIdentifier("conversation.shareInvite")
+            } else {
+                Button(action: createInvite) {
+                    Label("Invite", systemImage: "person.badge.plus")
+                        .labelStyle(.titleAndIcon)
+                }
+                .font(.subheadline.weight(.semibold))
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+                .accessibilityIdentifier("conversation.createInvite")
             }
         }
         .padding(.horizontal, 14)
@@ -148,8 +170,10 @@ private struct FloatingTaskTile: View {
                         .foregroundStyle(AppPalette.muted)
                 }
                 Spacer()
-                Image(systemName: activeTasks.isEmpty && drafts.isEmpty ? "checkmark.circle" : "bolt.fill")
+                Image(systemName: activeTasks.isEmpty && drafts.isEmpty ? "checkmark.circle" : "list.bullet.clipboard")
                     .foregroundStyle(AppPalette.weChatGreen)
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
             }
 
             if drafts.isEmpty && activeTasks.isEmpty {
@@ -159,7 +183,7 @@ private struct FloatingTaskTile: View {
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 ForEach(drafts) { draft in
-                    DraftTaskRow(draft: draft)
+                    DraftTaskRow(draft: draft, threadID: threadID)
                 }
                 ForEach(activeTasks.prefix(3)) { chore in
                     ActiveTaskRow(chore: chore)
@@ -174,6 +198,8 @@ private struct FloatingTaskTile: View {
         .padding(.top, 8)
         .padding(.bottom, 6)
         .background(AppPalette.chatCanvas)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Tasks, \(summary)")
     }
 
     private var summary: String {
@@ -189,39 +215,65 @@ private struct FloatingTaskTile: View {
 private struct DraftTaskRow: View {
     @Environment(AppState.self) private var appState
     let draft: TaskDraft
+    let threadID: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(AppPalette.weChatGreen)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(draft.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppPalette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(detailText)
-                    .font(.caption)
-                    .foregroundStyle(AppPalette.muted)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                StatusIcon(systemName: "person.crop.circle.badge.questionmark", color: AppPalette.warning)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(draft.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(detailText)
+                        .font(.caption)
+                        .foregroundStyle(AppPalette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            Spacer(minLength: 8)
-            Button {
-                appState.confirmDraft(draft)
-            } label: {
-                Text("Add")
+            if draft.assignmentState == .needsAssignee {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Who should do this?")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppPalette.ink)
+                    FlexibleAssigneeChips(
+                        participants: appState.participants(in: threadID),
+                        selectedID: draft.assigneeID
+                    ) { participantID in
+                        appState.confirmDraft(draft, assigneeID: participantID)
+                    }
+                }
+            } else {
+                ResponsiveTaskActions {
+                    Button {
+                        appState.confirmDraft(draft)
+                    } label: {
+                        Label("Add task", systemImage: "plus.circle.fill")
+                    }
+                    .buttonStyle(TaskActionButtonStyle(isPrimary: true))
+                    .accessibilityHint("Creates this chore.")
                     .accessibilityIdentifier("taskDraft.confirm.\(draft.id)")
+
+                    Button {
+                        appState.dismissDraft(draft)
+                    } label: {
+                        Label("Skip", systemImage: "xmark.circle")
+                    }
+                    .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                    .accessibilityHint("Removes this suggestion.")
+                    .accessibilityIdentifier("taskDraft.skip.\(draft.id)")
+                }
             }
-            .buttonStyle(TileMiniButtonStyle(isPrimary: true))
-            .accessibilityIdentifier("taskDraft.confirm.\(draft.id)")
             Button {
                 appState.dismissDraft(draft)
             } label: {
-                Text("Skip")
-                    .accessibilityIdentifier("taskDraft.skip.\(draft.id)")
+                Label("Dismiss suggestion", systemImage: "xmark")
             }
-            .buttonStyle(TileMiniButtonStyle(isPrimary: false))
-            .accessibilityIdentifier("taskDraft.skip.\(draft.id)")
+            .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+            .accessibilityIdentifier("taskDraft.dismiss.\(draft.id)")
         }
-        .padding(10)
+        .padding(12)
         .background(AppPalette.receivedBubble)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
@@ -229,9 +281,40 @@ private struct DraftTaskRow: View {
     private var detailText: String {
         let assignee = draft.assigneeID.flatMap { id in
             appState.participants.first(where: { $0.id == id })?.displayName
-        } ?? "Choose assignee"
+        } ?? "Waiting for assignee"
         let due = draft.dueDate.map { "Due \($0.weChoreShortDueText)" } ?? "No due date"
         return "\(assignee) • \(due)"
+    }
+}
+
+private struct FlexibleAssigneeChips: View {
+    let participants: [ChatParticipant]
+    let selectedID: String?
+    let choose: (String) -> Void
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 116), spacing: 8, alignment: .leading)
+    ]
+
+    var body: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            ForEach(participants) { participant in
+                Button {
+                    choose(participant.id)
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: selectedID == participant.id ? "checkmark.circle.fill" : "person.fill")
+                        Text(participant.displayName)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
+                .buttonStyle(TaskActionButtonStyle(isPrimary: selectedID == participant.id))
+                .accessibilityHint("Assigns this chore to \(participant.displayName).")
+                .accessibilityIdentifier("taskDraft.assignee.\(participant.id)")
+            }
+        }
     }
 }
 
@@ -240,44 +323,123 @@ private struct ActiveTaskRow: View {
     let chore: Chore
 
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: chore.status == .inProgress ? "clock.fill" : "checklist")
-                .foregroundStyle(AppPalette.weChatGreen)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(chore.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppPalette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(detailText)
-                    .font(.caption)
-                    .foregroundStyle(chore.dueDate == nil ? AppPalette.muted : AppPalette.warning)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                StatusIcon(systemName: statusIconName, color: statusColor)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(chore.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(detailText)
+                        .font(.caption)
+                        .foregroundStyle(statusColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 8)
-            Button {
-                Task { await appState.scheduleReminder(for: chore) }
-            } label: {
-                Text("Remind")
-                    .accessibilityIdentifier("taskTile.remind.\(chore.id)")
+            ResponsiveTaskActions {
+                Button {
+                    Task { await appState.scheduleReminder(for: chore) }
+                } label: {
+                    Label("Remind", systemImage: "bell.fill")
+                }
+                .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                .accessibilityHint("Schedules a reminder for \(appState.assigneeName(for: chore)).")
+                .accessibilityIdentifier("taskTile.remind.\(chore.id)")
+
+                Button {
+                    appState.updateStatus(choreID: chore.id, status: .blocked)
+                } label: {
+                    Label("Blocked", systemImage: "exclamationmark.octagon.fill")
+                }
+                .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                .accessibilityHint("Marks this chore as blocked.")
+                .accessibilityIdentifier("taskTile.blocked.\(chore.id)")
+
+                Button {
+                    appState.updateStatus(choreID: chore.id, status: .done)
+                } label: {
+                    Label("Done", systemImage: "checkmark.circle.fill")
+                }
+                .buttonStyle(TaskActionButtonStyle(isPrimary: true))
+                .accessibilityHint("Marks this chore complete. You can undo from the status message.")
+                .accessibilityIdentifier("taskTile.done.\(chore.id)")
             }
-            .buttonStyle(TileMiniButtonStyle(isPrimary: false))
-            .accessibilityIdentifier("taskTile.remind.\(chore.id)")
-            Button {
-                appState.updateStatus(choreID: chore.id, status: .done)
-            } label: {
-                Text("Done")
-                    .accessibilityIdentifier("taskTile.done.\(chore.id)")
-            }
-            .buttonStyle(TileMiniButtonStyle(isPrimary: true))
-            .accessibilityIdentifier("taskTile.done.\(chore.id)")
         }
-        .padding(10)
+        .padding(12)
         .background(AppPalette.receivedBubble)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Done") {
+            appState.updateStatus(choreID: chore.id, status: .done)
+        }
+        .accessibilityAction(named: "Remind") {
+            Task { await appState.scheduleReminder(for: chore) }
+        }
     }
 
     private var detailText: String {
-        let due = chore.dueDate.map { "Due \($0.weChoreShortDueText)" } ?? chore.status.displayName
+        let due = statusLabel
         return "\(appState.assigneeName(for: chore)) • \(due)"
+    }
+
+    private var statusLabel: String {
+        if chore.status == .blocked { return "Blocked" }
+        guard let dueDate = chore.dueDate else { return chore.status.displayName }
+        if Calendar.current.startOfDay(for: dueDate) < Calendar.current.startOfDay(for: Date()) {
+            return "Overdue"
+        }
+        if Calendar.current.isDateInToday(dueDate) {
+            return "Due today"
+        }
+        return "Due \(dueDate.weChoreShortDueText)"
+    }
+
+    private var statusIconName: String {
+        switch chore.status {
+        case .blocked: "exclamationmark.octagon.fill"
+        case .done: "checkmark.circle.fill"
+        case .inProgress: "clock.fill"
+        case .open, .archived:
+            chore.dueDate == nil ? "checklist" : "calendar"
+        }
+    }
+
+    private var statusColor: Color {
+        if chore.status == .blocked { return AppPalette.warning }
+        if statusLabel == "Overdue" || statusLabel == "Due today" { return AppPalette.warning }
+        return AppPalette.muted
+    }
+}
+
+private struct ResponsiveTaskActions<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                content
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                content
+            }
+        }
+    }
+}
+
+private struct StatusIcon: View {
+    let systemName: String
+    let color: Color
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.headline)
+            .foregroundStyle(color)
+            .frame(width: 44, height: 44)
+            .background(AppPalette.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .accessibilityHidden(true)
     }
 }
 
@@ -463,14 +625,50 @@ private struct StatusToast: View {
 
     var body: some View {
         if let message = appState.lastStatusMessage {
-            Text(message)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(AppPalette.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(AppPalette.surface)
-                .accessibilityIdentifier("status.message")
+            HStack(alignment: .center, spacing: 10) {
+                Text(message)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppPalette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if appState.recentlyCompletedTaskID != nil {
+                    Button {
+                        appState.reopenRecentlyCompletedTask()
+                    } label: {
+                        Text("Undo")
+                    }
+                    .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                    .accessibilityHint("Reopens the task that was just completed.")
+                    .accessibilityAction(named: "Reopen") {
+                        appState.reopenRecentlyCompletedTask()
+                    }
+                    .accessibilityIdentifier("status.undo")
+                }
+                Button {
+                    appState.dismissStatusMessage()
+                } label: {
+                    Label("Dismiss", systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("status.dismiss")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(AppPalette.surface)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("status.message")
+            #if canImport(UIKit)
+            .onAppear {
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
+            .onChange(of: appState.lastStatusMessage) { _, newMessage in
+                guard let newMessage else { return }
+                UIAccessibility.post(notification: .announcement, argument: newMessage)
+            }
+            #endif
         }
     }
 }
@@ -484,6 +682,7 @@ private struct ChatComposer: View {
     let send: () -> Void
     let startVoice: () -> Void
     let finishVoice: () -> Void
+    let cancelVoice: () -> Void
 
     private var canSend: Bool {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -496,9 +695,11 @@ private struct ChatComposer: View {
                 isActionPanelOpen = false
                 isDraftFocused = !isVoiceMode
             } label: {
-                Image(systemName: isVoiceMode ? "keyboard" : "mic.fill")
-                    .frame(width: 34, height: 34)
+                Label(isVoiceMode ? "Keyboard" : "Voice", systemImage: isVoiceMode ? "keyboard" : "mic.fill")
+                    .labelStyle(.iconOnly)
             }
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
             .accessibilityIdentifier("message.voiceMode")
 
@@ -506,7 +707,8 @@ private struct ChatComposer: View {
                 VoiceRecordButton(
                     isRecording: appState.isRecordingVoiceMessage,
                     start: startVoice,
-                    finish: finishVoice
+                    finish: finishVoice,
+                    cancel: cancelVoice
                 )
             } else {
                 TextField("Message", text: $draft, axis: .vertical)
@@ -524,22 +726,34 @@ private struct ChatComposer: View {
                 isActionPanelOpen.toggle()
                 isDraftFocused = false
             } label: {
-                Image(systemName: isActionPanelOpen ? "xmark.circle.fill" : "plus.circle.fill")
-                    .frame(width: 34, height: 34)
+                Label(
+                    isActionPanelOpen ? "Close actions" : "More actions",
+                    systemImage: isActionPanelOpen ? "xmark.circle.fill" : "plus.circle.fill"
+                )
+                    .labelStyle(.iconOnly)
             }
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
             .accessibilityIdentifier("message.more")
 
             if !isVoiceMode {
-                Button("Send", action: send)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(canSend ? AppPalette.onAccent : AppPalette.muted)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .background(canSend ? AppPalette.weChatGreen : AppPalette.receivedBubble)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .disabled(!canSend)
-                    .accessibilityIdentifier("message.post")
+                Button {
+                    isDraftFocused = false
+                    Task { @MainActor in
+                        await Task.yield()
+                        send()
+                    }
+                } label: {
+                    Text("Send")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(canSend ? AppPalette.onAccent : AppPalette.muted)
+                        .frame(minWidth: 58, minHeight: 44)
+                        .padding(.horizontal, 4)
+                        .background(canSend ? AppPalette.weChatGreen : AppPalette.receivedBubble)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .accessibilityIdentifier("message.post")
             }
         }
         .padding(.horizontal, 10)
@@ -548,44 +762,93 @@ private struct ChatComposer: View {
 }
 
 private struct VoiceRecordButton: View {
-    @State private var isPressing = false
+    @State private var isHoldRecording = false
 
     let isRecording: Bool
     let start: () -> Void
     let finish: () -> Void
+    let cancel: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
-            Text(isRecording ? "Release to Send" : "Hold to Talk")
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
+            Button {
+                isRecording ? finish() : start()
+            } label: {
+                VStack(spacing: 3) {
+                    Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
+                    Text(isRecording ? "Tap to Send" : "Tap to Record")
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+                .font(.headline)
+                .foregroundStyle(AppPalette.ink)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .padding(.horizontal, 10)
+                .background(isRecording ? AppPalette.weChatGreen.opacity(0.45) : AppPalette.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(isRecording ? "Sends this voice message." : "Starts recording a voice message.")
+            .accessibilityAction {
+                isRecording ? finish() : start()
+            }
+            .accessibilityIdentifier("message.voiceRecord")
+            if !isRecording {
+                HoldVoiceShortcutButton(
+                    isHoldRecording: $isHoldRecording,
+                    start: start,
+                    finish: finish
+                )
+            }
+            if isRecording {
+                Button {
+                    isHoldRecording = false
+                    cancel()
+                } label: {
+                    Label("Cancel", systemImage: "xmark.circle.fill")
+                }
+                .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                .accessibilityHint("Deletes this voice recording.")
+                .accessibilityIdentifier("message.voiceCancel")
+            }
         }
-        .font(.headline)
+    }
+}
+
+private struct HoldVoiceShortcutButton: View {
+    @Binding var isHoldRecording: Bool
+    let start: () -> Void
+    let finish: () -> Void
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Image(systemName: "hand.tap.fill")
+            Text("Hold")
+                .font(.caption.weight(.semibold))
+        }
         .foregroundStyle(AppPalette.ink)
-        .frame(maxWidth: .infinity, minHeight: 42)
-        .padding(.horizontal, 10)
-        .background(isRecording ? AppPalette.weChatGreen.opacity(0.45) : AppPalette.surface)
+        .frame(width: 50, height: 54)
+        .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard !isPressing else { return }
-                    isPressing = true
+        .onLongPressGesture(
+            minimumDuration: 0.25,
+            maximumDistance: 48,
+            perform: {},
+            onPressingChanged: { pressing in
+                if pressing, !isHoldRecording {
+                    isHoldRecording = true
                     start()
-                }
-                .onEnded { _ in
-                    guard isPressing else { return }
-                    isPressing = false
+                } else if !pressing, isHoldRecording {
+                    isHoldRecording = false
                     finish()
                 }
+            }
         )
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
-        .accessibilityAction {
-            isRecording ? finish() : start()
-        }
+        .accessibilityLabel("Hold to record")
+        .accessibilityHint("Hold down to record, then lift to send.")
         .accessibilityIdentifier("message.voiceHold")
     }
 }
@@ -610,7 +873,7 @@ private struct ConversationActionPanel: View {
                     VStack(spacing: 8) {
                         Image(systemName: "airplayaudio")
                             .font(.title3)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .background(AppPalette.surface)
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         Text("Share")
@@ -640,7 +903,7 @@ private struct ChatActionButton: View {
             VStack(spacing: 8) {
                 Image(systemName: systemImage)
                     .font(.title3)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
                     .background(AppPalette.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 Text(title)
@@ -651,6 +914,7 @@ private struct ChatActionButton: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 68)
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
@@ -674,9 +938,11 @@ struct JoinStartView: View {
                     .foregroundStyle(AppPalette.ink)
 
                 JoinStartPanel(title: "Start a group chat") {
-                    TextField("Family, weekend crew, soccer carpool", text: $groupTitle)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityIdentifier("join.groupTitle")
+                    VisibleFieldLabel("Group chat name") {
+                        TextField("Family, weekend crew, soccer carpool", text: $groupTitle)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityIdentifier("join.groupTitle")
+                    }
                     Button("Start Group") {
                         openThread(appState.createGroupChat(title: groupTitle))
                         groupTitle = ""
@@ -686,15 +952,19 @@ struct JoinStartView: View {
                 }
 
                 JoinStartPanel(title: "Start a DM") {
-                    TextField("Name", text: $dmName)
-                        .textContentType(.name)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityIdentifier("join.dmName")
-                    TextField("Phone or email", text: $dmContact)
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.emailAddress)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityIdentifier("join.dmContact")
+                    VisibleFieldLabel("Name") {
+                        TextField("Name", text: $dmName)
+                            .textContentType(.name)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityIdentifier("join.dmName")
+                    }
+                    VisibleFieldLabel("Phone or email") {
+                        TextField("Phone or email", text: $dmContact)
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityIdentifier("join.dmContact")
+                    }
                     Button("Start DM") {
                         openThread(appState.startDM(
                             displayName: dmName,
@@ -709,10 +979,12 @@ struct JoinStartView: View {
                 }
 
                 JoinStartPanel(title: "Join with code") {
-                    TextField("Invite code", text: $inviteCode)
-                        .textInputAutocapitalization(.characters)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityIdentifier("join.inviteCode")
+                    VisibleFieldLabel("Invite code") {
+                        TextField("Invite code", text: $inviteCode)
+                            .textInputAutocapitalization(.characters)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityIdentifier("join.inviteCode")
+                    }
                     Button("Join Code") {
                         if let threadID = appState.acceptInviteCode(inviteCode) {
                             openThread(threadID)
@@ -765,15 +1037,34 @@ private struct JoinStartPanel<Content: View>: View {
     }
 }
 
-private struct TileMiniButtonStyle: ButtonStyle {
+private struct VisibleFieldLabel<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    init(_ title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppPalette.ink)
+            content
+        }
+    }
+}
+
+private struct TaskActionButtonStyle: ButtonStyle {
     let isPrimary: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.caption.weight(.bold))
+            .font(.subheadline.weight(.bold))
             .foregroundStyle(isPrimary ? AppPalette.onAccent : AppPalette.ink)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 7)
+            .frame(minHeight: 44)
+            .padding(.horizontal, 12)
             .background(isPrimary ? AppPalette.weChatGreen : AppPalette.surface)
             .opacity(configuration.isPressed ? 0.72 : 1)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

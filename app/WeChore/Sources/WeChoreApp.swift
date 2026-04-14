@@ -3,6 +3,7 @@ import SwiftUI
 
 @main
 struct WeChoreApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var appState: AppState
     @State private var router = AppRouter()
     private let container: ModelContainer
@@ -17,7 +18,7 @@ struct WeChoreApp: App {
             fatalError("Failed to create ModelContainer: \(error)")
         }
         let context = ModelContext(container)
-        let repository = SwiftDataChoreRepository(context: context)
+        let repository = CompositeChoreRepository(primary: SwiftDataChoreRepository(context: context))
         let extractionEngine: any TaskExtractionEngine = RuntimeEnvironment.isRunningUITests
             ? RuleBasedTaskExtractionEngine()
             : TaskExtractionEngineFactory.live()
@@ -58,12 +59,30 @@ struct WeChoreApp: App {
                     }
                 }
                 .onOpenURL { url in
-                    if let threadID = appState.acceptInviteURL(url) {
-                        let destination = ChatDestination.thread(threadID)
+                    if let destination = route(for: url) {
                         router.selectedDestination = destination
                         router.phonePath = [destination]
                     }
                 }
+                .onChange(of: scenePhase) { _, phase in
+                    guard phase == .active else { return }
+                    appState.refreshFromSharedState()
+                }
+        }
+    }
+
+    private func route(for url: URL) -> ChatDestination? {
+        guard let deepLink = WeChoreDeepLink(url: url) else { return nil }
+        switch deepLink {
+        case let .thread(threadID):
+            guard appState.thread(for: threadID) != nil else { return nil }
+            return .thread(threadID)
+        case let .task(taskID):
+            guard let threadID = appState.threadID(forTaskID: taskID) else { return nil }
+            return .thread(threadID)
+        case let .join(payload):
+            let threadID = appState.acceptInvite(payload)
+            return .thread(threadID)
         }
     }
 }
