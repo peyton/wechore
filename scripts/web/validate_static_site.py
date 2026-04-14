@@ -14,6 +14,7 @@ REQUIRED_FILES = (
     "index.html",
     "support/index.html",
     "privacy/index.html",
+    "license/index.html",
     "404.html",
     "robots.txt",
     "sitemap.xml",
@@ -35,8 +36,24 @@ REQUIRED_EMAILS_BY_FILE = {
         PRIVACY_EMAIL,
         SECURITY_EMAIL,
     ),
+    Path("license/index.html"): (CONTACT_EMAIL,),
     Path("404.html"): (CONTACT_EMAIL, SUPPORT_EMAIL),
 }
+REQUIRED_LICENSE_LINK_FILES = (
+    Path("index.html"),
+    Path("support/index.html"),
+    Path("privacy/index.html"),
+    Path("license/index.html"),
+)
+REQUIRED_LICENSE_PHRASES = (
+    "source-available for review only",
+    "not open source",
+    "all rights reserved",
+    "no license is granted",
+    "app marketplace",
+    "derivative works",
+    "no trademark",
+)
 FORBIDDEN_PHRASES = (
     "download on the app store",
     'href="#"',
@@ -162,6 +179,12 @@ def validate_html_file(root: Path, path: Path) -> list[str]:
     for email in REQUIRED_EMAILS_BY_FILE.get(relative, (CONTACT_EMAIL,)):
         if email not in raw:
             errors.append(f"{relative}: missing {email}.")
+    if relative in REQUIRED_LICENSE_LINK_FILES and 'href="/license/"' not in raw:
+        errors.append(f"{relative}: missing /license/ footer link.")
+    if relative == Path("license/index.html"):
+        for phrase in REQUIRED_LICENSE_PHRASES:
+            if phrase not in lowered:
+                errors.append(f"{relative}: missing license phrase {phrase!r}.")
     for phrase in FORBIDDEN_PHRASES:
         if phrase in lowered:
             errors.append(f"{relative}: contains forbidden copy {phrase!r}.")
@@ -191,7 +214,7 @@ def validate_site(root: Path) -> list[str]:
     sitemap = resolved_root / "sitemap.xml"
     if sitemap.is_file():
         sitemap_text = sitemap.read_text(encoding="utf-8")
-        for path in ("/", "/support/", "/privacy/"):
+        for path in ("/", "/support/", "/privacy/", "/license/"):
             expected = f"https://wechore.peyton.app{path}"
             if expected not in sitemap_text:
                 errors.append(f"sitemap.xml missing {expected}.")

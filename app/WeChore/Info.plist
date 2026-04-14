@@ -52,6 +52,8 @@
 		<string>_wchore-chat._tcp</string>
 		<string>_wchore-chat._udp</string>
 	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Peyton Randolph. All rights reserved.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>WeChore transcribes your voice messages on device so they can become task suggestions.</string>
 	<key>NSSupportsLiveActivities</key>
