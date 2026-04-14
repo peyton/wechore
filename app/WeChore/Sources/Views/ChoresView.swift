@@ -213,6 +213,7 @@ private struct AddChorePanel: View {
             .pickerStyle(.segmented)
             .accessibilityIdentifier("chore.duePreset")
             Button("Add Task", action: add)
+                .keyboardShortcut(.return, modifiers: .command)
                 .buttonStyle(PrimaryActionButtonStyle())
                 .disabled(!canAdd)
                 .accessibilityIdentifier("chore.add")
