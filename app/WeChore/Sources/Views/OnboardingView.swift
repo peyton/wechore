@@ -10,7 +10,9 @@ struct OnboardingView: View {
     @State private var contact = ""
     @State private var selectedDiscovery: OnboardingDiscovery?
     @State private var selectedContact: ContactSelection?
+    @State private var selectedEmoji: String?
     @State private var isContactPickerPresented = false
+    @State private var isEmojiPickerPresented = false
 
     var body: some View {
         NavigationStack {
@@ -91,6 +93,20 @@ struct OnboardingView: View {
                                 .fixedSize(horizontal: false, vertical: true)
 
                             VStack(spacing: 14) {
+                                Button {
+                                    isEmojiPickerPresented = true
+                                } label: {
+                                    HStack {
+                                        Text(selectedEmoji ?? "😊")
+                                            .font(.largeTitle)
+                                        Text("Pick your avatar")
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppPalette.muted)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("onboarding.avatar")
+
                                 LabeledInput(title: "Your name") {
                                     TextField("Your name", text: $displayName)
                                         .textContentType(.name)
@@ -149,6 +165,9 @@ struct OnboardingView: View {
                     isContactPickerPresented = false
                 }
             }
+            .sheet(isPresented: $isEmojiPickerPresented) {
+                EmojiPickerSheet(selectedEmoji: $selectedEmoji)
+            }
         }
     }
 
@@ -196,7 +215,8 @@ struct OnboardingView: View {
         appState.completeOnboarding(
             displayName: displayName,
             householdName: firstChatName,
-            contact: contact
+            contact: contact,
+            avatarEmoji: selectedEmoji
         )
         if let selectedContact {
             let contactValue = selectedContact.contactValue

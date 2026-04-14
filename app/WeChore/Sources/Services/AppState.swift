@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 
 @MainActor
 @Observable
@@ -88,7 +89,7 @@ final class AppState {
         chores.filter { $0.assigneeID == currentParticipant.id && $0.status != .archived }
     }
 
-    func completeOnboarding(displayName: String, householdName: String, contact: String) {
+    func completeOnboarding(displayName: String, householdName: String, contact: String, avatarEmoji: String? = nil) {
         let now = clock.now()
         var participant = currentParticipant
         let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,6 +100,7 @@ final class AppState {
         } else if !trimmedContact.isEmpty {
             participant.phoneNumber = Self.normalizedPhoneNumber(trimmedContact)
         }
+        participant.avatarEmoji = avatarEmoji
         participant.isCurrentUser = true
 
         let trimmedChatTitle = householdName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -441,7 +443,7 @@ final class AppState {
         return save("Updated \(trimmedTitle).")
     }
 
-    func updateCurrentParticipant(displayName: String, contact: String) -> Bool {
+    func updateCurrentParticipant(displayName: String, contact: String, avatarEmoji: String? = nil) -> Bool {
         guard let index = snapshot.participants.firstIndex(where: { $0.id == currentParticipant.id }) else {
             lastStatusMessage = "Profile could not be updated."
             return false
@@ -454,6 +456,7 @@ final class AppState {
         let trimmedContact = contact.trimmingCharacters(in: .whitespacesAndNewlines)
         snapshot.participants[index].displayName = trimmedName
         snapshot.participants[index].isCurrentUser = true
+        snapshot.participants[index].avatarEmoji = avatarEmoji
         if trimmedContact.contains("@") {
             snapshot.participants[index].faceTimeHandle = trimmedContact
             snapshot.participants[index].phoneNumber = nil
@@ -948,6 +951,7 @@ final class AppState {
             try repository.saveSnapshot(snapshot)
             lastStatusMessage = message
             widgetTimelineReloader.reloadAllTimelines()
+            updateBadgeCount()
             return true
         } catch {
             if let loaded = try? repository.loadSnapshot() {
@@ -955,6 +959,23 @@ final class AppState {
             }
             lastStatusMessage = "WeChore could not save the latest change."
             return false
+        }
+    }
+
+    private func updateBadgeCount() {
+        let overdue = chores.filter { chore in
+            chore.isActive && (chore.dueDate ?? .distantFuture) < clock.now()
+        }.count
+        let unread = threads.reduce(0) { $0 + $1.unreadCount }
+        let total = overdue + unread
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(total)
+        }
+    }
+
+    func clearBadge() {
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(0)
         }
     }
 

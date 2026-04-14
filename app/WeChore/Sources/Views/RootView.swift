@@ -211,17 +211,28 @@ private struct ChatThreadRow: View {
 }
 
 private struct ThreadAvatar: View {
+    @Environment(AppState.self) private var appState
     let thread: ChatThread
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(thread.kind == .group ? AppPalette.weChatGreen : AppPalette.surface)
-            Image(systemName: thread.kind == .group ? "person.2.fill" : "person.fill")
-                .font(.headline)
-                .foregroundStyle(thread.kind == .group ? AppPalette.onAccent : AppPalette.ink)
+            if let emoji = firstParticipantEmoji {
+                Text(emoji)
+                    .font(.title2)
+            } else {
+                Image(systemName: thread.kind == .group ? "person.2.fill" : "person.fill")
+                    .font(.headline)
+                    .foregroundStyle(thread.kind == .group ? AppPalette.onAccent : AppPalette.ink)
+            }
         }
         .frame(width: 44, height: 44)
         .accessibilityHidden(true)
+    }
+
+    private var firstParticipantEmoji: String? {
+        appState.participants(in: thread.id)
+            .first(where: { $0.avatarEmoji != nil })?.avatarEmoji
     }
 }
