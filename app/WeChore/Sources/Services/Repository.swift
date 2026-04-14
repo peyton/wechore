@@ -62,3 +62,69 @@ public final class SwiftDataChoreRepository: ChoreRepository {
         try context.save()
     }
 }
+
+@MainActor
+public final class CompositeChoreRepository: ChoreRepository {
+    private let primary: ChoreRepository
+    private let sharedStore: SharedSnapshotStore
+
+    public init(primary: ChoreRepository, sharedStore: SharedSnapshotStore = SharedSnapshotStore()) {
+        self.primary = primary
+        self.sharedStore = sharedStore
+    }
+
+    public func loadSnapshot() throws -> ChoreSnapshot {
+        let primarySnapshot = try? primary.loadSnapshot()
+        let sharedSnapshot = try? sharedStore.loadSnapshot()
+
+        switch (primarySnapshot, sharedSnapshot) {
+        case let (storedPrimary?, shared?):
+            let newest = Self.snapshotLastUpdatedAt(shared) > Self.snapshotLastUpdatedAt(storedPrimary)
+                ? shared
+                : storedPrimary
+            if newest != storedPrimary {
+                try? self.primary.saveSnapshot(newest)
+            }
+            if newest != shared {
+                try? sharedStore.saveSnapshot(newest)
+            }
+            return newest
+        case let (storedPrimary?, nil):
+            try? sharedStore.saveSnapshot(storedPrimary)
+            return storedPrimary
+        case let (nil, shared?):
+            try primary.saveSnapshot(shared)
+            return shared
+        case (nil, nil):
+            return try primary.loadSnapshot()
+        }
+    }
+
+    public func saveSnapshot(_ snapshot: ChoreSnapshot) throws {
+        try primary.saveSnapshot(snapshot)
+        try? sharedStore.saveSnapshot(snapshot)
+    }
+
+    private static func snapshotLastUpdatedAt(_ snapshot: ChoreSnapshot) -> Date {
+        let householdDates = [snapshot.household.createdAt, snapshot.household.updatedAt]
+        let participantDates = snapshot.participants.map(\.createdAt)
+        let threadDates = snapshot.threads.flatMap { [$0.createdAt, $0.updatedAt, $0.lastActivityAt] }
+        let choreDates = snapshot.chores.flatMap { [$0.createdAt, $0.updatedAt] }
+        let messageDates = snapshot.messages.map(\.createdAt)
+        let reminderDates = snapshot.reminderLogs.map(\.createdAt)
+        let suggestionDates = snapshot.suggestions.map(\.createdAt)
+        let activityDates = snapshot.taskActivities.map(\.createdAt)
+        let inviteDates = snapshot.invites.map(\.createdAt)
+        return (
+            householdDates
+                + participantDates
+                + threadDates
+                + choreDates
+                + messageDates
+                + reminderDates
+                + suggestionDates
+                + activityDates
+                + inviteDates
+        ).max() ?? .distantPast
+    }
+}

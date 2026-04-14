@@ -12,9 +12,11 @@ final class AppState {
     private let voiceTranscriber: VoiceMessageTranscribing
     private let voiceStorage: VoiceMessageStorage
     private let voicePlayer: VoiceMessagePlaying
+    private let widgetTimelineReloader: WidgetTimelineReloading
 
     private(set) var snapshot: ChoreSnapshot
     var lastStatusMessage: String?
+    var recentlyCompletedTaskID: String?
     var preparedMessageMember: Member?
     var preparedMessageBody = ""
     var shouldPresentMessageComposer = false
@@ -33,6 +35,7 @@ final class AppState {
         voiceTranscriber: VoiceMessageTranscribing = AppleSpeechVoiceMessageTranscriber(),
         voiceStorage: VoiceMessageStorage = LocalVoiceMessageStorage(),
         voicePlayer: VoiceMessagePlaying = AppleVoiceMessagePlayer(),
+        widgetTimelineReloader: WidgetTimelineReloading = LiveWidgetTimelineReloader(),
         clock: ClockProviding = SystemClock()
     ) {
         self.repository = repository
@@ -43,10 +46,11 @@ final class AppState {
         self.voiceTranscriber = voiceTranscriber
         self.voiceStorage = voiceStorage
         self.voicePlayer = voicePlayer
+        self.widgetTimelineReloader = widgetTimelineReloader
         self.clock = clock
         do {
             snapshot = try repository.loadSnapshot()
-            snapshot.normalizeConversationState()
+            applyLoadedSnapshot(snapshot, shouldAnnounceRecentCompletion: true)
         } catch {
             snapshot = .empty(now: clock.now())
             lastStatusMessage = "WeChore started with a fresh local cache."
@@ -239,17 +243,25 @@ final class AppState {
         var createdTasks: [Chore] = []
         var draftTasks: [TaskDraft] = []
         if kind != .system {
+            let thread = thread(for: resolvedThreadID)
             let extracted = await extractionEngine.extractTasks(
                 from: message,
                 participants: participants(in: resolvedThreadID),
                 now: now
             )
-            for draft in extracted {
-                if draft.needsConfirmation {
+            for originalDraft in extracted {
+                let draft = draftForAssignment(originalDraft, in: thread, sourceMessage: message)
+                switch draft.assignmentState {
+                case .needsAssignee:
                     snapshot.suggestions.append(draft)
                     draftTasks.append(draft)
-                } else {
-                    createdTasks.append(createTask(from: draft, sourceMessage: message, at: now))
+                case .ready:
+                    if draft.needsConfirmation {
+                        snapshot.suggestions.append(draft)
+                        draftTasks.append(draft)
+                    } else {
+                        createdTasks.append(createTask(from: draft, sourceMessage: message, at: now))
+                    }
                 }
             }
         }
@@ -295,17 +307,27 @@ final class AppState {
         save("Added \(trimmed).")
     }
 
-    func confirmDraft(_ draft: TaskDraft) {
+    func confirmDraft(_ draft: TaskDraft, assigneeID: String? = nil) {
+        var confirmedDraft = draft
+        if let assigneeID {
+            confirmedDraft.assigneeID = assigneeID
+        }
+        if confirmedDraft.assignmentState == .needsAssignee && confirmedDraft.assigneeID == nil {
+            lastStatusMessage = "Choose who should do this."
+            return
+        }
+        confirmedDraft.assignmentState = .ready
+        confirmedDraft.needsConfirmation = false
         let now = clock.now()
         let fallbackMessage = ChoreMessage(
-            id: draft.sourceMessageID,
-            threadID: draft.threadID,
+            id: confirmedDraft.sourceMessageID,
+            threadID: confirmedDraft.threadID,
             authorMemberID: currentParticipant.id,
-            body: draft.title,
-            createdAt: draft.createdAt
+            body: confirmedDraft.title,
+            createdAt: confirmedDraft.createdAt
         )
-        let chore = createTask(from: draft, sourceMessage: fallbackMessage, at: now)
-        snapshot.suggestions.removeAll { $0.id == draft.id }
+        let chore = createTask(from: confirmedDraft, sourceMessage: fallbackMessage, at: now)
+        snapshot.suggestions.removeAll { $0.id == confirmedDraft.id }
         save("Added task: \(chore.title).")
     }
 
@@ -327,7 +349,41 @@ final class AppState {
         case .archived: .completed
         }
         recordActivity(for: chore, kind: activityKind, at: now)
+        if status == .done {
+            recentlyCompletedTaskID = chore.id
+            snapshot.settings.recentlyCompletedTaskID = chore.id
+        } else if recentlyCompletedTaskID == chore.id {
+            recentlyCompletedTaskID = nil
+            snapshot.settings.recentlyCompletedTaskID = nil
+        }
         save("\(chore.title) is \(status.displayName.lowercased()).")
+    }
+
+    func reopenRecentlyCompletedTask() {
+        guard let recentlyCompletedTaskID else { return }
+        updateStatus(choreID: recentlyCompletedTaskID, status: .open)
+    }
+
+    func dismissStatusMessage() {
+        lastStatusMessage = nil
+        recentlyCompletedTaskID = nil
+        snapshot.settings.recentlyCompletedTaskID = nil
+        do {
+            snapshot.normalizeConversationState()
+            try repository.saveSnapshot(snapshot)
+            widgetTimelineReloader.reloadAllTimelines()
+        } catch {
+            lastStatusMessage = "WeChore could not save the latest change."
+        }
+    }
+
+    func refreshFromSharedState() {
+        do {
+            let loaded = try repository.loadSnapshot()
+            applyLoadedSnapshot(loaded, shouldAnnounceRecentCompletion: true)
+        } catch {
+            lastStatusMessage = "WeChore could not refresh the latest changes."
+        }
     }
 
     func scheduleReminder(for chore: Chore) async {
@@ -555,6 +611,27 @@ final class AppState {
         confirmDraft(suggestion)
     }
 
+    func threadID(forTaskID taskID: String) -> String? {
+        snapshot.chores.first { $0.id == taskID }?.threadID
+    }
+
+    func isWidgetFavorite(threadID: String) -> Bool {
+        snapshot.settings.widgetFavoriteThreadIDs.contains(threadID)
+    }
+
+    func setWidgetFavorite(threadID: String, isFavorite: Bool) {
+        if isFavorite {
+            guard snapshot.threads.contains(where: { $0.id == threadID }) else { return }
+            if !snapshot.settings.widgetFavoriteThreadIDs.contains(threadID) {
+                snapshot.settings.widgetFavoriteThreadIDs.append(threadID)
+            }
+            save("Widget favorite added.")
+        } else {
+            snapshot.settings.widgetFavoriteThreadIDs.removeAll { $0 == threadID }
+            save("Widget favorite removed.")
+        }
+    }
+
     private func createTask(from draft: TaskDraft, sourceMessage: ChoreMessage, at now: Date) -> Chore {
         let assigneeID = draft.assigneeID ?? currentParticipant.id
         let chore = Chore(
@@ -573,6 +650,28 @@ final class AppState {
         snapshot.chores.append(chore)
         recordActivity(for: chore, kind: .assigned, at: now)
         return chore
+    }
+
+    private func draftForAssignment(
+        _ draft: TaskDraft,
+        in thread: ChatThread?,
+        sourceMessage message: ChoreMessage
+    ) -> TaskDraft {
+        var assignedDraft = draft
+        guard let thread else { return assignedDraft }
+
+        switch thread.kind {
+        case .dm:
+            let recipientID = thread.participantIDs.first { $0 != message.authorMemberID }
+            assignedDraft.assigneeID = recipientID ?? assignedDraft.assigneeID
+            assignedDraft.needsConfirmation = false
+            assignedDraft.assignmentState = .ready
+        case .group:
+            assignedDraft.needsConfirmation = true
+            assignedDraft.assignmentState = .needsAssignee
+        }
+
+        return assignedDraft
     }
 
     private func recordActivity(for chore: Chore, kind: TaskActivityKind, at date: Date) {
@@ -635,11 +734,29 @@ final class AppState {
         try? repository.saveSnapshot(snapshot)
     }
 
+    private func applyLoadedSnapshot(
+        _ loadedSnapshot: ChoreSnapshot,
+        shouldAnnounceRecentCompletion: Bool
+    ) {
+        snapshot = loadedSnapshot
+        snapshot.normalizeConversationState()
+        recentlyCompletedTaskID = snapshot.settings.recentlyCompletedTaskID
+        guard shouldAnnounceRecentCompletion,
+              let recentlyCompletedTaskID,
+              let chore = snapshot.chores.first(where: {
+                  $0.id == recentlyCompletedTaskID && $0.status == .done
+              }) else {
+            return
+        }
+        lastStatusMessage = "\(chore.title) is done."
+    }
+
     private func save(_ message: String) {
         do {
             snapshot.normalizeConversationState()
             try repository.saveSnapshot(snapshot)
             lastStatusMessage = message
+            widgetTimelineReloader.reloadAllTimelines()
         } catch {
             lastStatusMessage = "WeChore could not save the latest change."
         }

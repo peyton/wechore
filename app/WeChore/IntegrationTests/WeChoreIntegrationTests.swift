@@ -129,12 +129,13 @@ final class WeChoreIntegrationTests: XCTestCase {
             clock: FixedClock(now)
         )
 
-        await state.startVoiceMessageRecording(in: "thread-pine")
+        await state.startVoiceMessageRecording(in: "thread-dm-sam")
         await state.finishVoiceMessageRecording()
         let chore = try XCTUnwrap(state.chores.first { $0.title == "Sweep the floor" })
         state.updateStatus(choreID: chore.id, status: .done)
 
-        XCTAssertFalse(state.activeChores(in: "thread-pine").contains { $0.id == chore.id })
+        XCTAssertEqual(chore.assigneeID, "participant-sam")
+        XCTAssertFalse(state.activeChores(in: "thread-dm-sam").contains { $0.id == chore.id })
         XCTAssertEqual(state.snapshot.taskActivities.last?.kind, .completed)
     }
 }

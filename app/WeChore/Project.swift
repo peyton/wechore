@@ -12,7 +12,9 @@ let currentProjectVersion = {
 
 struct WeChoreFlavor {
     let appTargetName: String
+    let widgetTargetName: String
     let bundleID: String
+    let widgetBundleID: String
     let appGroupID: String
     let cloudKitContainerIdentifier: String
     let displayName: String
@@ -21,7 +23,9 @@ struct WeChoreFlavor {
 
 let productionFlavor = WeChoreFlavor(
     appTargetName: "WeChore",
+    widgetTargetName: "WeChoreWidgetsExtension",
     bundleID: "app.peyton.wechore",
+    widgetBundleID: "app.peyton.wechore.widgets",
     appGroupID: "group.app.peyton.wechore",
     cloudKitContainerIdentifier: "iCloud.app.peyton.wechore",
     displayName: "WeChore",
@@ -30,7 +34,9 @@ let productionFlavor = WeChoreFlavor(
 
 let developmentFlavor = WeChoreFlavor(
     appTargetName: "WeChoreDev",
+    widgetTargetName: "WeChoreDevWidgetsExtension",
     bundleID: "app.peyton.wechore.dev",
+    widgetBundleID: "app.peyton.wechore.dev.widgets",
     appGroupID: "group.app.peyton.wechore.dev",
     cloudKitContainerIdentifier: "iCloud.app.peyton.wechore.dev",
     displayName: "WeChore Dev",
@@ -75,7 +81,51 @@ func appTarget(for flavor: WeChoreFlavor) -> Target {
             "Resources/**"
         ],
         entitlements: "WeChore.entitlements",
+        dependencies: [
+            .target(name: flavor.widgetTargetName)
+        ],
         settings: targetSettings(for: flavor)
+    )
+}
+
+func widgetTarget(for flavor: WeChoreFlavor) -> Target {
+    var settings = SettingsDictionary()
+        .automaticCodeSigning(devTeam: signingTeam)
+    settings["SWIFT_VERSION"] = "6.0"
+    settings["IPHONEOS_DEPLOYMENT_TARGET"] = "18.7"
+    settings["APPLICATION_EXTENSION_API_ONLY"] = "YES"
+    for (key, value) in flavorBuildSettings(flavor) {
+        settings[key] = value
+    }
+
+    return .target(
+        name: flavor.widgetTargetName,
+        destinations: .iOS,
+        product: .appExtension,
+        bundleId: flavor.widgetBundleID,
+        deploymentTargets: defaultDeploymentTarget,
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": "$(WECHORE_DISPLAY_NAME)",
+            "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+            "CFBundleVersion": "$(WECHORE_BUILD_NUMBER)",
+            "WeChoreAppGroupID": "$(WECHORE_APP_GROUP_ID)",
+            "WeChoreURLScheme": "$(WECHORE_URL_SCHEME)",
+            "NSExtension": [
+                "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
+            ]
+        ]),
+        sources: [
+            "WidgetExtension/Sources/**",
+            "Sources/Models/DomainModels.swift",
+            "Sources/Shared/SharedSnapshotStore.swift",
+            "Sources/Shared/WeChoreDeepLink.swift"
+        ],
+        entitlements: "WidgetExtension/WeChoreWidget.entitlements",
+        dependencies: [
+            .sdk(name: "AppIntents", type: .framework),
+            .sdk(name: "WidgetKit", type: .framework)
+        ],
+        settings: .settings(base: settings)
     )
 }
 
@@ -90,7 +140,9 @@ let project = Project(
         return .settings(base: base)
     }(),
     targets: [
+        widgetTarget(for: productionFlavor),
         appTarget(for: productionFlavor),
+        widgetTarget(for: developmentFlavor),
         appTarget(for: developmentFlavor),
         .target(
             name: "WeChoreTests",

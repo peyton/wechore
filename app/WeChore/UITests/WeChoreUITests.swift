@@ -67,26 +67,41 @@ final class WeChoreUITests: XCTestCase {
 
         sendMessage("Sam please unload dishwasher tomorrow", in: app)
         XCTAssertTrue(app.staticTexts["Unload dishwasher"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Who should do this?"].waitForExistence(timeout: 5))
+        element("taskDraft.assignee.participant-sam", in: app).tap()
+        XCTAssertTrue(app.staticTexts["Sam was assigned Unload dishwasher."].waitForExistence(timeout: 5))
 
         sendMessage("Please clean bathroom tomorrow", in: app)
         XCTAssertTrue(app.staticTexts["Clean bathroom"].waitForExistence(timeout: 5))
-        let confirm = element(matchingIdentifierPrefix: "taskDraft.confirm.", in: app)
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        confirm.tap()
+        XCTAssertTrue(app.staticTexts["Who should do this?"].waitForExistence(timeout: 5))
+        element("taskDraft.assignee.participant-sam", in: app).tap()
+        XCTAssertTrue(app.staticTexts["Sam was assigned Clean bathroom."].waitForExistence(timeout: 5))
+    }
+
+    func testDMSendsTaskToRecipientWithoutNamingThem() {
+        let app = seededApp(route: "dm")
+        XCTAssertTrue(waitForConversation(in: app, timeout: 10))
+
+        sendMessage("Please clean bathroom tomorrow", in: app)
+
         XCTAssertTrue(app.staticTexts["Clean bathroom"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sam was assigned Clean bathroom."].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Who should do this?"].exists)
     }
 
     func testFakeVoiceTranscriptCreatesTaskInFloatingTile() {
         let app = seededApp(
-            route: "group",
+            route: "dm",
             fakeVoiceTranscript: "Sam please sweep the floor tomorrow"
         )
         XCTAssertTrue(waitForConversation(in: app, timeout: 10))
 
         element("message.voiceMode", in: app).tap()
-        let voiceHold = element("message.voiceHold", in: app)
-        XCTAssertTrue(voiceHold.waitForExistence(timeout: 5))
-        voiceHold.press(forDuration: 0.6)
+        let voiceRecord = element("message.voiceRecord", in: app)
+        XCTAssertTrue(voiceRecord.waitForExistence(timeout: 5))
+        voiceRecord.tap()
+        XCTAssertTrue(element("message.voiceCancel", in: app).waitForExistence(timeout: 5))
+        voiceRecord.tap()
 
         XCTAssertTrue(element(matchingIdentifierPrefix: "voice.play.", in: app).waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Sweep the floor"].waitForExistence(timeout: 5))
@@ -105,6 +120,7 @@ final class WeChoreUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Load dishwasher is done."].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Sam completed Load dishwasher."].waitForExistence(timeout: 5))
+        XCTAssertTrue(element("status.undo", in: app).waitForExistence(timeout: 5))
     }
 
     func testMeAndSettingsAreReachableFromTree() {
@@ -115,6 +131,8 @@ final class WeChoreUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Apple-only sync"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Widget Favorites"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element("settings.widgetFavorite.thread-pine", in: app).exists)
     }
 
     func testLargeTextKeepsTaskTileComposerAndJoinActionsUsable() {
@@ -124,7 +142,22 @@ final class WeChoreUITests: XCTestCase {
         XCTAssertTrue(element("taskTile", in: app).exists)
         XCTAssertTrue(element("message.input", in: app).exists)
         XCTAssertTrue(element("message.more", in: app).exists)
+        XCTAssertTrue(app.buttons["Remind"].exists)
+        XCTAssertTrue(app.buttons["Done"].exists)
         XCTAssertTrue(element("taskTile.done.task-dishes", in: app).waitForExistence(timeout: 5))
+    }
+
+    func testOpeningConversationDoesNotCreateInviteToast() {
+        let app = seededApp(route: "group")
+
+        XCTAssertTrue(waitForConversation(in: app, timeout: 10))
+        XCTAssertFalse(app.staticTexts["Invite ready for Pine Chat."].exists)
+        XCTAssertTrue(element("conversation.createInvite", in: app).waitForExistence(timeout: 5))
+
+        element("conversation.createInvite", in: app).tap()
+
+        XCTAssertTrue(app.staticTexts["Invite ready for Pine Chat."].waitForExistence(timeout: 5))
+        XCTAssertTrue(element("conversation.shareInvite", in: app).waitForExistence(timeout: 5))
     }
 
     private func seededApp(

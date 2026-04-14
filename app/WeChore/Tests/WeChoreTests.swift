@@ -193,7 +193,27 @@ final class WeChoreTests: XCTestCase {
         XCTAssertTrue(payload.shareText.contains("PINE123"))
     }
 
-    func testAppStateAutoCreatesClearTaskFromMessage() async {
+    func testDMChoreIsAssignedToRecipientWithoutMention() async {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let widgetReloader = CapturingWidgetTimelineReloader()
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            widgetTimelineReloader: widgetReloader,
+            clock: FixedClock(now)
+        )
+
+        await state.postMessage("Please clean bathroom tomorrow", in: "thread-dm-sam")
+
+        let chore = state.chores.first { $0.title == "Clean bathroom" && $0.threadID == "thread-dm-sam" }
+        XCTAssertEqual(chore?.assigneeID, "participant-sam")
+        XCTAssertTrue(state.suggestions.isEmpty)
+        XCTAssertTrue(state.messages(in: "thread-dm-sam").contains { $0.kind == .system })
+        XCTAssertGreaterThan(widgetReloader.reloadCount, 0)
+    }
+
+    func testGroupTaskUsesAssigneeDraftBubbleEvenWhenNameDetected() async throws {
         let now = Date(timeIntervalSince1970: 1_000)
         let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
         let state = AppState(
@@ -204,9 +224,18 @@ final class WeChoreTests: XCTestCase {
 
         await state.postMessage("Sam please clean bathroom tomorrow", in: "thread-pine")
 
-        XCTAssertTrue(state.chores.contains { $0.title == "Clean bathroom" && $0.threadID == "thread-pine" })
-        XCTAssertTrue(state.suggestions.isEmpty)
-        XCTAssertTrue(state.messages(in: "thread-pine").contains { $0.kind == .system })
+        let draft = state.taskDrafts(in: "thread-pine").first
+        XCTAssertEqual(draft?.title, "Clean bathroom")
+        XCTAssertEqual(draft?.assigneeID, "participant-sam")
+        XCTAssertEqual(draft?.assignmentState, .needsAssignee)
+        XCTAssertFalse(state.chores.contains { $0.title == "Clean bathroom" && $0.threadID == "thread-pine" })
+
+        state.confirmDraft(try XCTUnwrap(draft), assigneeID: "participant-sam")
+
+        XCTAssertTrue(state.chores.contains {
+            $0.title == "Clean bathroom" && $0.threadID == "thread-pine" && $0.assigneeID == "participant-sam"
+        })
+        XCTAssertTrue(state.taskDrafts(in: "thread-pine").isEmpty)
     }
 
     func testAppStateKeepsAmbiguousTaskAsConfirmableDraft() async {
@@ -221,8 +250,15 @@ final class WeChoreTests: XCTestCase {
         await state.postMessage("Please clean bathroom tomorrow", in: "thread-pine")
 
         XCTAssertEqual(state.taskDrafts(in: "thread-pine").count, 1)
+        XCTAssertEqual(state.taskDrafts(in: "thread-pine")[0].assignmentState, .needsAssignee)
         state.confirmDraft(state.taskDrafts(in: "thread-pine")[0])
-        XCTAssertTrue(state.chores.contains { $0.title == "Clean bathroom" && $0.threadID == "thread-pine" })
+        XCTAssertEqual(state.lastStatusMessage, "Choose who should do this.")
+
+        state.confirmDraft(state.taskDrafts(in: "thread-pine")[0], assigneeID: "participant-sam")
+
+        XCTAssertTrue(state.chores.contains {
+            $0.title == "Clean bathroom" && $0.threadID == "thread-pine" && $0.assigneeID == "participant-sam"
+        })
     }
 
     func testFakeExtractionEngineNormalizesThreadAndMessage() async {
@@ -255,11 +291,16 @@ final class WeChoreTests: XCTestCase {
             clock: FixedClock(now)
         )
 
-        await state.startVoiceMessageRecording(in: "thread-pine")
+        await state.startVoiceMessageRecording(in: "thread-dm-sam")
         await state.finishVoiceMessageRecording()
 
-        XCTAssertEqual(state.messages(in: "thread-pine").last(where: { $0.kind == .voice })?.body, "Sam please sweep the floor tomorrow")
-        XCTAssertTrue(state.chores.contains { $0.title == "Sweep the floor" && $0.threadID == "thread-pine" })
+        XCTAssertEqual(
+            state.messages(in: "thread-dm-sam").last(where: { $0.kind == .voice })?.body,
+            "Sam please sweep the floor tomorrow"
+        )
+        XCTAssertTrue(state.chores.contains {
+            $0.title == "Sweep the floor" && $0.threadID == "thread-dm-sam" && $0.assigneeID == "participant-sam"
+        })
     }
 
     func testVoiceAttachmentMetadataRoundTripsThroughSnapshot() throws {
@@ -318,6 +359,155 @@ final class WeChoreTests: XCTestCase {
         XCTAssertEqual(loaded.threads.first?.title, "Pine Chat")
         XCTAssertEqual(loaded.participants.count, 2)
         XCTAssertEqual(loaded.chores.first?.threadID, "thread-pine")
+    }
+
+    func testSharedSnapshotStoreRoundTripsAndMigratesDraftAssignmentState() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = SharedSnapshotStore(appGroupIdentifier: nil, fallbackDirectory: directory)
+        var snapshot = ChoreSnapshot.seededForUITests(now: Date(timeIntervalSince1970: 123))
+        snapshot.suggestions.append(TaskDraft(
+            threadID: "thread-pine",
+            sourceMessageID: "message-draft",
+            title: "Water plants",
+            needsConfirmation: true,
+            assignmentState: .needsAssignee,
+            createdAt: Date(timeIntervalSince1970: 124)
+        ))
+
+        try store.saveSnapshot(snapshot)
+        let loaded = try store.loadSnapshot()
+
+        XCTAssertEqual(loaded.threads.count, 2)
+        XCTAssertEqual(loaded.suggestions.first?.assignmentState, .needsAssignee)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try store.snapshotURL().path))
+    }
+
+    func testWidgetSnapshotMutatorCompletesTaskAndKeepsUndoMarker() {
+        let now = Date(timeIntervalSince1970: 123)
+        var snapshot = ChoreSnapshot.seededForUITests(now: now)
+
+        let changed = WidgetSnapshotMutator.markTaskDone(
+            taskID: "task-dishes",
+            in: &snapshot,
+            now: Date(timeIntervalSince1970: 200)
+        )
+        let summary = WidgetProjection.conversationSummaries(
+            from: snapshot,
+            now: Date(timeIntervalSince1970: 200)
+        ).first { $0.id == "thread-pine" }
+
+        XCTAssertTrue(changed)
+        XCTAssertEqual(snapshot.chores.first { $0.id == "task-dishes" }?.status, .done)
+        XCTAssertEqual(snapshot.taskActivities.last?.kind, .completed)
+        XCTAssertEqual(snapshot.settings.recentlyCompletedTaskID, "task-dishes")
+        XCTAssertEqual(summary?.activeTaskCount, 0)
+        XCTAssertEqual(summary?.doneTaskCount, 1)
+    }
+
+    func testAppStateRefreshImportsWidgetCompletionFromSharedSnapshot() throws {
+        let initial = Date(timeIntervalSince1970: 100)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sharedStore = SharedSnapshotStore(appGroupIdentifier: nil, fallbackDirectory: directory)
+        let primary = InMemoryChoreRepository(snapshot: .seededForUITests(now: initial))
+        let repository = CompositeChoreRepository(primary: primary, sharedStore: sharedStore)
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(initial)
+        )
+        var widgetSnapshot = ChoreSnapshot.seededForUITests(now: initial)
+        WidgetSnapshotMutator.markTaskDone(
+            taskID: "task-dishes",
+            in: &widgetSnapshot,
+            now: Date(timeIntervalSince1970: 250)
+        )
+        try sharedStore.saveSnapshot(widgetSnapshot)
+
+        state.refreshFromSharedState()
+
+        XCTAssertEqual(state.snapshot.chores.first { $0.id == "task-dishes" }?.status, .done)
+        XCTAssertEqual(state.recentlyCompletedTaskID, "task-dishes")
+        XCTAssertEqual(state.lastStatusMessage, "Load dishwasher is done.")
+    }
+
+    func testDeepLinksParseThreadsTasksAndExistingInvites() throws {
+        XCTAssertEqual(
+            WeChoreDeepLink(url: WeChoreDeepLink.thread("thread-pine").url(scheme: "wechore-dev")),
+            .thread("thread-pine")
+        )
+        XCTAssertEqual(
+            WeChoreDeepLink(url: WeChoreDeepLink.task("task-dishes").url()),
+            .task("task-dishes")
+        )
+        let invite = InvitePayload(
+            inviteID: "invite-1",
+            threadID: "thread-pine",
+            threadTitle: "Pine Chat",
+            inviterParticipantID: "participant-peyton",
+            code: "PINE123",
+            expiresAt: Date(timeIntervalSince1970: 2_000)
+        )
+        XCTAssertEqual(WeChoreDeepLink(url: invite.appURL()), .join(invite))
+    }
+
+    func testUndoReopensRecentlyCompletedTask() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let repository = InMemoryChoreRepository(snapshot: .seededForUITests(now: now))
+        let state = AppState(
+            repository: repository,
+            extractionEngine: RuleBasedTaskExtractionEngine(),
+            clock: FixedClock(now)
+        )
+
+        state.updateStatus(choreID: "task-dishes", status: .done)
+        XCTAssertEqual(state.recentlyCompletedTaskID, "task-dishes")
+        XCTAssertFalse(state.activeChores(in: "thread-pine").contains { $0.id == "task-dishes" })
+
+        state.reopenRecentlyCompletedTask()
+
+        XCTAssertNil(state.recentlyCompletedTaskID)
+        XCTAssertTrue(state.activeChores(in: "thread-pine").contains { $0.id == "task-dishes" })
+        XCTAssertEqual(state.snapshot.chores.first { $0.id == "task-dishes" }?.status, .open)
+    }
+
+    func testWidgetMetadataDeclaresTargetsFamiliesAndAppIntents() throws {
+        let appRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let project = try String(
+            contentsOf: appRoot.appendingPathComponent("Project.swift"),
+            encoding: .utf8
+        )
+        let widgetSource = try String(
+            contentsOf: appRoot.appendingPathComponent("WidgetExtension/Sources/WeChoreWidgets.swift"),
+            encoding: .utf8
+        )
+        let entitlements = try String(
+            contentsOf: appRoot.appendingPathComponent("WidgetExtension/WeChoreWidget.entitlements"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(project.contains("WeChoreWidgetsExtension"))
+        XCTAssertTrue(project.contains("WeChoreDevWidgetsExtension"))
+        XCTAssertTrue(project.contains("product: .appExtension"))
+        XCTAssertTrue(project.contains("WidgetExtension/WeChoreWidget.entitlements"))
+        XCTAssertTrue(entitlements.contains("$(WECHORE_APP_GROUP_ID)"))
+        XCTAssertTrue(widgetSource.contains("import WidgetKit"))
+        XCTAssertTrue(widgetSource.contains("import AppIntents"))
+        XCTAssertTrue(widgetSource.contains("MarkTaskDoneIntent"))
+        XCTAssertTrue(widgetSource.contains("OpenConversationIntent"))
+        XCTAssertTrue(widgetSource.contains("OpenTaskIntent"))
+        for family in [
+            ".systemSmall",
+            ".systemMedium",
+            ".systemLarge",
+            ".systemExtraLarge",
+            ".accessoryInline",
+            ".accessoryCircular",
+            ".accessoryRectangular"
+        ] {
+            XCTAssertTrue(widgetSource.contains(family), "Missing widget family \(family)")
+        }
     }
 
     func testCloudKitRecordNamesAreDeterministicForConversations() {

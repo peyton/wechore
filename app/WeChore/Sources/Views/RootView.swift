@@ -168,13 +168,22 @@ private struct ChatThreadRow: View {
                 }
             }
             .contentShape(Rectangle())
+            .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens chat.")
         .accessibilityIdentifier("chat.thread.\(thread.id)")
     }
 
     private var activeTaskCount: Int {
         appState.activeChores(in: thread.id).count
+    }
+
+    private var accessibilityLabel: String {
+        let taskText = activeTaskCount == 1 ? "1 active task" : "\(activeTaskCount) active tasks"
+        return "\(thread.title), \(thread.kind.displayName), \(taskText)"
     }
 }
 

@@ -27,6 +27,8 @@ struct SettingsView: View {
                     detail: "Share links, codes, AirDrop, and nearby join"
                 )
 
+                WidgetFavoritesSection()
+
                 Link("Support", destination: URL(string: "https://wechore.peyton.app/support/")!)
                     .buttonStyle(SecondaryActionButtonStyle())
                     .accessibilityIdentifier("settings.support")
@@ -38,6 +40,44 @@ struct SettingsView: View {
             .frame(maxWidth: 760, alignment: .leading)
         }
         .background(AppPalette.canvas)
+    }
+}
+
+private struct WidgetFavoritesSection: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Widget Favorites")
+                .font(.headline)
+                .foregroundStyle(AppPalette.ink)
+            Text("Choose the chats widgets show first. You can still pick any conversation when adding a configurable widget.")
+                .font(.subheadline)
+                .foregroundStyle(AppPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(appState.threads) { thread in
+                Toggle(isOn: Binding(
+                    get: { appState.isWidgetFavorite(threadID: thread.id) },
+                    set: { appState.setWidgetFavorite(threadID: thread.id, isFavorite: $0) }
+                )) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(thread.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppPalette.ink)
+                        Text(thread.kind.displayName)
+                            .font(.caption)
+                            .foregroundStyle(AppPalette.muted)
+                    }
+                }
+                .toggleStyle(.switch)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("settings.widgetFavorite.\(thread.id)")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(AppPalette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
