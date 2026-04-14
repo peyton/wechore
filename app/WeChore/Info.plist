@@ -42,9 +42,18 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>WeChore records voice messages so chores can be dictated in household chat.</string>
+	<string>WeChore records voice messages so tasks can be dictated in a conversation.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>WeChore can use contacts to start a DM or invite someone to a chat.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>WeChore uses the local network to exchange chat invites with nearby phones.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_wchore-chat._tcp</string>
+		<string>_wchore-chat._udp</string>
+	</array>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>WeChore transcribes your voice messages on device so they can become chore suggestions.</string>
+	<string>WeChore transcribes your voice messages on device so they can become task suggestions.</string>
 	<key>NSSupportsLiveActivities</key>
 	<false/>
 	<key>UIApplicationSceneManifest</key>

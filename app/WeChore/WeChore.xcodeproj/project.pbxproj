@@ -16,10 +16,10 @@
 		2E79DF102256163B6DE4257C /* TuistBundle+WeChore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA60A67D6AE72E1B9E9288C /* TuistBundle+WeChore.swift */; };
 		2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */; };
 		32481D35475FBDB412C33492 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
+		37B5405158878A3E1519B6E7 /* NearbyInviteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8002C9CDD9DA50A3F9721CB /* NearbyInviteService.swift */; };
 		3F70E9BC2616AE201060FC04 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
 		412573FCF0192DE9043D9553 /* Clock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCF0082220993EF6294B35 /* Clock.swift */; };
 		425028584323AEE018DC21B2 /* MessageSuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */; };
-		448D64F2FD71E1FB21D50D3F /* HouseholdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29EB030115CC2E44378D4A9 /* HouseholdView.swift */; };
 		4684411D548710A2FB5311C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17828170DA4D5FEDF94EA80C /* Assets.xcassets */; };
 		5E2ADB61860923691D0A6171 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */; };
 		610597C82F7AB23BCABC9965 /* WeChoreUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */; };
@@ -35,10 +35,10 @@
 		800021DD3BAE675E75C26C3A /* CloudKitHouseholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */; };
 		846F0470C3C80CC4A689C4FF /* SystemCommunicationOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */; };
 		87C761A1BD33C5526097CD8F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */; };
+		8800AA6295DC153E165D1567 /* NearbyInviteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8002C9CDD9DA50A3F9721CB /* NearbyInviteService.swift */; };
 		8D2A7018BC14FF80AD1EC777 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */; };
 		98EDCA2C253385B39954EF65 /* WeChoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */; };
 		9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
-		A0342072201DB35D57A12E2D /* HouseholdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29EB030115CC2E44378D4A9 /* HouseholdView.swift */; };
 		A25B8D1479188553485A7386 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
 		A3E2842DC12C02398E5F303D /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
 		A420663CF3EEAFA4763BC76D /* WeChoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */; };
@@ -165,9 +165,9 @@
 		91DCF0082220993EF6294B35 /* Clock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clock.swift; sourceTree = "<group>"; };
 		9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		A8C8F5EC061A571D76405E67 /* WeChoreDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeChoreDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B29EB030115CC2E44378D4A9 /* HouseholdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdView.swift; sourceTree = "<group>"; };
 		BE2D028F2405BB3E99C7B91E /* StoredModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredModels.swift; sourceTree = "<group>"; };
 		C3E994A026F5DF5FBF75A268 /* Repository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repository.swift; sourceTree = "<group>"; };
+		C8002C9CDD9DA50A3F9721CB /* NearbyInviteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyInviteService.swift; sourceTree = "<group>"; };
 		C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreIntegrationTests.swift; sourceTree = "<group>"; };
 		D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSuggestionEngine.swift; sourceTree = "<group>"; };
 		D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreUITests.swift; sourceTree = "<group>"; };
@@ -220,7 +220,6 @@
 			isa = PBXGroup;
 			children = (
 				0B53447435F88D82364A810A /* ChoresView.swift */,
-				B29EB030115CC2E44378D4A9 /* HouseholdView.swift */,
 				F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */,
 				2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */,
 				9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */,
@@ -266,6 +265,7 @@
 				91DCF0082220993EF6294B35 /* Clock.swift */,
 				2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */,
 				D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */,
+				C8002C9CDD9DA50A3F9721CB /* NearbyInviteService.swift */,
 				7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */,
 				C3E994A026F5DF5FBF75A268 /* Repository.swift */,
 				19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */,
@@ -565,6 +565,7 @@
 				092EFCB07D94CF9B2ACD6CC2 /* Clock.swift in Sources */,
 				D78E3CFA8010080845F1D996 /* CloudKitHouseholdStore.swift in Sources */,
 				425028584323AEE018DC21B2 /* MessageSuggestionEngine.swift in Sources */,
+				37B5405158878A3E1519B6E7 /* NearbyInviteService.swift in Sources */,
 				CB9130B54703322CCF710322 /* ReminderScheduler.swift in Sources */,
 				6AC06BD1E47F006BEF9BD114 /* Repository.swift in Sources */,
 				F5A2CB0834887B2664C1C8CE /* SystemCommunicationOpener.swift in Sources */,
@@ -573,7 +574,6 @@
 				A25B8D1479188553485A7386 /* AppTheme.swift in Sources */,
 				AF43B4B5CF80B04E3446B304 /* RuntimeEnvironment.swift in Sources */,
 				F543304ADC47AC3F8C211108 /* ChoresView.swift in Sources */,
-				448D64F2FD71E1FB21D50D3F /* HouseholdView.swift in Sources */,
 				DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */,
 				D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */,
 				21150B907A7A1159EEC72344 /* RootView.swift in Sources */,
@@ -602,6 +602,7 @@
 				412573FCF0192DE9043D9553 /* Clock.swift in Sources */,
 				800021DD3BAE675E75C26C3A /* CloudKitHouseholdStore.swift in Sources */,
 				6380C2325FE6750AFD858FF3 /* MessageSuggestionEngine.swift in Sources */,
+				8800AA6295DC153E165D1567 /* NearbyInviteService.swift in Sources */,
 				8D2A7018BC14FF80AD1EC777 /* ReminderScheduler.swift in Sources */,
 				C54539DA1FCB53E7AF6BA7D7 /* Repository.swift in Sources */,
 				846F0470C3C80CC4A689C4FF /* SystemCommunicationOpener.swift in Sources */,
@@ -610,7 +611,6 @@
 				9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */,
 				7FDD27DC8648DF5EB4BD210D /* RuntimeEnvironment.swift in Sources */,
 				69F23ED45B841BA673D3808D /* ChoresView.swift in Sources */,
-				A0342072201DB35D57A12E2D /* HouseholdView.swift in Sources */,
 				6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */,
 				2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */,
 				A3E2842DC12C02398E5F303D /* RootView.swift in Sources */,
@@ -914,7 +914,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 202604140827550;
+				CURRENT_PROJECT_VERSION = 202604141021370;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -932,7 +932,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
-				WECHORE_BUILD_NUMBER = 20260414.082755.0;
+				WECHORE_BUILD_NUMBER = 20260414.102137.0;
 			};
 			name = Release;
 		};
@@ -1010,7 +1010,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 202604140827550;
+				CURRENT_PROJECT_VERSION = 202604141021370;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1034,7 +1034,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
-				WECHORE_BUILD_NUMBER = 20260414.082755.0;
+				WECHORE_BUILD_NUMBER = 20260414.102137.0;
 			};
 			name = Debug;
 		};

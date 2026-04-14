@@ -2,15 +2,15 @@
 
 ## Product Summary
 
-WeChore is a local-first household chore app for iPhone and iPad. Users can create a household, add members, assign chores, set due dates, check progress, send reminders, and use in-app messages to create suggested chores.
+WeChore is a local-first messaging/task app for iPhone and iPad. Users create group chats and DMs, invite people through share links, invite codes, or nearby exchange, and turn plain chat requests into task tiles with reminders and completion updates.
 
 ## Goals
 
-- Make shared household work visible without a server-owned account.
-- Keep assignments, due dates, and progress easy to scan.
-- Let reminders and voice/text nudges use Apple system apps.
-- Suggest chores from messages typed inside WeChore without reading outside conversations.
-- Sync shared household records through CloudKit sharing.
+- Make shared work visible inside the conversations where requests happen.
+- Keep assignments, due dates, progress, reminders, and completion status easy to scan at the top of each chat.
+- Let invites, reminders, and voice/text nudges use Apple system apps.
+- Extract tasks from messages and voice transcripts typed or recorded inside WeChore without reading outside conversations.
+- Sync shared conversation records through CloudKit sharing.
 
 ## Non-Goals
 
@@ -21,20 +21,21 @@ WeChore is a local-first household chore app for iPhone and iPad. Users can crea
 
 ## Core Screens
 
-- Onboarding captures the user's display name, household name, and optional phone or FaceTime handle.
-- Chores shows assigned work, status, due dates, progress controls, reminder actions, and voice handoff actions.
-- Messages lets users post household messages and review suggested chores before accepting them.
-- Household shows members and CloudKit sharing status.
-- Settings shows notification, privacy, support, and sync controls.
+- Onboarding captures the user's display name, first group chat name, and optional contact handle.
+- Chats is the first screen and lists group chats, DMs, Join or Start, and Me without a bottom tab bar.
+- Conversation shows the floating task tile, messages, voice/text composer, invite/share controls, and task activity.
+- Join or Start creates group chats, starts DMs, accepts invite codes, and simulates nearby join in tests.
+- Me shows notification, privacy, support, and sync controls.
 
 ## Apple API Use
 
 - SwiftData stores a local Codable snapshot.
-- CloudKit stores deterministic records and creates `CKShare` metadata for shared households.
-- UserNotifications schedules local chore due reminders.
-- NaturalLanguage and `NSDataDetector` extract chore suggestions on device.
-- FaceTime, Phone, and Messages are opened through Apple URL and MessageUI handoff.
+- CloudKit stores deterministic conversation records and creates `CKShare` metadata for shared chats.
+- CloudKit public records back short invite-code lookup.
+- UserNotifications schedules task reminders with thread context.
+- NaturalLanguage, `NSDataDetector`, and optional iOS 26 Foundation Models extract task drafts on device.
+- ShareLink, AirDrop, Messages, FaceTime, Phone, MultipeerConnectivity, and optional NearbyInteraction use public Apple APIs for invite and reminder flows.
 
 ## Success Criteria
 
-From a clean checkout, `just ci` should pass. Running `just run` should open the app, complete onboarding, create a chore, post a message, accept a suggestion, mark a chore done, and expose reminder and voice/text handoff actions.
+From a clean checkout, `just ci` should pass. Running `just run` should open the app, complete onboarding, start or join a chat, type or record a task request, see the task in the floating tile, mark it done, and use invite/reminder/share actions.

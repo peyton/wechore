@@ -4,7 +4,7 @@ import Foundation
 @Observable
 final class AppState {
     private let repository: ChoreRepository
-    private let suggestionEngine: MessageSuggestionGenerating
+    private let extractionEngine: any TaskExtractionEngine
     private let reminderScheduler: ReminderScheduling
     private let communicationOpener: SystemCommunicationOpening
     private let clock: ClockProviding
@@ -19,11 +19,14 @@ final class AppState {
     var preparedMessageBody = ""
     var shouldPresentMessageComposer = false
     var isRecordingVoiceMessage = false
+    var latestInvitePayload: InvitePayload?
+
     private var currentVoiceRecordingURL: URL?
+    private var currentVoiceThreadID: String?
 
     init(
         repository: ChoreRepository,
-        suggestionEngine: MessageSuggestionGenerating = OnDeviceMessageSuggestionEngine(),
+        extractionEngine: any TaskExtractionEngine = TaskExtractionEngineFactory.live(),
         reminderScheduler: ReminderScheduling = LocalReminderScheduler(),
         communicationOpener: SystemCommunicationOpening = AppleSystemCommunicationOpener(),
         voiceRecorder: VoiceMessageRecording = AppleVoiceMessageRecorder(),
@@ -33,7 +36,7 @@ final class AppState {
         clock: ClockProviding = SystemClock()
     ) {
         self.repository = repository
-        self.suggestionEngine = suggestionEngine
+        self.extractionEngine = extractionEngine
         self.reminderScheduler = reminderScheduler
         self.communicationOpener = communicationOpener
         self.voiceRecorder = voiceRecorder
@@ -43,6 +46,7 @@ final class AppState {
         self.clock = clock
         do {
             snapshot = try repository.loadSnapshot()
+            snapshot.normalizeConversationState()
         } catch {
             snapshot = .empty(now: clock.now())
             lastStatusMessage = "WeChore started with a fresh local cache."
@@ -50,199 +54,313 @@ final class AppState {
         applyLaunchConfigurationIfNeeded()
     }
 
+    var participants: [ChatParticipant] { snapshot.participants }
+    var members: [Member] { snapshot.participants }
     var household: Household { snapshot.household }
-    var members: [Member] { snapshot.members }
+    var threads: [ChatThread] { snapshot.threads.sorted(by: threadSort) }
+    var groupThreads: [ChatThread] { threads.filter { $0.kind == .group } }
+    var dmThreads: [ChatThread] { threads.filter { $0.kind == .dm } }
     var chores: [Chore] { snapshot.chores.sorted(by: Self.choreSort) }
     var activeChores: [Chore] { chores.filter(\.isActive) }
     var messages: [ChoreMessage] { snapshot.messages.sorted { $0.createdAt < $1.createdAt } }
-    var suggestions: [ChoreSuggestion] { snapshot.suggestions.sorted { $0.createdAt < $1.createdAt } }
+    var suggestions: [TaskDraft] { snapshot.suggestions.sorted { $0.createdAt < $1.createdAt } }
     var settings: LocalSettings { snapshot.settings }
 
-    var currentMember: Member {
-        if let selected = settings.selectedMemberID,
-           let member = members.first(where: { $0.id == selected }) {
-            return member
+    var currentParticipant: ChatParticipant {
+        if let selected = settings.selectedParticipantID,
+           let participant = participants.first(where: { $0.id == selected }) {
+            return participant
         }
-        return members.first ?? Member(displayName: "Me", isCurrentUser: true)
+        return participants.first ?? ChatParticipant(displayName: "Me", isCurrentUser: true)
+    }
+
+    var currentMember: Member { currentParticipant }
+
+    var defaultThreadID: String {
+        threads.first?.id ?? ChatThread.legacyDefaultID
     }
 
     var currentMemberChores: [Chore] {
-        chores.filter { $0.assigneeID == currentMember.id && $0.status != .archived }
+        chores.filter { $0.assigneeID == currentParticipant.id && $0.status != .archived }
     }
 
     func completeOnboarding(displayName: String, householdName: String, contact: String) {
         let now = clock.now()
-        var member = currentMember
-        member.displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Me" : displayName
+        var participant = currentParticipant
+        let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        participant.displayName = trimmedName.isEmpty ? "Me" : trimmedName
         if contact.contains("@") {
-            member.faceTimeHandle = contact
+            participant.faceTimeHandle = contact
         } else if !contact.isEmpty {
-            member.phoneNumber = contact
+            participant.phoneNumber = contact
         }
-        member.isCurrentUser = true
+        participant.isCurrentUser = true
 
-        snapshot.household.name = householdName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Our Household" : householdName
+        let chatTitle = householdName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Family Chat"
+            : householdName
+        let thread = ChatThread(
+            id: ChatThread.legacyDefaultID,
+            kind: .group,
+            title: chatTitle,
+            participantIDs: [participant.id],
+            createdAt: now,
+            updatedAt: now,
+            lastActivityAt: now
+        )
+
+        snapshot.household.name = chatTitle
         snapshot.household.updatedAt = now
-        snapshot.members = [member, Member(displayName: "Sam", phoneNumber: "5551231111", faceTimeHandle: "sam@example.com")]
+        snapshot.participants = [participant]
+        snapshot.threads = [thread]
         snapshot.settings.hasCompletedOnboarding = true
-        snapshot.settings.selectedMemberID = member.id
-        save("Household ready.")
+        snapshot.settings.selectedParticipantID = participant.id
+        save("Chat ready.")
     }
 
-    func addMember(displayName: String, phoneNumber: String = "", faceTimeHandle: String = "") {
+    @discardableResult
+    func addParticipant(displayName: String, phoneNumber: String = "", faceTimeHandle: String = "") -> ChatParticipant? {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        snapshot.members.append(Member(
+        guard !trimmed.isEmpty else { return nil }
+        if let existing = participants.first(where: { $0.displayName.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+            return existing
+        }
+        let participant = ChatParticipant(
             displayName: trimmed,
             phoneNumber: phoneNumber.isEmpty ? nil : phoneNumber,
             faceTimeHandle: faceTimeHandle.isEmpty ? nil : faceTimeHandle
-        ))
+        )
+        snapshot.participants.append(participant)
         save("Added \(trimmed).")
+        return participant
     }
 
-    func addChore(title: String, assigneeID: String, dueDate: Date?, notes: String = "") {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+    func addMember(displayName: String, phoneNumber: String = "", faceTimeHandle: String = "") {
+        _ = addParticipant(displayName: displayName, phoneNumber: phoneNumber, faceTimeHandle: faceTimeHandle)
+    }
+
+    @discardableResult
+    func createGroupChat(title: String, participantIDs: [String] = []) -> String {
         let now = clock.now()
-        snapshot.chores.append(Chore(
-            title: trimmed,
-            notes: notes,
-            createdByMemberID: currentMember.id,
-            assigneeID: assigneeID,
-            dueDate: dueDate,
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let ids = Array(Set(([currentParticipant.id] + participantIDs).filter { !$0.isEmpty }))
+        let thread = ChatThread(
+            kind: .group,
+            title: trimmed.isEmpty ? "New Group" : trimmed,
+            participantIDs: ids,
             createdAt: now,
-            updatedAt: now
-        ))
-        save("Added \(trimmed).")
+            updatedAt: now,
+            lastActivityAt: now
+        )
+        snapshot.threads.append(thread)
+        save("Started \(thread.title).")
+        return thread.id
     }
 
-    func updateStatus(choreID: String, status: ChoreStatus) {
-        guard let index = snapshot.chores.firstIndex(where: { $0.id == choreID }) else { return }
-        snapshot.chores[index].transition(to: status, at: clock.now())
-        save("\(snapshot.chores[index].title) is \(status.displayName.lowercased()).")
+    @discardableResult
+    func startDM(displayName: String, phoneNumber: String = "", faceTimeHandle: String = "") -> String {
+        let participant = addParticipant(
+            displayName: displayName,
+            phoneNumber: phoneNumber,
+            faceTimeHandle: faceTimeHandle
+        ) ?? ChatParticipant(displayName: displayName)
+        if let existing = snapshot.threads.first(where: { thread in
+            thread.kind == .dm
+                && Set(thread.participantIDs) == Set([currentParticipant.id, participant.id])
+        }) {
+            lastStatusMessage = "Opened \(existing.title)."
+            return existing.id
+        }
+
+        let now = clock.now()
+        let thread = ChatThread(
+            kind: .dm,
+            title: participant.displayName,
+            participantIDs: [currentParticipant.id, participant.id],
+            createdAt: now,
+            updatedAt: now,
+            lastActivityAt: now
+        )
+        snapshot.threads.append(thread)
+        save("Started DM with \(participant.displayName).")
+        return thread.id
+    }
+
+    func thread(for id: String) -> ChatThread? {
+        snapshot.threads.first { $0.id == id }
+    }
+
+    func participants(in threadID: String) -> [ChatParticipant] {
+        guard let thread = thread(for: threadID) else { return [] }
+        return participants.filter { thread.participantIDs.contains($0.id) }
+    }
+
+    func messages(in threadID: String) -> [ChoreMessage] {
+        messages.filter { $0.threadID == threadID }
+    }
+
+    func activeChores(in threadID: String) -> [Chore] {
+        chores.filter { $0.threadID == threadID && $0.isActive }
+    }
+
+    func taskDrafts(in threadID: String) -> [TaskDraft] {
+        suggestions.filter { $0.threadID == threadID }
+    }
+
+    func lastMessagePreview(for thread: ChatThread) -> String {
+        if let message = messages(in: thread.id).last {
+            return message.kind == .system ? message.body : "\(participantName(for: message.authorMemberID)): \(message.body)"
+        }
+        let count = activeChores(in: thread.id).count
+        return count == 1 ? "1 active task" : "\(count) active tasks"
     }
 
     func postMessage(
         _ body: String,
+        in threadID: String? = nil,
         kind: ChoreMessageKind = .text,
         voiceAttachment: VoiceAttachment? = nil
-    ) {
+    ) async {
+        let resolvedThreadID = threadID ?? defaultThreadID
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        let now = clock.now()
         let message = ChoreMessage(
-            authorMemberID: currentMember.id,
+            threadID: resolvedThreadID,
+            authorMemberID: currentParticipant.id,
             body: trimmed,
             kind: kind,
             voiceAttachment: voiceAttachment,
-            createdAt: clock.now()
+            createdAt: now
         )
         snapshot.messages.append(message)
-        let newSuggestions = suggestionEngine.suggestions(from: message, members: members, now: clock.now())
-        snapshot.suggestions.append(contentsOf: newSuggestions)
-        save(newSuggestions.isEmpty ? "Message posted." : "Suggested \(newSuggestions[0].title).")
-    }
+        touchThread(resolvedThreadID, at: now)
 
-    func postVoiceMessage(transcript: String, attachment: VoiceAttachment) {
-        postMessage(transcript, kind: .voice, voiceAttachment: attachment)
-    }
-
-    func startVoiceMessageRecording() async {
-        guard !isRecordingVoiceMessage else { return }
-        do {
-            let url = try voiceStorage.makeRecordingURL()
-            currentVoiceRecordingURL = url
-            try await voiceRecorder.startRecording(to: url)
-            isRecordingVoiceMessage = true
-            lastStatusMessage = "Recording voice message."
-        } catch {
-            currentVoiceRecordingURL = nil
-            isRecordingVoiceMessage = false
-            lastStatusMessage = "Voice recording could not start."
-        }
-    }
-
-    func finishVoiceMessageRecording() async {
-        guard isRecordingVoiceMessage, let url = currentVoiceRecordingURL else {
-            lastStatusMessage = "No voice message is recording."
-            return
-        }
-
-        do {
-            let duration = try await voiceRecorder.stopRecording()
-            isRecordingVoiceMessage = false
-            currentVoiceRecordingURL = nil
-            let transcript = try await voiceTranscriber.transcript(for: url)
-            let attachment = voiceStorage.attachment(
-                for: url,
-                duration: duration,
-                transcriptConfidence: transcript.confidence
+        var createdTasks: [Chore] = []
+        var draftTasks: [TaskDraft] = []
+        if kind != .system {
+            let extracted = await extractionEngine.extractTasks(
+                from: message,
+                participants: participants(in: resolvedThreadID),
+                now: now
             )
-            postVoiceMessage(transcript: transcript.text, attachment: attachment)
-        } catch {
-            voiceRecorder.cancelRecording()
-            isRecordingVoiceMessage = false
-            currentVoiceRecordingURL = nil
-            lastStatusMessage = "Voice message could not be posted."
+            for draft in extracted {
+                if draft.needsConfirmation {
+                    snapshot.suggestions.append(draft)
+                    draftTasks.append(draft)
+                } else {
+                    createdTasks.append(createTask(from: draft, sourceMessage: message, at: now))
+                }
+            }
+        }
+
+        if let first = createdTasks.first {
+            save("Added task: \(first.title).")
+        } else if let first = draftTasks.first {
+            save("Draft task ready: \(first.title).")
+        } else {
+            save("Message posted.")
         }
     }
 
-    func cancelVoiceMessageRecording() {
-        guard isRecordingVoiceMessage else { return }
-        voiceRecorder.cancelRecording()
-        isRecordingVoiceMessage = false
-        currentVoiceRecordingURL = nil
-        lastStatusMessage = "Voice message canceled."
+    func postVoiceMessage(transcript: String, attachment: VoiceAttachment, in threadID: String? = nil) async {
+        await postMessage(transcript, in: threadID, kind: .voice, voiceAttachment: attachment)
     }
 
-    func playVoiceMessage(_ message: ChoreMessage) {
-        guard let attachment = message.voiceAttachment else {
-            lastStatusMessage = "Voice message audio is unavailable."
-            return
-        }
-
-        do {
-            let url = try voiceStorage.fileURL(for: attachment)
-            let duration = try voicePlayer.play(url: url)
-            lastStatusMessage = "Playing voice message (\(Self.voiceDurationText(duration)))."
-        } catch {
-            lastStatusMessage = "Voice message audio is unavailable."
-        }
-    }
-
-    func acceptSuggestion(_ suggestion: ChoreSuggestion) {
-        let assigneeID = suggestion.assigneeID ?? currentMember.id
-        addChore(
-            title: suggestion.title,
+    func addChore(
+        title: String,
+        assigneeID: String,
+        dueDate: Date?,
+        notes: String = "",
+        threadID: String? = nil,
+        sourceMessageID: String? = nil
+    ) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let now = clock.now()
+        let resolvedThreadID = threadID ?? defaultThreadID
+        let chore = Chore(
+            threadID: resolvedThreadID,
+            title: trimmed,
+            notes: notes,
+            createdByMemberID: currentParticipant.id,
             assigneeID: assigneeID,
-            dueDate: suggestion.dueDate,
-            notes: "Suggested from household messages."
+            sourceMessageID: sourceMessageID,
+            dueDate: dueDate,
+            createdAt: now,
+            updatedAt: now
         )
-        snapshot.suggestions.removeAll { $0.id == suggestion.id }
-        save("Accepted \(suggestion.title).")
+        snapshot.chores.append(chore)
+        recordActivity(for: chore, kind: .assigned, at: now)
+        save("Added \(trimmed).")
+    }
+
+    func confirmDraft(_ draft: TaskDraft) {
+        let now = clock.now()
+        let fallbackMessage = ChoreMessage(
+            id: draft.sourceMessageID,
+            threadID: draft.threadID,
+            authorMemberID: currentParticipant.id,
+            body: draft.title,
+            createdAt: draft.createdAt
+        )
+        let chore = createTask(from: draft, sourceMessage: fallbackMessage, at: now)
+        snapshot.suggestions.removeAll { $0.id == draft.id }
+        save("Added task: \(chore.title).")
+    }
+
+    func dismissDraft(_ draft: TaskDraft) {
+        snapshot.suggestions.removeAll { $0.id == draft.id }
+        save("Draft removed.")
+    }
+
+    func updateStatus(choreID: String, status: ChoreStatus) {
+        guard let index = snapshot.chores.firstIndex(where: { $0.id == choreID }) else { return }
+        let now = clock.now()
+        snapshot.chores[index].transition(to: status, at: now)
+        let chore = snapshot.chores[index]
+        let activityKind: TaskActivityKind = switch status {
+        case .open: .reopened
+        case .inProgress: .started
+        case .blocked: .blocked
+        case .done: .completed
+        case .archived: .completed
+        }
+        recordActivity(for: chore, kind: activityKind, at: now)
+        save("\(chore.title) is \(status.displayName.lowercased()).")
     }
 
     func scheduleReminder(for chore: Chore) async {
-        guard let assignee = members.first(where: { $0.id == chore.assigneeID }) else { return }
+        guard let assignee = participants.first(where: { $0.id == chore.assigneeID }) else { return }
         do {
             let allowed = try await reminderScheduler.requestAuthorization()
             snapshot.settings.notificationsEnabled = allowed
             let plan = ReminderPlanner.plan(chore: chore, assignee: assignee, now: clock.now())
             try await reminderScheduler.schedule(plan: plan)
+            if let index = snapshot.chores.firstIndex(where: { $0.id == chore.id }) {
+                snapshot.chores[index].notificationState = .scheduled
+                snapshot.chores[index].lastReminderAt = plan.fireDate
+            }
             snapshot.reminderLogs.append(ReminderLog(
+                threadID: chore.threadID,
                 choreID: chore.id,
                 memberID: assignee.id,
                 channel: "local-notification",
                 scheduledAt: plan.fireDate,
                 createdAt: clock.now()
             ))
+            recordActivity(for: chore, kind: .reminded, at: clock.now())
             save("Reminder scheduled for \(assignee.displayName).")
         } catch {
+            if let index = snapshot.chores.firstIndex(where: { $0.id == chore.id }) {
+                snapshot.chores[index].notificationState = .failed
+            }
             lastStatusMessage = "Reminder could not be scheduled."
         }
     }
 
     func prepareTextReminder(for chore: Chore) {
-        guard let assignee = members.first(where: { $0.id == chore.assigneeID }) else { return }
+        guard let assignee = participants.first(where: { $0.id == chore.assigneeID }) else { return }
         preparedMessageMember = assignee
         preparedMessageBody = "Reminder from WeChore: please check progress on \(chore.title)."
         if RuntimeEnvironment.isRunningUITests {
@@ -263,7 +381,7 @@ final class AppState {
     }
 
     func startVoiceHandoff(for chore: Chore) async {
-        guard let assignee = members.first(where: { $0.id == chore.assigneeID }) else { return }
+        guard let assignee = participants.first(where: { $0.id == chore.assigneeID }) else { return }
         let opened = await communicationOpener.openVoice(for: assignee)
         lastStatusMessage = opened ? "Opened voice handoff for \(assignee.displayName)." : "No voice handle for \(assignee.displayName)."
     }
@@ -273,17 +391,243 @@ final class AppState {
     }
 
     func assigneeName(for chore: Chore) -> String {
-        members.first(where: { $0.id == chore.assigneeID })?.displayName ?? "Unassigned"
+        participants.first(where: { $0.id == chore.assigneeID })?.displayName ?? "Unassigned"
+    }
+
+    func participantName(for id: String) -> String {
+        participants.first(where: { $0.id == id })?.displayName ?? "Someone"
+    }
+
+    func createInvite(for threadID: String) -> InvitePayload? {
+        guard let thread = thread(for: threadID) else { return nil }
+        let now = clock.now()
+        let code = makeInviteCode()
+        let invite = ThreadInvite(
+            threadID: threadID,
+            inviterParticipantID: currentParticipant.id,
+            code: code,
+            expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now) ?? now,
+            createdAt: now
+        )
+        snapshot.invites.append(invite)
+        let payload = InvitePayload(
+            inviteID: invite.id,
+            threadID: thread.id,
+            threadTitle: thread.title,
+            inviterParticipantID: invite.inviterParticipantID,
+            code: invite.code,
+            expiresAt: invite.expiresAt
+        )
+        latestInvitePayload = payload
+        save("Invite ready for \(thread.title).")
+        return payload
+    }
+
+    @discardableResult
+    func acceptInviteURL(_ url: URL) -> String? {
+        guard let payload = InvitePayload(url: url) else {
+            lastStatusMessage = "That invite link could not be opened."
+            return nil
+        }
+        return acceptInvite(payload)
+    }
+
+    @discardableResult
+    func acceptInviteCode(_ code: String) -> String? {
+        let normalized = code
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        guard let invite = snapshot.invites.first(where: {
+            $0.code == normalized && $0.expiresAt >= clock.now()
+        }), let thread = thread(for: invite.threadID) else {
+            lastStatusMessage = "Invite code not found."
+            return nil
+        }
+        let payload = InvitePayload(
+            inviteID: invite.id,
+            threadID: thread.id,
+            threadTitle: thread.title,
+            inviterParticipantID: invite.inviterParticipantID,
+            code: invite.code,
+            expiresAt: invite.expiresAt
+        )
+        return acceptInvite(payload)
+    }
+
+    @discardableResult
+    func acceptInvite(_ payload: InvitePayload) -> String {
+        if snapshot.threads.contains(where: { $0.id == payload.threadID }) {
+            lastStatusMessage = "Opened \(payload.threadTitle)."
+            return payload.threadID
+        }
+        let now = clock.now()
+        snapshot.threads.append(ChatThread(
+            id: payload.threadID,
+            kind: .group,
+            title: payload.threadTitle,
+            participantIDs: [currentParticipant.id],
+            createdAt: now,
+            updatedAt: now,
+            lastActivityAt: now
+        ))
+        save("Joined \(payload.threadTitle).")
+        return payload.threadID
+    }
+
+    @discardableResult
+    func simulateNearbyJoin() -> String {
+        let threadID = createGroupChat(title: "Nearby Chat")
+        lastStatusMessage = "Nearby invite accepted."
+        return threadID
+    }
+
+    func startVoiceMessageRecording(in threadID: String? = nil) async {
+        guard !isRecordingVoiceMessage else { return }
+        do {
+            let url = try voiceStorage.makeRecordingURL()
+            currentVoiceRecordingURL = url
+            currentVoiceThreadID = threadID ?? defaultThreadID
+            try await voiceRecorder.startRecording(to: url)
+            isRecordingVoiceMessage = true
+            lastStatusMessage = "Recording voice message."
+        } catch {
+            currentVoiceRecordingURL = nil
+            currentVoiceThreadID = nil
+            isRecordingVoiceMessage = false
+            lastStatusMessage = "Voice recording could not start."
+        }
+    }
+
+    func finishVoiceMessageRecording() async {
+        guard isRecordingVoiceMessage,
+              let url = currentVoiceRecordingURL,
+              let threadID = currentVoiceThreadID else {
+            lastStatusMessage = "No voice message is recording."
+            return
+        }
+
+        do {
+            let duration = try await voiceRecorder.stopRecording()
+            isRecordingVoiceMessage = false
+            currentVoiceRecordingURL = nil
+            currentVoiceThreadID = nil
+            let transcript = try await voiceTranscriber.transcript(for: url)
+            let attachment = voiceStorage.attachment(
+                for: url,
+                duration: duration,
+                transcriptConfidence: transcript.confidence
+            )
+            await postVoiceMessage(transcript: transcript.text, attachment: attachment, in: threadID)
+        } catch {
+            voiceRecorder.cancelRecording()
+            isRecordingVoiceMessage = false
+            currentVoiceRecordingURL = nil
+            currentVoiceThreadID = nil
+            lastStatusMessage = "Voice message could not be posted."
+        }
+    }
+
+    func cancelVoiceMessageRecording() {
+        guard isRecordingVoiceMessage else { return }
+        voiceRecorder.cancelRecording()
+        isRecordingVoiceMessage = false
+        currentVoiceRecordingURL = nil
+        currentVoiceThreadID = nil
+        lastStatusMessage = "Voice message canceled."
+    }
+
+    func playVoiceMessage(_ message: ChoreMessage) {
+        guard let attachment = message.voiceAttachment else {
+            lastStatusMessage = "Voice message audio is unavailable."
+            return
+        }
+
+        do {
+            let url = try voiceStorage.fileURL(for: attachment)
+            let duration = try voicePlayer.play(url: url)
+            lastStatusMessage = "Playing voice message (\(Self.voiceDurationText(duration)))."
+        } catch {
+            lastStatusMessage = "Voice message audio is unavailable."
+        }
+    }
+
+    func acceptSuggestion(_ suggestion: ChoreSuggestion) {
+        confirmDraft(suggestion)
+    }
+
+    private func createTask(from draft: TaskDraft, sourceMessage: ChoreMessage, at now: Date) -> Chore {
+        let assigneeID = draft.assigneeID ?? currentParticipant.id
+        let chore = Chore(
+            threadID: draft.threadID,
+            title: draft.title,
+            notes: "Created from chat.",
+            createdByMemberID: sourceMessage.authorMemberID,
+            assigneeID: assigneeID,
+            sourceMessageID: sourceMessage.id,
+            dueDate: draft.dueDate,
+            status: .open,
+            reminderPolicy: draft.dueDate == nil ? .smart : .dueDate,
+            createdAt: now,
+            updatedAt: now
+        )
+        snapshot.chores.append(chore)
+        recordActivity(for: chore, kind: .assigned, at: now)
+        return chore
+    }
+
+    private func recordActivity(for chore: Chore, kind: TaskActivityKind, at date: Date) {
+        let body = activityBody(for: chore, kind: kind)
+        snapshot.taskActivities.append(TaskActivity(
+            threadID: chore.threadID,
+            choreID: chore.id,
+            actorParticipantID: currentParticipant.id,
+            kind: kind,
+            body: body,
+            createdAt: date
+        ))
+        snapshot.messages.append(ChoreMessage(
+            threadID: chore.threadID,
+            authorMemberID: currentParticipant.id,
+            body: body,
+            kind: .system,
+            createdAt: date
+        ))
+        touchThread(chore.threadID, at: date)
+    }
+
+    private func activityBody(for chore: Chore, kind: TaskActivityKind) -> String {
+        switch kind {
+        case .assigned:
+            "\(assigneeName(for: chore)) was assigned \(chore.title)."
+        case .reminded:
+            "Reminder scheduled for \(assigneeName(for: chore)): \(chore.title)."
+        case .started:
+            "\(assigneeName(for: chore)) started \(chore.title)."
+        case .blocked:
+            "\(chore.title) is blocked."
+        case .completed:
+            "\(assigneeName(for: chore)) completed \(chore.title)."
+        case .reopened:
+            "\(chore.title) was reopened."
+        }
+    }
+
+    private func touchThread(_ threadID: String, at date: Date) {
+        guard let index = snapshot.threads.firstIndex(where: { $0.id == threadID }) else { return }
+        snapshot.threads[index].updatedAt = date
+        snapshot.threads[index].lastActivityAt = date
     }
 
     private func applyLaunchConfigurationIfNeeded() {
         guard RuntimeEnvironment.isRunningUITests else { return }
-        if RuntimeEnvironment.shouldCompleteOnboarding || RuntimeEnvironment.shouldSeedHousehold || RuntimeEnvironment.shouldSeedChores {
+        if RuntimeEnvironment.shouldCompleteOnboarding
+            || RuntimeEnvironment.shouldSeedConversation
+            || RuntimeEnvironment.shouldSeedChores {
             snapshot = .seededForUITests(now: clock.now())
         }
-        if let memberName = RuntimeEnvironment.requestedMemberName,
-           let member = snapshot.members.first(where: { $0.displayName == memberName }) {
-            snapshot.settings.selectedMemberID = member.id
+        if let participantName = RuntimeEnvironment.requestedParticipantName,
+           let participant = snapshot.participants.first(where: { $0.displayName == participantName }) {
+            snapshot.settings.selectedParticipantID = participant.id
         }
         if RuntimeEnvironment.shouldDisableCloudKit {
             snapshot.settings.cloudKitEnabled = false
@@ -293,11 +637,20 @@ final class AppState {
 
     private func save(_ message: String) {
         do {
+            snapshot.normalizeConversationState()
             try repository.saveSnapshot(snapshot)
             lastStatusMessage = message
         } catch {
             lastStatusMessage = "WeChore could not save the latest change."
         }
+    }
+
+    private func threadSort(lhs: ChatThread, rhs: ChatThread) -> Bool {
+        lhs.lastActivityAt > rhs.lastActivityAt
+    }
+
+    private func makeInviteCode() -> String {
+        String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(6)).uppercased()
     }
 
     private static func choreSort(lhs: Chore, rhs: Chore) -> Bool {

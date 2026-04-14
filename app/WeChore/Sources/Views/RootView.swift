@@ -2,7 +2,6 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppState.self) private var appState
-    @Environment(AppRouter.self) private var router
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
@@ -26,74 +25,171 @@ private struct PhoneRootView: View {
 
     var body: some View {
         @Bindable var router = router
-        TabView(selection: $router.selectedRoute) {
-            ForEach(AppRoute.allCases) { route in
-                NavigationStack {
-                    destination(for: route)
-                        .navigationTitle(route.title)
-                }
-                .tabItem {
-                    Label(route.title, systemImage: route.systemImage)
-                }
-                .tag(route)
+        NavigationStack(path: $router.phonePath) {
+            ChatTreeView { destination in
+                router.openOnPhone(destination)
+            }
+            .navigationTitle("Chats")
+            .navigationDestination(for: ChatDestination.self) { destination in
+                ChatDestinationView(destination: destination)
             }
         }
-        .accessibilityIdentifier("root.phoneTabs")
+        .accessibilityIdentifier("root.phoneChatTree")
+    }
+}
+
+private struct IPadRootView: View {
+    @Environment(AppState.self) private var appState
+    @Environment(AppRouter.self) private var router
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+
+    var body: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            ChatTreeView { destination in
+                router.selectOnIPad(destination)
+            }
+            .navigationTitle("Chats")
+            .accessibilityIdentifier("root.sidebar")
+        } detail: {
+            NavigationStack {
+                ChatDestinationView(destination: selectedDestination)
+            }
+        }
+        .navigationSplitViewStyle(.balanced)
+        .accessibilityIdentifier("root.ipadSplit")
     }
 
-    @ViewBuilder
-    private func destination(for route: AppRoute) -> some View {
-        switch route {
-        case .chores:
-            ChoresView()
-        case .messages:
-            MessagesView()
-        case .household:
-            HouseholdView()
+    private var selectedDestination: ChatDestination {
+        if let selected = router.selectedDestination {
+            return selected
+        }
+        if let first = appState.threads.first {
+            return .thread(first.id)
+        }
+        return .joinStart
+    }
+}
+
+private struct ChatDestinationView: View {
+    let destination: ChatDestination
+
+    var body: some View {
+        switch destination {
+        case let .thread(threadID):
+            ConversationView(threadID: threadID)
+        case .joinStart:
+            JoinStartView()
         case .settings:
             SettingsView()
         }
     }
 }
 
-private struct IPadRootView: View {
-    @Environment(AppRouter.self) private var router
+struct ChatTreeView: View {
+    @Environment(AppState.self) private var appState
+    let open: (ChatDestination) -> Void
 
     var body: some View {
-        NavigationSplitView {
+        VStack(spacing: 0) {
             List {
-                ForEach(AppRoute.allCases) { route in
-                    Button {
-                        router.selectedRoute = route
-                    } label: {
-                        Label(route.title, systemImage: route.systemImage)
+                if !appState.groupThreads.isEmpty {
+                    Section("Group chats") {
+                        ForEach(appState.groupThreads) { thread in
+                            ChatThreadRow(thread: thread) {
+                                open(.thread(thread.id))
+                            }
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("sidebar.\(route.rawValue)")
+                }
+
+                if !appState.dmThreads.isEmpty {
+                    Section("DMs") {
+                        ForEach(appState.dmThreads) { thread in
+                            ChatThreadRow(thread: thread) {
+                                open(.thread(thread.id))
+                            }
+                        }
+                    }
+                }
+
+                Section {
+                    Button {
+                        open(.joinStart)
+                    } label: {
+                        Label("Join or Start", systemImage: "plus.bubble.fill")
+                    }
+                    .accessibilityIdentifier("chatTree.joinStart")
+
+                    Button {
+                        open(.settings)
+                    } label: {
+                        Label("Me", systemImage: "person.crop.circle.fill")
+                    }
+                    .accessibilityIdentifier("chatTree.me")
                 }
             }
-            .navigationTitle("WeChore")
-            .accessibilityIdentifier("root.sidebar")
-        } detail: {
-            NavigationStack {
-                destination(for: router.selectedRoute)
-                    .navigationTitle(router.selectedRoute.title)
-            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
         }
-        .accessibilityIdentifier("root.ipadSplit")
+        .background(AppPalette.canvas)
+        .accessibilityIdentifier("chat.tree")
+    }
+}
+
+private struct ChatThreadRow: View {
+    @Environment(AppState.self) private var appState
+    let thread: ChatThread
+    let open: () -> Void
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 12) {
+                ThreadAvatar(thread: thread)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(thread.title)
+                            .font(.headline)
+                            .foregroundStyle(AppPalette.ink)
+                            .lineLimit(1)
+                        Spacer()
+                        Text(thread.lastActivityAt.weChoreShortDueText)
+                            .font(.caption2)
+                            .foregroundStyle(AppPalette.muted)
+                    }
+                    Text(appState.lastMessagePreview(for: thread))
+                        .font(.subheadline)
+                        .foregroundStyle(AppPalette.muted)
+                        .lineLimit(2)
+                    if activeTaskCount > 0 {
+                        Text(activeTaskCount == 1 ? "1 active task" : "\(activeTaskCount) active tasks")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppPalette.weChatGreen)
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("chat.thread.\(thread.id)")
     }
 
-    @ViewBuilder
-    private func destination(for route: AppRoute) -> some View {
-        switch route {
-        case .chores:
-            ChoresView()
-        case .messages:
-            MessagesView()
-        case .household:
-            HouseholdView()
-        case .settings:
-            SettingsView()
+    private var activeTaskCount: Int {
+        appState.activeChores(in: thread.id).count
+    }
+}
+
+private struct ThreadAvatar: View {
+    let thread: ChatThread
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(thread.kind == .group ? AppPalette.weChatGreen : AppPalette.surface)
+            Image(systemName: thread.kind == .group ? "person.2.fill" : "person.fill")
+                .font(.headline)
+                .foregroundStyle(thread.kind == .group ? AppPalette.onAccent : AppPalette.ink)
         }
+        .frame(width: 44, height: 44)
+        .accessibilityHidden(true)
     }
 }

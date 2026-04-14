@@ -18,6 +18,9 @@ struct WeChoreApp: App {
         }
         let context = ModelContext(container)
         let repository = SwiftDataChoreRepository(context: context)
+        let extractionEngine: any TaskExtractionEngine = RuntimeEnvironment.isRunningUITests
+            ? RuleBasedTaskExtractionEngine()
+            : TaskExtractionEngineFactory.live()
         let reminderScheduler: ReminderScheduling = RuntimeEnvironment.isRunningUITests
             ? CapturingReminderScheduler()
             : LocalReminderScheduler()
@@ -32,6 +35,7 @@ struct WeChoreApp: App {
             : AppleVoiceMessagePlayer()
         _appState = State(initialValue: AppState(
             repository: repository,
+            extractionEngine: extractionEngine,
             reminderScheduler: reminderScheduler,
             voiceRecorder: voiceRecorder,
             voiceTranscriber: voiceTranscriber,
@@ -48,8 +52,16 @@ struct WeChoreApp: App {
                 .tint(AppPalette.weChatGreen)
                 .modifier(UITestDynamicTypeModifier())
                 .onAppear {
-                    if let preferredRoute = RuntimeEnvironment.preferredRoute {
-                        router.selectedRoute = preferredRoute
+                    if let preferredDestination = RuntimeEnvironment.preferredDestination {
+                        router.selectedDestination = preferredDestination
+                        router.phonePath = [preferredDestination]
+                    }
+                }
+                .onOpenURL { url in
+                    if let threadID = appState.acceptInviteURL(url) {
+                        let destination = ChatDestination.thread(threadID)
+                        router.selectedDestination = destination
+                        router.phonePath = [destination]
                     }
                 }
         }
