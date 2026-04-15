@@ -27,9 +27,18 @@ BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-ok() { pass=$((pass + 1)); printf '  %b[ok]%b    %s\n' "$GREEN" "$RESET" "$1"; }
-skip() { warn=$((warn + 1)); printf '  %b[skip]%b  %s\n' "$YELLOW" "$RESET" "$1"; }
-bad() { fail=$((fail + 1)); printf '  %b[FAIL]%b  %s\n' "$RED" "$RESET" "$1"; }
+ok() {
+  pass=$((pass + 1))
+  printf '  %b[ok]%b    %s\n' "$GREEN" "$RESET" "$1"
+}
+skip() {
+  warn=$((warn + 1))
+  printf '  %b[skip]%b  %s\n' "$YELLOW" "$RESET" "$1"
+}
+bad() {
+  fail=$((fail + 1))
+  printf '  %b[FAIL]%b  %s\n' "$RED" "$RESET" "$1"
+}
 hint() { printf '          %b%s%b\n' "$DIM" "$1" "$RESET"; }
 
 section() {
@@ -215,7 +224,7 @@ else
   bad "Preflight failed (exit $?)"
   while IFS= read -r line; do
     hint "  $line"
-  done <<< "$preflight_output"
+  done <<<"$preflight_output"
 fi
 
 # ── 8. App Store Connect API connectivity ───────────────────────────
@@ -247,7 +256,7 @@ if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] &&
       bad "App Store Connect check failed (exit $asc_rc)"
       while IFS= read -r line; do
         hint "  $line"
-      done <<< "$asc_output"
+      done <<<"$asc_output"
     fi
   fi
 else
@@ -269,12 +278,12 @@ if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] &&
     ok "Provisioning plan generated"
     while IFS= read -r line; do
       hint "  $line"
-    done <<< "$prov_output"
+    done <<<"$prov_output"
   else
     bad "Provisioning check failed (exit $?)"
     while IFS= read -r line; do
       hint "  $line"
-    done <<< "$prov_output"
+    done <<<"$prov_output"
   fi
 else
   skip "Skipping provisioning check (credentials not fully configured)"
@@ -337,8 +346,11 @@ printf '       -allowProvisioningUpdates + API key auth handles this\n'
 printf '\n'
 printf '  %bEntitlement mismatches:%b\n' "$BOLD" "$RESET"
 printf '    Entitlements reference build-setting variables:\n'
+# shellcheck disable=SC2016
 printf '      $(WECHORE_ICLOUD_CONTAINER)    = iCloud.app.peyton.wechore\n'
+# shellcheck disable=SC2016
 printf '      $(WECHORE_ICLOUD_ENVIRONMENT)  = Development or Production\n'
+# shellcheck disable=SC2016
 printf '      $(WECHORE_APP_GROUP_ID)         = group.app.peyton.wechore\n'
 printf '    These are set by Tuist in Project.swift via flavorBuildSettings().\n'
 printf '    If profiles reject entitlements, run:\n'
