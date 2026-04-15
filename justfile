@@ -123,6 +123,10 @@ cloudflare-deploy BRANCH='master':
         mise exec -- just web-build; \
         mise exec -- wrangler pages deploy .build/web --project-name "${CLOUDFLARE_PAGES_PROJECT:-wechore}" --branch "$branch"
 
+[group('doctor')]
+doctor:
+    bash scripts/tooling/doctor_signing.sh
+
 [group('cloudkit')]
 cloudkit-doctor:
     bash scripts/cloudkit/doctor.sh
