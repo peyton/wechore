@@ -27,9 +27,9 @@ BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-ok()   { pass=$((pass + 1)); printf '  %b[ok]%b    %s\n' "$GREEN" "$RESET" "$1"; }
+ok() { pass=$((pass + 1)); printf '  %b[ok]%b    %s\n' "$GREEN" "$RESET" "$1"; }
 skip() { warn=$((warn + 1)); printf '  %b[skip]%b  %s\n' "$YELLOW" "$RESET" "$1"; }
-bad()  { fail=$((fail + 1)); printf '  %b[FAIL]%b  %s\n' "$RED" "$RESET" "$1"; }
+bad() { fail=$((fail + 1)); printf '  %b[FAIL]%b  %s\n' "$RED" "$RESET" "$1"; }
 hint() { printf '          %b%s%b\n' "$DIM" "$1" "$RESET"; }
 
 section() {
@@ -110,7 +110,7 @@ fi
 if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ]; then
   state_key_path="$REPO_ROOT/.state/appstoreconnect/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
   if [ -n "${APP_STORE_CONNECT_API_KEY_PATH:-}" ] && [ -f "${APP_STORE_CONNECT_API_KEY_PATH}" ]; then
-    if head -1 "${APP_STORE_CONNECT_API_KEY_PATH}" | grep -q 'BEGIN PRIVATE KEY'; then
+    if head -n 1 "${APP_STORE_CONNECT_API_KEY_PATH}" | grep -q 'BEGIN PRIVATE KEY'; then
       ok "Private key file looks like a valid PEM key"
     else
       bad "Private key file does not start with PEM header"
@@ -125,7 +125,7 @@ fi
 section "Xcode & Signing Tools"
 
 if command -v xcodebuild >/dev/null 2>&1; then
-  xcode_version="$(xcodebuild -version 2>/dev/null | head -1 || echo 'unknown')"
+  xcode_version="$(xcodebuild -version 2>/dev/null | head -n 1 || echo 'unknown')"
   ok "xcodebuild available ($xcode_version)"
 else
   skip "xcodebuild not found (expected on macOS CI runners)"
@@ -208,13 +208,11 @@ section "Release Preflight Validation"
 hint "Running: scripts.app_store_connect.preflight (without --require-credentials)"
 
 preflight_output=""
-preflight_rc=0
 if preflight_output="$(WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production \
   run_repo_python_module scripts.app_store_connect.preflight 2>&1)"; then
   ok "Preflight passed (metadata, entitlements, privacy manifest, AASA)"
 else
-  preflight_rc=$?
-  bad "Preflight failed (exit $preflight_rc)"
+  bad "Preflight failed (exit $?)"
   while IFS= read -r line; do
     hint "  $line"
   done <<< "$preflight_output"
@@ -223,13 +221,12 @@ fi
 # ── 8. App Store Connect API connectivity ───────────────────────────
 section "App Store Connect API Connectivity"
 
-if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] \
-  && [ -n "${APP_STORE_CONNECT_API_ISSUER_ID:-}" ] \
-  && [ -n "$key_source" ]; then
+if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] &&
+  [ -n "${APP_STORE_CONNECT_API_ISSUER_ID:-}" ] &&
+  [ -n "$key_source" ]; then
 
   hint "Running: scripts.app_store_connect.check_asc"
   asc_output=""
-  asc_rc=0
   if asc_output="$(WECHORE_FLAVOR=prod \
     run_repo_python_module scripts.app_store_connect.check_asc 2>&1)"; then
     ok "App Store Connect app found"
@@ -261,13 +258,12 @@ fi
 # ── 9. Provisioning profile status ──────────────────────────────────
 section "Provisioning Profile Status"
 
-if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] \
-  && [ -n "${APP_STORE_CONNECT_API_ISSUER_ID:-}" ] \
-  && [ -n "$key_source" ]; then
+if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] &&
+  [ -n "${APP_STORE_CONNECT_API_ISSUER_ID:-}" ] &&
+  [ -n "$key_source" ]; then
 
   hint "Running: scripts.app_store_connect.provisioning --dry-run"
   prov_output=""
-  prov_rc=0
   if prov_output="$(WECHORE_FLAVOR=prod WECHORE_CLOUD_KIT_ENVIRONMENT=Production \
     run_repo_python_module scripts.app_store_connect.provisioning --dry-run 2>&1)"; then
     ok "Provisioning plan generated"
@@ -275,8 +271,7 @@ if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] \
       hint "  $line"
     done <<< "$prov_output"
   else
-    prov_rc=$?
-    bad "Provisioning check failed (exit $prov_rc)"
+    bad "Provisioning check failed (exit $?)"
     while IFS= read -r line; do
       hint "  $line"
     done <<< "$prov_output"
