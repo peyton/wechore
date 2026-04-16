@@ -13,6 +13,7 @@
 		09A3059468736225D3A84C6E /* TuistAssets+WeChoreDev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E0B3CCBB9F2CA47A52901B7 /* TuistAssets+WeChoreDev.swift */; };
 		09E811409FF7180B9553BE74 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 904E57B6772853AF1445E5F8 /* AppState.swift */; };
 		144F089A4CC7C2FE955C604C /* ContactPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */; };
+		1597737A726E72D3ABB61AF0 /* EmojiPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BAD31A1DAA6EAC915D726D /* EmojiPickerSheet.swift */; };
 		1B4A47BFE222B65692A465F7 /* VoiceMessageServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5776EEC590992DB1D8C39EF4 /* VoiceMessageServices.swift */; };
 		21150B907A7A1159EEC72344 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
 		292FDE83B0FE1F2EDEDD43FD /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
@@ -24,10 +25,12 @@
 		3F70E9BC2616AE201060FC04 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
 		412573FCF0192DE9043D9553 /* Clock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCF0082220993EF6294B35 /* Clock.swift */; };
 		425028584323AEE018DC21B2 /* MessageSuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */; };
+		438BE4B0801D11451D0A2865 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA9687A86DDDA73A433A8B7 /* StatisticsView.swift */; };
 		4458A59A2FCEB3620C38D9E7 /* ContactPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */; };
 		4684411D548710A2FB5311C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17828170DA4D5FEDF94EA80C /* Assets.xcassets */; };
 		5351BC7F05AB46A04C0A84E6 /* WidgetTimelineReloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D241160ED569D750FA9F88 /* WidgetTimelineReloader.swift */; };
 		5470A9EA14B4D248B574DFF4 /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
+		56A3CE72BEEC1D5264FC431A /* AddTaskShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D7F888C31A64AD0049FA48 /* AddTaskShortcut.swift */; };
 		5E2ADB61860923691D0A6171 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */; };
 		610597C82F7AB23BCABC9965 /* WeChoreUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C6863F7E93547AE1278CAA /* WeChoreUITests.swift */; };
 		6380C2325FE6750AFD858FF3 /* MessageSuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */; };
@@ -50,6 +53,8 @@
 		88A6EE6A7ADB777DF0DB23F6 /* InviteQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */; };
 		8BCF2B6F6E8539FD25E3EE8B /* WeChoreWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2ED4010281569611C1B7F81 /* WeChoreWidgets.swift */; };
 		8D2A7018BC14FF80AD1EC777 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */; };
+		94E6083D3D9095F12FF1294C /* EmojiPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BAD31A1DAA6EAC915D726D /* EmojiPickerSheet.swift */; };
+		96D468F711C1150CD3FE5C24 /* WeChoreFocusFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4260E6952C621C3F35337F3E /* WeChoreFocusFilter.swift */; };
 		98EDCA2C253385B39954EF65 /* WeChoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63BB77AAF026911F5AD7F47E /* WeChoreTests.swift */; };
 		9E42E5106C80AF0A52CB9323 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
 		9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582F6F32E15D8E1D75C1B32 /* AppTheme.swift */; };
@@ -68,7 +73,10 @@
 		B9A5A51910A381B99393DA97 /* SharedSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CFC67E6F941A83FD76761C /* SharedSnapshotStore.swift */; };
 		BB8B63041D210511FE9CF80C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */; };
 		BCA47C2D0D3AB32265630F48 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 35B078A38F61C6DA8A58AD2B /* AppIntents.framework */; };
+		BF7EF151FD78E05BBA325F72 /* AddTaskShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D7F888C31A64AD0049FA48 /* AddTaskShortcut.swift */; };
+		C0B5297A182BD70AE29F7797 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA9687A86DDDA73A433A8B7 /* StatisticsView.swift */; };
 		C54539DA1FCB53E7AF6BA7D7 /* Repository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E994A026F5DF5FBF75A268 /* Repository.swift */; };
+		C9409836D59A99D61C53D744 /* WeChoreFocusFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4260E6952C621C3F35337F3E /* WeChoreFocusFilter.swift */; };
 		CB9130B54703322CCF710322 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC8E2F12503A02A528F3DC8 /* ReminderScheduler.swift */; };
 		D1B5E6BAA9019F3615608576 /* VoiceMessageServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5776EEC590992DB1D8C39EF4 /* VoiceMessageServices.swift */; };
 		D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */; };
@@ -232,8 +240,10 @@
 		2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitHouseholdStore.swift; sourceTree = "<group>"; };
 		35B078A38F61C6DA8A58AD2B /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/AppIntents.framework; sourceTree = DEVELOPER_DIR; };
+		3CA9687A86DDDA73A433A8B7 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 		3E7A7758B91BF63A4E2A62E2 /* TuistBundle+WeChoreDev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+WeChoreDev.swift"; sourceTree = "<group>"; };
 		41CC8E7CD5CF1D7FE0A227F6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		4260E6952C621C3F35337F3E /* WeChoreFocusFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreFocusFilter.swift; sourceTree = "<group>"; };
 		45DEAC4E1F1BD7EA690E62EE /* WeChore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeChore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E0B3CCBB9F2CA47A52901B7 /* TuistAssets+WeChoreDev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+WeChoreDev.swift"; sourceTree = "<group>"; };
 		5776EEC590992DB1D8C39EF4 /* VoiceMessageServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMessageServices.swift; sourceTree = "<group>"; };
@@ -251,8 +261,10 @@
 		8BD141F64931FE97AE9C85A5 /* WeChoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WeChoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		904E57B6772853AF1445E5F8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		91DCF0082220993EF6294B35 /* Clock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clock.swift; sourceTree = "<group>"; };
+		93BAD31A1DAA6EAC915D726D /* EmojiPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiPickerSheet.swift; sourceTree = "<group>"; };
 		9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		9AD8E0CC811743DD14E76300 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/WidgetKit.framework; sourceTree = DEVELOPER_DIR; };
+		A3D7F888C31A64AD0049FA48 /* AddTaskShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskShortcut.swift; sourceTree = "<group>"; };
 		A5714810EB28BF1653AA5DE4 /* WeChoreDevWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WeChoreDevWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8C8F5EC061A571D76405E67 /* WeChoreDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeChoreDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE2D028F2405BB3E99C7B91E /* StoredModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredModels.swift; sourceTree = "<group>"; };
@@ -333,11 +345,13 @@
 			children = (
 				0B53447435F88D82364A810A /* ChoresView.swift */,
 				666CD710CF3DBA3FB42044D5 /* ContactPicker.swift */,
+				93BAD31A1DAA6EAC915D726D /* EmojiPickerSheet.swift */,
 				F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */,
 				F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */,
 				2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */,
 				9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */,
 				5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */,
+				3CA9687A86DDDA73A433A8B7 /* StatisticsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -380,6 +394,7 @@
 		2C5D224AB258503CF70B7F5C /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				A3D7F888C31A64AD0049FA48 /* AddTaskShortcut.swift */,
 				904E57B6772853AF1445E5F8 /* AppState.swift */,
 				91DCF0082220993EF6294B35 /* Clock.swift */,
 				2EAB1A9F464CEF0D62CB09CC /* CloudKitHouseholdStore.swift */,
@@ -389,6 +404,7 @@
 				C3E994A026F5DF5FBF75A268 /* Repository.swift */,
 				19553FC04D6FF82738F9B995 /* SystemCommunicationOpener.swift */,
 				5776EEC590992DB1D8C39EF4 /* VoiceMessageServices.swift */,
+				4260E6952C621C3F35337F3E /* WeChoreFocusFilter.swift */,
 				86D241160ED569D750FA9F88 /* WidgetTimelineReloader.swift */,
 			);
 			path = Services;
@@ -779,6 +795,7 @@
 				2E79DF102256163B6DE4257C /* TuistBundle+WeChore.swift in Sources */,
 				32481D35475FBDB412C33492 /* DomainModels.swift in Sources */,
 				64D7F70D64644B75EA42D85C /* StoredModels.swift in Sources */,
+				BF7EF151FD78E05BBA325F72 /* AddTaskShortcut.swift in Sources */,
 				B0CA40F2AC9F90044D019A34 /* AppState.swift in Sources */,
 				092EFCB07D94CF9B2ACD6CC2 /* Clock.swift in Sources */,
 				D78E3CFA8010080845F1D996 /* CloudKitHouseholdStore.swift in Sources */,
@@ -788,6 +805,7 @@
 				6AC06BD1E47F006BEF9BD114 /* Repository.swift in Sources */,
 				F5A2CB0834887B2664C1C8CE /* SystemCommunicationOpener.swift in Sources */,
 				D1B5E6BAA9019F3615608576 /* VoiceMessageServices.swift in Sources */,
+				96D468F711C1150CD3FE5C24 /* WeChoreFocusFilter.swift in Sources */,
 				DE53C6C4F86EFFA6D3BC8771 /* WidgetTimelineReloader.swift in Sources */,
 				77371031B2F28DD449624828 /* AppRoute.swift in Sources */,
 				A25B8D1479188553485A7386 /* AppTheme.swift in Sources */,
@@ -797,11 +815,13 @@
 				B90042819A083FD803C157D5 /* WeChoreDeepLink.swift in Sources */,
 				F543304ADC47AC3F8C211108 /* ChoresView.swift in Sources */,
 				144F089A4CC7C2FE955C604C /* ContactPicker.swift in Sources */,
+				1597737A726E72D3ABB61AF0 /* EmojiPickerSheet.swift in Sources */,
 				88A6EE6A7ADB777DF0DB23F6 /* InviteQRCodeView.swift in Sources */,
 				DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */,
 				D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */,
 				21150B907A7A1159EEC72344 /* RootView.swift in Sources */,
 				87C761A1BD33C5526097CD8F /* SettingsView.swift in Sources */,
+				C0B5297A182BD70AE29F7797 /* StatisticsView.swift in Sources */,
 				70785E6F38DA6A9C8001FE14 /* WeChoreApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -844,6 +864,7 @@
 				7FA838F46B4EC576CC8750C3 /* TuistBundle+WeChoreDev.swift in Sources */,
 				3F70E9BC2616AE201060FC04 /* DomainModels.swift in Sources */,
 				FCBCE56F629878AC91F0D9E7 /* StoredModels.swift in Sources */,
+				56A3CE72BEEC1D5264FC431A /* AddTaskShortcut.swift in Sources */,
 				09E811409FF7180B9553BE74 /* AppState.swift in Sources */,
 				412573FCF0192DE9043D9553 /* Clock.swift in Sources */,
 				800021DD3BAE675E75C26C3A /* CloudKitHouseholdStore.swift in Sources */,
@@ -853,6 +874,7 @@
 				C54539DA1FCB53E7AF6BA7D7 /* Repository.swift in Sources */,
 				846F0470C3C80CC4A689C4FF /* SystemCommunicationOpener.swift in Sources */,
 				1B4A47BFE222B65692A465F7 /* VoiceMessageServices.swift in Sources */,
+				C9409836D59A99D61C53D744 /* WeChoreFocusFilter.swift in Sources */,
 				5351BC7F05AB46A04C0A84E6 /* WidgetTimelineReloader.swift in Sources */,
 				FDF54445C2CD028BCA583930 /* AppRoute.swift in Sources */,
 				9F052E1C5FACBEF04B3E5F03 /* AppTheme.swift in Sources */,
@@ -862,11 +884,13 @@
 				5470A9EA14B4D248B574DFF4 /* WeChoreDeepLink.swift in Sources */,
 				69F23ED45B841BA673D3808D /* ChoresView.swift in Sources */,
 				4458A59A2FCEB3620C38D9E7 /* ContactPicker.swift in Sources */,
+				94E6083D3D9095F12FF1294C /* EmojiPickerSheet.swift in Sources */,
 				E7EBB9903546867BF3A71AD4 /* InviteQRCodeView.swift in Sources */,
 				6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */,
 				2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */,
 				A3E2842DC12C02398E5F303D /* RootView.swift in Sources */,
 				BB8B63041D210511FE9CF80C /* SettingsView.swift in Sources */,
+				438BE4B0801D11451D0A2865 /* StatisticsView.swift in Sources */,
 				A420663CF3EEAFA4763BC76D /* WeChoreApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

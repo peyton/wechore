@@ -31,9 +31,13 @@ final class WeChoreTests: XCTestCase {
         XCTAssertFalse(chore.isActive)
     }
 
-    func testReminderPlannerUsesThreadScopedIdentifier() {
-        let now = Date(timeIntervalSince1970: 1_000)
-        let due = Date(timeIntervalSince1970: 2_000)
+    func testReminderPlannerUsesThreadScopedIdentifier() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        let now = try XCTUnwrap(calendar.date(
+            from: DateComponents(year: 2026, month: 1, day: 1, hour: 11, minute: 43, second: 20)
+        ))
+        let due = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1, hour: 12)))
         let chore = Chore(
             id: "task-1",
             threadID: "thread-family",
@@ -44,7 +48,7 @@ final class WeChoreTests: XCTestCase {
         )
         let participant = ChatParticipant(id: "participant-2", displayName: "Sam")
 
-        let plan = ReminderPlanner.plan(chore: chore, assignee: participant, now: now)
+        let plan = ReminderPlanner.plan(chore: chore, assignee: participant, now: now, calendar: calendar)
 
         XCTAssertEqual(plan.identifier, "wechore.thread.thread-family.task.task-1")
         XCTAssertEqual(plan.fireDate, due)
