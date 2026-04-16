@@ -129,6 +129,16 @@ def test_private_key_can_be_loaded_from_base64_env(tmp_path: Path) -> None:
         )
         == key
     )
+    assert (
+        load_private_key_pem(
+            {
+                "APP_STORE_CONNECT_API_KEY_P8_BASE64": (
+                    "-----BEGIN PRIVATE KEY-----\\nexample\\n-----END PRIVATE KEY-----"
+                )
+            }
+        )
+        == key
+    )
     assert load_private_key_pem({"APP_STORE_CONNECT_API_KEY_P8": key.decode()}) == key
 
     key_path = tmp_path / "AuthKey_KEY123.p8"
@@ -188,6 +198,7 @@ def test_asc_environment_maps_existing_app_store_connect_names() -> None:
     )
 
     assert raw_pem_env["ASC_PRIVATE_KEY"].startswith("-----BEGIN PRIVATE KEY-----")
+    assert "\\n" not in raw_pem_env["ASC_PRIVATE_KEY"]
     assert "ASC_PRIVATE_KEY_B64" not in raw_pem_env
 
 

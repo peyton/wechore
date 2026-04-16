@@ -21,6 +21,7 @@ from scripts.app_store_connect.check import (
     DEFAULT_SKU,
     looks_like_private_key_pem,
     manual_creation_message,
+    normalize_private_key_pem,
     validate_app_record,
 )
 
@@ -58,9 +59,12 @@ def asc_environment(environment: Mapping[str, str]) -> dict[str, str]:
     key_base64 = asc_env.get("APP_STORE_CONNECT_API_KEY_P8_BASE64")
     if key_base64 and looks_like_private_key_pem(key_base64):
         if not asc_env.get("ASC_PRIVATE_KEY"):
-            asc_env["ASC_PRIVATE_KEY"] = key_base64
+            asc_env["ASC_PRIVATE_KEY"] = normalize_private_key_pem(key_base64)
     elif key_base64 and not asc_env.get("ASC_PRIVATE_KEY_B64"):
         asc_env["ASC_PRIVATE_KEY_B64"] = key_base64
+    key_raw = asc_env.get("ASC_PRIVATE_KEY")
+    if key_raw and looks_like_private_key_pem(key_raw):
+        asc_env["ASC_PRIVATE_KEY"] = normalize_private_key_pem(key_raw)
 
     has_env_key = bool(
         asc_env.get("ASC_KEY_ID")

@@ -104,6 +104,13 @@ def looks_like_private_key_pem(value: str) -> bool:
     return stripped.startswith("-----BEGIN ") and "PRIVATE KEY-----" in stripped[:80]
 
 
+def normalize_private_key_pem(value: str) -> str:
+    normalized = value.strip()
+    if "\\n" in normalized and "\n" not in normalized:
+        normalized = normalized.replace("\\n", "\n")
+    return f"{normalized}\n"
+
+
 def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     key_path = environment.get("APP_STORE_CONNECT_API_KEY_PATH")
     key_base64 = environment.get("APP_STORE_CONNECT_API_KEY_P8_BASE64")
@@ -113,7 +120,7 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
         return Path(key_path).expanduser().read_bytes()
     if key_base64:
         if looks_like_private_key_pem(key_base64):
-            return key_base64.encode("utf-8")
+            return normalize_private_key_pem(key_base64).encode("utf-8")
         normalized_key = "".join(key_base64.split())
         try:
             return base64.b64decode(normalized_key, validate=True)
@@ -122,7 +129,7 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
                 "APP_STORE_CONNECT_API_KEY_P8_BASE64 is not valid base64."
             ) from error
     if key_raw:
-        return key_raw.encode("utf-8")
+        return normalize_private_key_pem(key_raw).encode("utf-8")
     raise AppStoreConnectError(
         "Missing App Store Connect private key. Set "
         "APP_STORE_CONNECT_API_KEY_PATH or APP_STORE_CONNECT_API_KEY_P8_BASE64."
