@@ -107,12 +107,17 @@ def test_private_key_can_be_loaded_from_base64_env(tmp_path: Path) -> None:
     from scripts.app_store_connect.check import load_private_key_pem
 
     key = b"-----BEGIN PRIVATE KEY-----\nexample\n-----END PRIVATE KEY-----\n"
+    encoded_key = base64.b64encode(key).decode("ascii")
 
+    assert (
+        load_private_key_pem({"APP_STORE_CONNECT_API_KEY_P8_BASE64": encoded_key})
+        == key
+    )
     assert (
         load_private_key_pem(
             {
-                "APP_STORE_CONNECT_API_KEY_P8_BASE64": base64.b64encode(key).decode(
-                    "ascii"
+                "APP_STORE_CONNECT_API_KEY_P8_BASE64": (
+                    f"{encoded_key[:16]}\n{encoded_key[16:32]}\n{encoded_key[32:]}"
                 )
             }
         )

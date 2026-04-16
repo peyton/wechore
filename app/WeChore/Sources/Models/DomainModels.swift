@@ -673,8 +673,9 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         widgetFavoriteThreadIDs: [String] = [],
         widgetFavoriteTaskIDs: [String] = [],
         recentlyCompletedTaskID: String? = nil,
-        mutedThreadIDs: Set<String> = []
-        themePreference: String = "system"    ) {
+        mutedThreadIDs: Set<String> = [],
+        themePreference: String = "system"
+    ) {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.selectedParticipantID = selectedParticipantID
         self.notificationsEnabled = notificationsEnabled
@@ -683,7 +684,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         self.widgetFavoriteTaskIDs = widgetFavoriteTaskIDs
         self.recentlyCompletedTaskID = recentlyCompletedTaskID
         self.mutedThreadIDs = mutedThreadIDs
-        self.themePreference = themePreference    }
+        self.themePreference = themePreference
+    }
 
     public var selectedMemberID: String? {
         get { selectedParticipantID }
@@ -700,7 +702,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         case widgetFavoriteTaskIDs
         case recentlyCompletedTaskID
         case mutedThreadIDs
-        case themePreference    }
+        case themePreference
+    }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -721,7 +724,11 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         ) ?? []
         recentlyCompletedTaskID = try container.decodeIfPresent(String.self, forKey: .recentlyCompletedTaskID)
         mutedThreadIDs = try container.decodeIfPresent(Set<String>.self, forKey: .mutedThreadIDs) ?? []
-        themePreference = try container.decodeIfPresent(String.self, forKey: .themePreference) ?? "system"    }
+        themePreference = try container.decodeIfPresent(
+            String.self,
+            forKey: .themePreference
+        ) ?? "system"
+    }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -733,7 +740,8 @@ public struct LocalSettings: Hashable, Codable, Sendable {
         try container.encode(widgetFavoriteTaskIDs, forKey: .widgetFavoriteTaskIDs)
         try container.encodeIfPresent(recentlyCompletedTaskID, forKey: .recentlyCompletedTaskID)
         try container.encode(mutedThreadIDs, forKey: .mutedThreadIDs)
-        try container.encode(themePreference, forKey: .themePreference)    }
+        try container.encode(themePreference, forKey: .themePreference)
+    }
 }
 
 public struct ChoreSnapshot: Hashable, Codable, Sendable {

@@ -107,8 +107,9 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     if key_path:
         return Path(key_path).expanduser().read_bytes()
     if key_base64:
+        normalized_key = "".join(key_base64.split())
         try:
-            return base64.b64decode(key_base64, validate=True)
+            return base64.b64decode(normalized_key, validate=True)
         except (binascii.Error, ValueError) as error:
             raise AppStoreConnectError(
                 "APP_STORE_CONNECT_API_KEY_P8_BASE64 is not valid base64."

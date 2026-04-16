@@ -33,7 +33,8 @@ struct SettingsView: View {
                 } label: {
                     Label("Household Stats", systemImage: "chart.bar.fill")
                 }
-                .buttonStyle(SecondaryActionButtonStyle())                SettingsProfileSection()
+                .buttonStyle(SecondaryActionButtonStyle())
+                SettingsProfileSection()
                 SettingsQRCodeSection()
                 WidgetFavoritesSection()
                 SettingsDiagnosticsSection()

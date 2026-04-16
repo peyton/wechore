@@ -358,7 +358,7 @@ final class AppState {
         } else {
             snapshot.messages[index].reactions.append(MessageReaction(emoji: emoji, participantID: participantID))
         }
-        save(nil)
+        save("Reaction updated.")
     }
 
     @discardableResult
@@ -923,17 +923,20 @@ final class AppState {
     func endLiveActivity(for choreID: String) {
         #if canImport(ActivityKit)
         if #available(iOS 16.2, *) {
-            let activities = Activity<TaskActivityAttributes>.activities
-            for activity in activities where activity.attributes.taskID == choreID {
-                Task {
+            Task { @MainActor in
+                let activities = Activity<TaskActivityAttributes>.activities
+                for activity in activities where activity.attributes.taskID == choreID {
                     await activity.end(nil, dismissalPolicy: .immediate)
                 }
             }
         }
         #endif
+    }
+
     func updateThemePreference(_ preference: String) {
         snapshot.settings.themePreference = preference
-        save("Theme updated.")    }
+        save("Theme updated.")
+    }
 
     private func createTask(from draft: TaskDraft, sourceMessage: ChoreMessage, at now: Date) -> Chore? {
         let assigneeID = draft.assigneeID ?? currentParticipant.id

@@ -39,7 +39,6 @@ struct WeChoreShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: AddTaskShortcut(),
             phrases: [
-                "Add \(\.$taskTitle) to \(.applicationName)",
                 "Create a task in \(.applicationName)",
             ],
             shortTitle: "Add Task",

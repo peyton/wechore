@@ -8,6 +8,10 @@ struct WeChoreFocusFilter: SetFocusFilterIntent {
     @Parameter(title: "Show notifications", default: true)
     var showNotifications: Bool
 
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: showNotifications ? "Show notifications" : "Mute notifications")
+    }
+
     func perform() async throws -> some IntentResult {
         UserDefaults.standard.set(showNotifications, forKey: "focusFilterShowNotifications")
         return .result()
