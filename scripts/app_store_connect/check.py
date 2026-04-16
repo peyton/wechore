@@ -99,6 +99,11 @@ def required_env(environment: Mapping[str, str], name: str) -> str:
     return value
 
 
+def looks_like_private_key_pem(value: str) -> bool:
+    stripped = value.lstrip()
+    return stripped.startswith("-----BEGIN ") and "PRIVATE KEY-----" in stripped[:80]
+
+
 def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     key_path = environment.get("APP_STORE_CONNECT_API_KEY_PATH")
     key_base64 = environment.get("APP_STORE_CONNECT_API_KEY_P8_BASE64")
@@ -107,6 +112,8 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     if key_path:
         return Path(key_path).expanduser().read_bytes()
     if key_base64:
+        if looks_like_private_key_pem(key_base64):
+            return key_base64.encode("utf-8")
         normalized_key = "".join(key_base64.split())
         try:
             return base64.b64decode(normalized_key, validate=True)

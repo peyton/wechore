@@ -21,13 +21,13 @@ if [ -z "$key_path" ]; then
 fi
 
 if [ ! -f "$key_path" ]; then
-  if [ -z "${APP_STORE_CONNECT_API_KEY_P8_BASE64:-}" ]; then
-    printf 'Error: %s does not exist and APP_STORE_CONNECT_API_KEY_P8_BASE64 is not set.\n' "$key_path" >&2
+  if [ -z "${APP_STORE_CONNECT_API_KEY_P8_BASE64:-}" ] && [ -z "${APP_STORE_CONNECT_API_KEY_P8:-}" ]; then
+    printf 'Error: %s does not exist and no App Store Connect private key env var is set.\n' "$key_path" >&2
     exit 2
   fi
   mkdir -p "$(dirname "$key_path")"
   APP_STORE_CONNECT_API_KEY_OUTPUT="$key_path" run_mise_exec uv run python -c \
-    'import base64, os, pathlib; pathlib.Path(os.environ["APP_STORE_CONNECT_API_KEY_OUTPUT"]).write_bytes(base64.b64decode(os.environ["APP_STORE_CONNECT_API_KEY_P8_BASE64"]))'
+    'import os, pathlib; from scripts.app_store_connect.check import load_private_key_pem; pathlib.Path(os.environ["APP_STORE_CONNECT_API_KEY_OUTPUT"]).write_bytes(load_private_key_pem(os.environ))'
   chmod 600 "$key_path"
 fi
 
