@@ -18,6 +18,8 @@ struct ChoresView: View {
                 TaskScopePicker(scope: $scope)
                 TaskSortPicker(sortOrder: $sortOrder)
 
+                TaskSections(sections: taskSections)
+
                 AddChorePanel(
                     title: $title,
                     selectedMemberID: $selectedMemberID,
@@ -26,8 +28,6 @@ struct ChoresView: View {
                     canAdd: canAddChore,
                     add: addChore
                 )
-
-                TaskSections(sections: taskSections)
             }
             .padding(18)
             .frame(maxWidth: 920, alignment: .leading)
@@ -306,35 +306,28 @@ private struct TaskSections: View {
     let sections: [TaskListSection]
 
     var body: some View {
-        List {
+        VStack(alignment: .leading, spacing: 16) {
             ForEach(sections) { section in
                 if !section.chores.isEmpty || section.emptyText != nil {
-                    Section {
-                        if section.chores.isEmpty, let emptyText = section.emptyText {
-                            EmptyState(text: emptyText)
-                                .listRowInsets(EdgeInsets())
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                        } else {
-                            ForEach(section.chores) { chore in
-                                ChoreRow(chore: chore)
-                                    .listRowInsets(EdgeInsets())
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                            }
-                        }
-                    } header: {
+                    VStack(alignment: .leading, spacing: 10) {
                         Text(section.title)
                             .font(.title3.bold())
                             .foregroundStyle(AppPalette.ink)
-                            .textCase(nil)
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("tasks.section.\(section.id)")
+
+                        if section.chores.isEmpty, let emptyText = section.emptyText {
+                            EmptyState(text: emptyText)
+                        } else {
+                            ForEach(section.chores) { chore in
+                                ChoreRow(chore: chore)
+                            }
+                        }
                     }
                 }
             }
         }
-        .listStyle(.plain)
-        .scrollDisabled(true)
-        .frame(minHeight: 200)
+        .accessibilityIdentifier("tasks.sections")
     }
 }
 
