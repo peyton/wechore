@@ -258,12 +258,14 @@ def create_profile_body(
     bundle_id: BundleIdRecord,
     certificates: Sequence[CertificateRecord],
     profile_type: str,
+    *,
+    profile_name: str | None = None,
 ) -> dict[str, Any]:
     return {
         "data": {
             "type": "profiles",
             "attributes": {
-                "name": requirement.profile_name,
+                "name": profile_name or requirement.profile_name,
                 "profileType": profile_type,
             },
             "relationships": {
@@ -305,6 +307,24 @@ def bundle_capabilities_query() -> dict[str, str]:
 
 def bundle_profiles_query() -> dict[str, str]:
     return {"fields[profiles]": "name,profileType,profileState,expirationDate"}
+
+
+def profile_name_for_create(
+    requirement: RequiredBundleId,
+    profiles: Sequence[ProfileRecord],
+    now: datetime,
+) -> str:
+    existing_names = {profile.name for profile in profiles}
+    if requirement.profile_name not in existing_names:
+        return requirement.profile_name
+
+    timestamp = now.strftime("%Y%m%d%H%M%S")
+    candidate = f"{requirement.profile_name} {timestamp}"
+    suffix = 2
+    while candidate in existing_names:
+        candidate = f"{requirement.profile_name} {timestamp} {suffix}"
+        suffix += 1
+    return candidate
 
 
 def setting_has_option(
@@ -517,12 +537,12 @@ class ProvisioningEnsurer:
                 return
             raise AppStoreConnectError(message)
 
+        profile_name = profile_name_for_create(requirement, profiles, self.now)
         self.actions.append(
             ProvisioningAction(
                 "create",
                 bundle_id.identifier,
-                f"Create {self.profile_type} provisioning profile "
-                f"{requirement.profile_name}.",
+                f"Create {self.profile_type} provisioning profile {profile_name}.",
             )
         )
         if not self.dry_run:
@@ -534,6 +554,7 @@ class ProvisioningEnsurer:
                     bundle_id,
                     certificates,
                     self.profile_type,
+                    profile_name=profile_name,
                 ),
             )
 

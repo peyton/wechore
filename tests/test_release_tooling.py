@@ -38,6 +38,7 @@ from scripts.app_store_connect.provisioning import (
     create_profile_body,
     is_usable_distribution_certificate,
     is_usable_profile,
+    profile_name_for_create,
     production_requirements,
 )
 from scripts.cloudflare.setup import (
@@ -377,6 +378,60 @@ def test_create_profile_body_links_bundle_and_certificates() -> None:
     assert body["data"]["relationships"]["certificates"]["data"] == [
         {"type": "certificates", "id": "cert-1"}
     ]
+
+
+def test_create_profile_body_accepts_replacement_profile_name() -> None:
+    requirement = production_requirements()[0]
+    bundle = BundleIdRecord(
+        resource_id="bundle-123",
+        name="WeChore",
+        identifier=DEFAULT_BUNDLE_ID,
+        platform="IOS",
+    )
+    certificates = [
+        CertificateRecord(
+            resource_id="cert-1",
+            certificate_type="DISTRIBUTION",
+            display_name="Apple Distribution",
+            expiration_date=None,
+            activated=True,
+        )
+    ]
+
+    body = create_profile_body(
+        requirement,
+        bundle,
+        certificates,
+        "IOS_APP_STORE",
+        profile_name="WeChore App Store 20260420120000",
+    )
+
+    assert body["data"]["attributes"]["name"] == "WeChore App Store 20260420120000"
+
+
+def test_profile_name_for_create_avoids_invalidated_profile_name_collision() -> None:
+    requirement = production_requirements()[0]
+    now = datetime(2026, 4, 20, 12, 0, 0, tzinfo=UTC)
+    profiles = [
+        ProfileRecord(
+            resource_id="profile-1",
+            name="WeChore App Store",
+            profile_type="IOS_APP_STORE",
+            profile_state="INVALID",
+            expiration_date=None,
+        ),
+        ProfileRecord(
+            resource_id="profile-2",
+            name="WeChore App Store 20260420120000",
+            profile_type="IOS_APP_STORE",
+            profile_state="INVALID",
+            expiration_date=None,
+        ),
+    ]
+
+    profile_name = profile_name_for_create(requirement, profiles, now)
+
+    assert profile_name == "WeChore App Store 20260420120000 2"
 
 
 def test_certificate_list_query_avoids_repeated_certificate_type_filter() -> None:

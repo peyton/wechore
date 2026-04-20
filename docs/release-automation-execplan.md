@@ -24,7 +24,9 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T03:34:00Z) Updated the GitHub TestFlight workflow, release checks, tests, and docs so the existing raw `APP_STORE_CONNECT_API_KEY_P8` secret is the primary key source, base64 values are normalized when used, and non-blocking portal metadata does not prevent upload.
 - [x] (2026-04-20T03:34:00Z) Added `appstore-ensure-provisioning` to the TestFlight workflow before archive/upload so CI explicitly creates or verifies bundle IDs, capabilities, and App Store provisioning profiles before Xcode export.
 - [x] (2026-04-20T03:36:00Z) Ran focused release tests, local `appstore-check`, local `appstore-provisioning-plan`, and the required `mise exec -- just lint`; all completed successfully after the fixes.
-- [ ] Run non-dry-run provisioning after user confirmation, then push and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T22:26:19Z) Used Apple Developer portal access to create and assign `group.app.peyton.wechore`, create and assign `iCloud.app.peyton.wechore`, and save App Groups on the widget App ID.
+- [x] (2026-04-20T22:26:47Z) Regenerated App Store profiles `B2M3324R6V` and `FG6GNSL2Q7`; decoded entitlements now include `group.app.peyton.wechore` on both profiles and `iCloud.app.peyton.wechore` on the app profile.
+- [ ] Push the provisioning fix and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -50,6 +52,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: Apple rejected repeated `filter[certificateType]` query parameters, rejected `limit` on bundle-ID relationship endpoints, and returned the existing iOS app bundle ID platform as `UNIVERSAL`.
 - Observation: The current Apple account is missing several release resources, but the repo can now plan them successfully.
   Evidence: `mise exec -- just appstore-provisioning-plan` reported an active distribution certificate, the existing main bundle ID, and planned creation of app-group, associated-domains, iCloud capabilities, the widget bundle ID, and both App Store provisioning profiles.
+- Observation: Saving App Groups or iCloud in the Apple Developer portal invalidates existing provisioning profiles, and Apple's API can still reserve the old profile names after invalidation.
+  Evidence: After saving the App Groups update for `app.peyton.wechore.widgets`, `just appstore-provisioning-plan` planned new App Store profiles, while the non-dry-run create failed with `Multiple profiles found with the name 'WeChore App Store'`.
 
 ## Decision Log
 
@@ -79,6 +83,9 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Date/Author: 2026-04-20 / Codex
 - Decision: Run the repo-owned provisioning ensure step in the TestFlight workflow before archive/upload.
   Rationale: The dry-run showed required bundle IDs, capabilities, and profiles are not fully present yet. Making provisioning explicit catches Apple portal drift before the slower Xcode archive/export step and keeps the clean-checkout GitHub path self-contained.
+  Date/Author: 2026-04-20 / Codex
+- Decision: Create timestamped replacement profile names when invalidated Apple profiles still occupy the preferred profile name.
+  Rationale: The archive/export path uses automatic signing and does not require a fixed profile name. Timestamped replacement names avoid a repeatable Apple API 409 while preserving the stable preferred name whenever it is available.
   Date/Author: 2026-04-20 / Codex
 
 ## Outcomes & Retrospective
