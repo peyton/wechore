@@ -89,16 +89,16 @@ elif [ -n "${APP_STORE_CONNECT_API_KEY_PATH:-}" ]; then
   bad "APP_STORE_CONNECT_API_KEY_PATH is set but file does not exist: ${APP_STORE_CONNECT_API_KEY_PATH}"
 fi
 
-if [ -n "${APP_STORE_CONNECT_API_KEY_P8_BASE64:-}" ]; then
-  if [ -z "$key_source" ]; then
-    key_source="base64"
-  fi
-  ok "APP_STORE_CONNECT_API_KEY_P8_BASE64 is set"
-elif [ -n "${APP_STORE_CONNECT_API_KEY_P8:-}" ]; then
+if [ -n "${APP_STORE_CONNECT_API_KEY_P8:-}" ]; then
   if [ -z "$key_source" ]; then
     key_source="raw"
   fi
   ok "APP_STORE_CONNECT_API_KEY_P8 is set (raw PEM)"
+elif [ -n "${APP_STORE_CONNECT_API_KEY_P8_BASE64:-}" ]; then
+  if [ -z "$key_source" ]; then
+    key_source="base64"
+  fi
+  ok "APP_STORE_CONNECT_API_KEY_P8_BASE64 is set"
 fi
 
 if [ -z "$key_source" ]; then

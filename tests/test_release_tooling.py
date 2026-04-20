@@ -154,6 +154,22 @@ def test_private_key_can_be_loaded_from_base64_env(tmp_path: Path) -> None:
     )
 
 
+def test_private_key_prefers_raw_pem_over_legacy_base64_fallback() -> None:
+    from scripts.app_store_connect.check import load_private_key_pem
+
+    key = b"-----BEGIN PRIVATE KEY-----\nexample\n-----END PRIVATE KEY-----\n"
+
+    assert (
+        load_private_key_pem(
+            {
+                "APP_STORE_CONNECT_API_KEY_P8": key.decode(),
+                "APP_STORE_CONNECT_API_KEY_P8_BASE64": "not base64!",
+            }
+        )
+        == key
+    )
+
+
 def test_private_key_rejects_invalid_base64_env() -> None:
     from scripts.app_store_connect.check import load_private_key_pem
 

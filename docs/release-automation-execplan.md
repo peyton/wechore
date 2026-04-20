@@ -27,7 +27,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T22:26:19Z) Used Apple Developer portal access to create and assign `group.app.peyton.wechore`, create and assign `iCloud.app.peyton.wechore`, and save App Groups on the widget App ID.
 - [x] (2026-04-20T22:26:47Z) Regenerated App Store profiles `B2M3324R6V` and `FG6GNSL2Q7`; decoded entitlements now include `group.app.peyton.wechore` on both profiles and `iCloud.app.peyton.wechore` on the app profile.
 - [x] (2026-04-20T22:29:24Z) Pushed the provisioning fix to `master`; GitHub run `24693639425` still failed in `appstore-check` because the `asc` CLI rejected the GitHub environment private key before provisioning/archive.
-- [ ] Switch the default App Store Connect check to the repo-local Python API client, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T22:32:51Z) Pushed the Python API-client check to `master`; GitHub run `24693764635` confirmed the Python path runs, but `APP_STORE_CONNECT_API_KEY_P8_BASE64` still shadowed the raw PEM secret in the shared key loader.
+- [ ] Make raw `APP_STORE_CONNECT_API_KEY_P8` take precedence over the legacy base64 fallback everywhere, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -57,6 +58,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: After saving the App Groups update for `app.peyton.wechore.widgets`, `just appstore-provisioning-plan` planned new App Store profiles, while the non-dry-run create failed with `Multiple profiles found with the name 'WeChore App Store'`.
 - Observation: The GitHub runner still fails when `appstore-check` shells out to `asc`, even after the workflow passes the raw `APP_STORE_CONNECT_API_KEY_P8` secret.
   Evidence: TestFlight run `24693639425` had both `APP_STORE_CONNECT_API_KEY_P8` and `APP_STORE_CONNECT_API_KEY_P8_BASE64` populated, then failed with `asc apps list failed: Error: apps: invalid private key: invalid PEM data`.
+- Observation: The shared key loader still preferred `APP_STORE_CONNECT_API_KEY_P8_BASE64` over `APP_STORE_CONNECT_API_KEY_P8`.
+  Evidence: TestFlight run `24693764635` used `scripts.app_store_connect.check`, then `cryptography` failed with `MalformedFraming` while both secret variables were populated.
 
 ## Decision Log
 
