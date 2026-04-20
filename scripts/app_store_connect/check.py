@@ -111,6 +111,31 @@ def normalize_private_key_pem(value: str) -> str:
     return f"{normalized}\n"
 
 
+def load_inline_private_key_pem(value: str, variable_name: str) -> bytes:
+    if looks_like_private_key_pem(value):
+        return normalize_private_key_pem(value).encode("utf-8")
+
+    normalized_key = "".join(value.split())
+    try:
+        decoded = base64.b64decode(normalized_key, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise AppStoreConnectError(
+            f"{variable_name} must be a PEM private key or base64-encoded PEM."
+        ) from error
+
+    try:
+        decoded_text = decoded.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise AppStoreConnectError(
+            f"{variable_name} decoded value is not UTF-8 PEM text."
+        ) from error
+    if not looks_like_private_key_pem(decoded_text):
+        raise AppStoreConnectError(
+            f"{variable_name} decoded value is not a PEM private key."
+        )
+    return normalize_private_key_pem(decoded_text).encode("utf-8")
+
+
 def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     key_path = environment.get("APP_STORE_CONNECT_API_KEY_PATH")
     key_base64 = environment.get("APP_STORE_CONNECT_API_KEY_P8_BASE64")
@@ -119,17 +144,12 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
     if key_path:
         return Path(key_path).expanduser().read_bytes()
     if key_raw:
-        return normalize_private_key_pem(key_raw).encode("utf-8")
+        return load_inline_private_key_pem(key_raw, "APP_STORE_CONNECT_API_KEY_P8")
     if key_base64:
-        if looks_like_private_key_pem(key_base64):
-            return normalize_private_key_pem(key_base64).encode("utf-8")
-        normalized_key = "".join(key_base64.split())
-        try:
-            return base64.b64decode(normalized_key, validate=True)
-        except (binascii.Error, ValueError) as error:
-            raise AppStoreConnectError(
-                "APP_STORE_CONNECT_API_KEY_P8_BASE64 is not valid base64."
-            ) from error
+        return load_inline_private_key_pem(
+            key_base64,
+            "APP_STORE_CONNECT_API_KEY_P8_BASE64",
+        )
     raise AppStoreConnectError(
         "Missing App Store Connect private key. Set "
         "APP_STORE_CONNECT_API_KEY_PATH, APP_STORE_CONNECT_API_KEY_P8, "

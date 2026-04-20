@@ -28,7 +28,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T22:26:47Z) Regenerated App Store profiles `B2M3324R6V` and `FG6GNSL2Q7`; decoded entitlements now include `group.app.peyton.wechore` on both profiles and `iCloud.app.peyton.wechore` on the app profile.
 - [x] (2026-04-20T22:29:24Z) Pushed the provisioning fix to `master`; GitHub run `24693639425` still failed in `appstore-check` because the `asc` CLI rejected the GitHub environment private key before provisioning/archive.
 - [x] (2026-04-20T22:32:51Z) Pushed the Python API-client check to `master`; GitHub run `24693764635` confirmed the Python path runs, but `APP_STORE_CONNECT_API_KEY_P8_BASE64` still shadowed the raw PEM secret in the shared key loader.
-- [ ] Make raw `APP_STORE_CONNECT_API_KEY_P8` take precedence over the legacy base64 fallback everywhere, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T22:35:41Z) Pushed raw-secret precedence to `master`; GitHub run `24693868296` still failed loading the PEM, which suggests the raw secret slot may contain base64 text rather than PEM framing.
+- [ ] Allow `APP_STORE_CONNECT_API_KEY_P8` to contain either raw PEM or base64-encoded PEM, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -60,6 +61,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: TestFlight run `24693639425` had both `APP_STORE_CONNECT_API_KEY_P8` and `APP_STORE_CONNECT_API_KEY_P8_BASE64` populated, then failed with `asc apps list failed: Error: apps: invalid private key: invalid PEM data`.
 - Observation: The shared key loader still preferred `APP_STORE_CONNECT_API_KEY_P8_BASE64` over `APP_STORE_CONNECT_API_KEY_P8`.
   Evidence: TestFlight run `24693764635` used `scripts.app_store_connect.check`, then `cryptography` failed with `MalformedFraming` while both secret variables were populated.
+- Observation: After raw-secret precedence was fixed, the runner still failed with `MalformedFraming`, so the value in `APP_STORE_CONNECT_API_KEY_P8` is present but not framed as PEM text.
+  Evidence: TestFlight run `24693868296` failed at `serialization.load_pem_private_key` with `MalformedFraming` after using the raw-priority loader.
 
 ## Decision Log
 

@@ -170,10 +170,26 @@ def test_private_key_prefers_raw_pem_over_legacy_base64_fallback() -> None:
     )
 
 
+def test_private_key_raw_env_accepts_base64_encoded_pem() -> None:
+    from scripts.app_store_connect.check import load_private_key_pem
+
+    key = b"-----BEGIN PRIVATE KEY-----\nexample\n-----END PRIVATE KEY-----\n"
+
+    assert (
+        load_private_key_pem(
+            {
+                "APP_STORE_CONNECT_API_KEY_P8": base64.b64encode(key).decode("ascii"),
+                "APP_STORE_CONNECT_API_KEY_P8_BASE64": "not base64!",
+            }
+        )
+        == key
+    )
+
+
 def test_private_key_rejects_invalid_base64_env() -> None:
     from scripts.app_store_connect.check import load_private_key_pem
 
-    with pytest.raises(AppStoreConnectError, match="not valid base64"):
+    with pytest.raises(AppStoreConnectError, match="base64-encoded PEM"):
         load_private_key_pem({"APP_STORE_CONNECT_API_KEY_P8_BASE64": "not base64!"})
 
 
