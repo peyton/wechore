@@ -29,7 +29,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T22:29:24Z) Pushed the provisioning fix to `master`; GitHub run `24693639425` still failed in `appstore-check` because the `asc` CLI rejected the GitHub environment private key before provisioning/archive.
 - [x] (2026-04-20T22:32:51Z) Pushed the Python API-client check to `master`; GitHub run `24693764635` confirmed the Python path runs, but `APP_STORE_CONNECT_API_KEY_P8_BASE64` still shadowed the raw PEM secret in the shared key loader.
 - [x] (2026-04-20T22:35:41Z) Pushed raw-secret precedence to `master`; GitHub run `24693868296` still failed loading the PEM, which suggests the raw secret slot may contain base64 text rather than PEM framing.
-- [ ] Allow `APP_STORE_CONNECT_API_KEY_P8` to contain either raw PEM or base64-encoded PEM, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T22:38:48Z) Pushed support for base64 text in `APP_STORE_CONNECT_API_KEY_P8`; GitHub run `24693969061` still failed with `MalformedFraming`, which points to PEM text stored without valid line framing.
+- [ ] Reconstruct single-line or space-separated PEM framing before loading the key, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -63,6 +64,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: TestFlight run `24693764635` used `scripts.app_store_connect.check`, then `cryptography` failed with `MalformedFraming` while both secret variables were populated.
 - Observation: After raw-secret precedence was fixed, the runner still failed with `MalformedFraming`, so the value in `APP_STORE_CONNECT_API_KEY_P8` is present but not framed as PEM text.
   Evidence: TestFlight run `24693868296` failed at `serialization.load_pem_private_key` with `MalformedFraming` after using the raw-priority loader.
+- Observation: Supporting base64 in the raw slot did not change the failure, which means the secret reaches the loader as PEM-looking text with invalid internal framing.
+  Evidence: TestFlight run `24693969061` still failed at `serialization.load_pem_private_key` with `MalformedFraming` after the encoded-raw fallback patch.
 
 ## Decision Log
 

@@ -145,6 +145,16 @@ def test_private_key_can_be_loaded_from_base64_env(tmp_path: Path) -> None:
         )
         == key
     )
+    assert (
+        load_private_key_pem(
+            {
+                "APP_STORE_CONNECT_API_KEY_P8": (
+                    "-----BEGIN PRIVATE KEY----- example -----END PRIVATE KEY-----"
+                )
+            }
+        )
+        == key
+    )
     assert load_private_key_pem({"APP_STORE_CONNECT_API_KEY_P8": key.decode()}) == key
 
     key_path = tmp_path / "AuthKey_KEY123.p8"

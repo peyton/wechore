@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 import json
 import os
 from pathlib import Path
+import re
 import sys
 from typing import Any
 from urllib.error import HTTPError
@@ -21,6 +22,12 @@ from cryptography.hazmat.primitives.asymmetric import ec, utils
 
 API_ROOT = "https://api.appstoreconnect.apple.com"
 JWT_AUDIENCE = "appstoreconnect-v1"
+PRIVATE_KEY_PEM_RE = re.compile(
+    r"-----BEGIN (?P<label>[A-Z ]*PRIVATE KEY)-----"
+    r"(?P<body>.*?)"
+    r"-----END (?P=label)-----",
+    re.DOTALL,
+)
 DEFAULT_APP_NAME = "WeChore"
 DEFAULT_BUNDLE_ID = "app.peyton.wechore"
 DEFAULT_SKU = "app.peyton.wechore"
@@ -105,9 +112,17 @@ def looks_like_private_key_pem(value: str) -> bool:
 
 
 def normalize_private_key_pem(value: str) -> str:
-    normalized = value.strip()
-    if "\\n" in normalized and "\n" not in normalized:
+    normalized = value.strip().strip("\"'")
+    if "\\n" in normalized:
         normalized = normalized.replace("\\n", "\n")
+    match = PRIVATE_KEY_PEM_RE.search(normalized)
+    if match:
+        body = re.sub(r"\s+", "", match.group("body"))
+        wrapped_body = "\n".join(
+            body[index : index + 64] for index in range(0, len(body), 64)
+        )
+        label = match.group("label")
+        return f"-----BEGIN {label}-----\n{wrapped_body}\n-----END {label}-----\n"
     return f"{normalized}\n"
 
 
@@ -179,10 +194,15 @@ def create_jwt(config: AppStoreConnectConfig, now: datetime | None = None) -> st
         f"{base64url(json.dumps(header, separators=(',', ':')).encode('utf-8'))}."
         f"{base64url(json.dumps(payload, separators=(',', ':')).encode('utf-8'))}"
     ).encode("ascii")
-    private_key = serialization.load_pem_private_key(
-        config.private_key_pem,
-        password=None,
-    )
+    try:
+        private_key = serialization.load_pem_private_key(
+            config.private_key_pem,
+            password=None,
+        )
+    except ValueError as error:
+        raise AppStoreConnectError(
+            "App Store Connect private key is not valid PEM."
+        ) from error
     if not isinstance(private_key, ec.EllipticCurvePrivateKey):
         raise AppStoreConnectError("App Store Connect key must be an EC private key.")
     der_signature = private_key.sign(signing_input, ec.ECDSA(hashes.SHA256()))
