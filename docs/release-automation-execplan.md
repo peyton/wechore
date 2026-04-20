@@ -32,7 +32,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T22:38:48Z) Pushed support for base64 text in `APP_STORE_CONNECT_API_KEY_P8`; GitHub run `24693969061` still failed with `MalformedFraming`, which points to PEM text stored without valid line framing.
 - [x] (2026-04-20T22:41:39Z) Reconstructed single-line or space-separated PEM framing before loading the key; GitHub run `24694067860` then failed cleanly with `App Store Connect private key is not valid PEM`.
 - [x] (2026-04-20T23:13:35Z) After the App Store Connect key secret and matching key ID/issuer secrets were corrected, GitHub run `24695149674` passed credentials, release metadata, App Store Connect app verification, and provisioning; archive/upload failed because `appstore_api_key.sh` was invoked as an executable without executable bits.
-- [ ] Invoke `appstore_api_key.sh` through `bash`, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T23:16:29Z) Invoked `appstore_api_key.sh` through `bash`; GitHub run `24695244804` then reached the next non-executable helper, `archive_release.sh`.
+- [ ] Invoke nested release helper scripts through `bash`, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -70,6 +71,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: TestFlight run `24693969061` still failed at `serialization.load_pem_private_key` with `MalformedFraming` after the encoded-raw fallback patch.
 - Observation: With matching App Store Connect key credentials in GitHub, the TestFlight workflow reaches archive/upload.
   Evidence: TestFlight run `24695149674` passed `Verify App Store Connect app` and `Ensure App Store provisioning`, then failed in `Archive and upload` with `scripts/tooling/appstore_api_key.sh: Permission denied`.
+- Observation: The GitHub checkout does not preserve executable bits on the release helper scripts, so nested script calls must be interpreter-explicit.
+  Evidence: TestFlight run `24695244804` passed credentials and provisioning, then failed with `scripts/tooling/archive_release.sh: Permission denied`.
 
 ## Decision Log
 

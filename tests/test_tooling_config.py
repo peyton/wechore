@@ -126,6 +126,13 @@ def test_release_scripts_do_not_require_helper_execute_bits() -> None:
 
         assert 'api_key_path="$(bash "$TOOLING_DIR/appstore_api_key.sh")"' in script
 
+    upload_script = (
+        REPO_ROOT / "scripts" / "tooling" / "upload_testflight.sh"
+    ).read_text(encoding="utf-8")
+    assert 'bash "$TOOLING_DIR/archive_release.sh" --archive-path "$archive_path"' in (
+        upload_script
+    )
+
 
 def test_release_tag_and_build_number_helpers() -> None:
     assert parse_release_tag("v1.2.3") == "1.2.3"
