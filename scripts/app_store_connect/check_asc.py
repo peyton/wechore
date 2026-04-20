@@ -61,7 +61,7 @@ def asc_environment(environment: Mapping[str, str]) -> dict[str, str]:
         if not asc_env.get("ASC_PRIVATE_KEY"):
             asc_env["ASC_PRIVATE_KEY"] = normalize_private_key_pem(key_base64)
     elif key_base64 and not asc_env.get("ASC_PRIVATE_KEY_B64"):
-        asc_env["ASC_PRIVATE_KEY_B64"] = key_base64
+        asc_env["ASC_PRIVATE_KEY_B64"] = "".join(key_base64.split())
     key_raw = asc_env.get("ASC_PRIVATE_KEY")
     if key_raw and looks_like_private_key_pem(key_raw):
         asc_env["ASC_PRIVATE_KEY"] = normalize_private_key_pem(key_raw)
@@ -163,6 +163,7 @@ def main() -> int:
     try:
         payload = run_asc_apps_list(config, os.environ)
         record = verify_payload(payload, config)
+        warnings = validate_app_record(config, record)
     except AppStoreAppMissingError as error:
         print(str(error), file=sys.stderr)
         return 3
@@ -173,6 +174,11 @@ def main() -> int:
     if args.json:
         print(json.dumps(record.__dict__, sort_keys=True))
     else:
+        for warning in warnings:
+            print(
+                f"Warning: App Store Connect app metadata: {warning}",
+                file=sys.stderr,
+            )
         print(
             "Found App Store Connect app with asc: "
             f"{record.name} ({record.bundle_id}, sku {record.sku}, id {record.app_id})"

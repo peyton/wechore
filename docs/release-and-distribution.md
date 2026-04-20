@@ -45,7 +45,7 @@ record exists.
    ```text
    Name: WeChore
    Bundle ID: app.peyton.wechore
-   SKU: WECHORE-IOS
+   SKU: app.peyton.wechore
    Primary locale: en-US
    Platform: iOS
    Version: 1.0.0
@@ -70,10 +70,15 @@ record exists.
    ```text
    APP_STORE_CONNECT_API_KEY_ID
    APP_STORE_CONNECT_API_ISSUER_ID
-   APP_STORE_CONNECT_API_KEY_P8_BASE64
+   APP_STORE_CONNECT_API_KEY_P8
    ```
 
-   Encode the `.p8` key as one line:
+   Store the `.p8` file contents exactly as Apple downloaded them, including the
+   `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines. The
+   older `APP_STORE_CONNECT_API_KEY_P8_BASE64` secret is still accepted as a
+   fallback, but new setup should use the raw PEM secret above.
+
+   If you need the fallback secret, encode the `.p8` key as one line:
 
    ```text
    base64 -i AuthKey_<KEY_ID>.p8 | tr -d '\n'
@@ -103,7 +108,7 @@ record exists.
 
    ```text
    Release metadata preflight passed.
-   Found App Store Connect app with asc: WeChore (app.peyton.wechore, sku WECHORE-IOS, id ...)
+   Found App Store Connect app with asc: WeChore (app.peyton.wechore, sku app.peyton.wechore, id ...)
    ```
 
    `appstore-check` also supports an authenticated local `asc` profile, but CI
@@ -147,15 +152,19 @@ The command archives the `WeChore` production scheme, exports with
 `method=app-store-connect`, uploads to App Store Connect, and leaves build
 artifacts under `.build/` and `.DerivedData/archive/`.
 
-GitHub Actions runs the same upload from `.github/workflows/testflight.yml` on
-app or release-tooling pushes to `master` and on manual dispatch. Documentation
-or website-only pushes do not create a new TestFlight build. New builds appear in
-App Store Connect under TestFlight after Apple processing completes.
+GitHub Actions runs the same release path from `.github/workflows/testflight.yml`
+on app or release-tooling pushes to `master` and on manual dispatch. The job
+validates release metadata, verifies that the App Store Connect app exists,
+ensures bundle IDs, capabilities, and App Store provisioning profiles, then
+archives and uploads. Documentation or website-only pushes do not create a new
+TestFlight build. New builds appear in App Store Connect under TestFlight after
+Apple processing completes.
 
-If the `testflight` GitHub environment is missing any required App Store Connect
-value, the workflow emits a notice and skips the upload instead of failing the
-push. Run `mise exec -- just appstore-preflight` locally or configure the
-environment values above to enable uploads.
+If the `testflight` GitHub environment is missing the team id, key id, issuer
+id, and one of `APP_STORE_CONNECT_API_KEY_P8` or
+`APP_STORE_CONNECT_API_KEY_P8_BASE64`, the workflow emits a notice and skips the
+upload instead of failing the push. Run `mise exec -- just appstore-preflight`
+locally or configure the environment values above to enable uploads.
 
 ## Versioning
 

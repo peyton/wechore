@@ -239,9 +239,18 @@ def update_capability_body(
 
 def capability_attributes(capability: RequiredCapability) -> dict[str, Any]:
     attributes: dict[str, Any] = {"capabilityType": capability.capability_type}
-    if capability.settings:
-        attributes["settings"] = list(capability.settings)
+    api_settings = capability_api_settings(capability)
+    if api_settings:
+        attributes["settings"] = list(api_settings)
     return attributes
+
+
+def capability_api_settings(
+    capability: RequiredCapability,
+) -> tuple[Mapping[str, Any], ...]:
+    if capability.capability_type == "APP_GROUPS":
+        return ()
+    return capability.settings
 
 
 def create_profile_body(
@@ -273,6 +282,29 @@ def create_profile_body(
             },
         }
     }
+
+
+def certificate_list_query() -> dict[str, str]:
+    return {
+        "fields[certificates]": (
+            "certificateType,displayName,expirationDate,activated"
+        ),
+        "limit": "200",
+    }
+
+
+def bundle_platform_matches(actual: str, expected: str) -> bool:
+    if actual == expected:
+        return True
+    return expected == "IOS" and actual == "UNIVERSAL"
+
+
+def bundle_capabilities_query() -> dict[str, str]:
+    return {"fields[bundleIdCapabilities]": "capabilityType,settings"}
+
+
+def bundle_profiles_query() -> dict[str, str]:
+    return {"fields[profiles]": "name,profileType,profileState,expirationDate"}
 
 
 def setting_has_option(
@@ -310,7 +342,8 @@ def capability_satisfies(
     if actual.capability_type != expected.capability_type:
         return False
     return all(
-        setting_has_option(actual.settings, setting) for setting in expected.settings
+        setting_has_option(actual.settings, setting)
+        for setting in capability_api_settings(expected)
     )
 
 
@@ -361,7 +394,7 @@ class ProvisioningEnsurer:
     def ensure_bundle_id(self, requirement: RequiredBundleId) -> BundleIdRecord:
         existing = self.find_bundle_id(requirement.identifier)
         if existing is not None:
-            if existing.platform != requirement.platform:
+            if not bundle_platform_matches(existing.platform, requirement.platform):
                 raise AppStoreConnectError(
                     f"Bundle ID {requirement.identifier} has platform "
                     f"{existing.platform!r}; expected {requirement.platform!r}."
@@ -525,10 +558,7 @@ class ProvisioningEnsurer:
         payload = self.client.request(
             "GET",
             f"/v1/bundleIds/{bundle_id.resource_id}/bundleIdCapabilities",
-            query={
-                "fields[bundleIdCapabilities]": "capabilityType,settings",
-                "limit": "50",
-            },
+            query=bundle_capabilities_query(),
         )
         return [
             CapabilityRecord.from_api_resource(resource)
@@ -539,13 +569,7 @@ class ProvisioningEnsurer:
         payload = self.client.request(
             "GET",
             "/v1/certificates",
-            query={
-                "filter[certificateType]": sorted(DISTRIBUTION_CERTIFICATE_TYPES),
-                "fields[certificates]": (
-                    "certificateType,displayName,expirationDate,activated"
-                ),
-                "limit": "200",
-            },
+            query=certificate_list_query(),
         )
         certificates = [
             CertificateRecord.from_api_resource(resource)
@@ -582,10 +606,7 @@ class ProvisioningEnsurer:
         payload = self.client.request(
             "GET",
             f"/v1/bundleIds/{bundle_id.resource_id}/profiles",
-            query={
-                "fields[profiles]": ("name,profileType,profileState,expirationDate"),
-                "limit": "200",
-            },
+            query=bundle_profiles_query(),
         )
         return [
             ProfileRecord.from_api_resource(resource)

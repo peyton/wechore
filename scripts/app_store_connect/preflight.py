@@ -60,14 +60,14 @@ def validate_required_credentials(
         environment.get(name)
         for name in (
             "APP_STORE_CONNECT_API_KEY_PATH",
-            "APP_STORE_CONNECT_API_KEY_P8_BASE64",
             "APP_STORE_CONNECT_API_KEY_P8",
+            "APP_STORE_CONNECT_API_KEY_P8_BASE64",
         )
     ):
         errors.append(
             "Missing App Store Connect private key. Set "
-            "APP_STORE_CONNECT_API_KEY_PATH, APP_STORE_CONNECT_API_KEY_P8_BASE64, "
-            "or APP_STORE_CONNECT_API_KEY_P8."
+            "APP_STORE_CONNECT_API_KEY_PATH, APP_STORE_CONNECT_API_KEY_P8, "
+            "or APP_STORE_CONNECT_API_KEY_P8_BASE64."
         )
         return
     try:

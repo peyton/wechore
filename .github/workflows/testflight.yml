@@ -37,6 +37,7 @@ jobs:
     env:
       APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
       APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
       TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
       WECHORE_CLOUD_KIT_ENVIRONMENT: Production
@@ -63,13 +64,19 @@ jobs:
           for name in \
             TEAM_ID \
             APP_STORE_CONNECT_API_KEY_ID \
-            APP_STORE_CONNECT_API_ISSUER_ID \
-            APP_STORE_CONNECT_API_KEY_P8_BASE64
+            APP_STORE_CONNECT_API_ISSUER_ID
           do
             if [ -z "${!name:-}" ]; then
               missing+=("$name")
             fi
           done
+
+          if [ -z "${APP_STORE_CONNECT_API_KEY_P8:-}" ] &&
+            [ -z "${APP_STORE_CONNECT_API_KEY_P8_BASE64:-}" ]; then
+            missing+=(
+              "APP_STORE_CONNECT_API_KEY_P8 or APP_STORE_CONNECT_API_KEY_P8_BASE64"
+            )
+          fi
 
           if [ "${#missing[@]}" -eq 0 ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
@@ -83,6 +90,9 @@ jobs:
       - name: Verify App Store Connect app
         if: steps.testflight-credentials.outputs.available == 'true'
         run: mise exec -- just appstore-check
+      - name: Ensure App Store provisioning
+        if: steps.testflight-credentials.outputs.available == 'true'
+        run: mise exec -- just appstore-ensure-provisioning
       - name: Archive and upload
         if: steps.testflight-credentials.outputs.available == 'true'
         run: mise exec -- just testflight-upload

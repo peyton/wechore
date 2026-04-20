@@ -32,7 +32,7 @@ appstore-create-app:
     @printf '%s\n' 'Create the app record once in App Store Connect with:'
     @printf '%s\n' '  Name: WeChore'
     @printf '%s\n' '  Bundle ID: app.peyton.wechore'
-    @printf '%s\n' '  SKU: WECHORE-IOS'
+    @printf '%s\n' '  SKU: app.peyton.wechore'
     @printf '%s\n' '  Primary locale: en-US'
     @printf '%s\n' '  Platform: iOS'
     @printf '%s\n' '  Version: 1.0.0'

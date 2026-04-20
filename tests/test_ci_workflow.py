@@ -65,9 +65,15 @@ def test_testflight_workflow_uploads_from_master_with_environment_secrets() -> N
     assert 'xcode-version: "26.3.0"' in workflow
     assert "APP_STORE_CONNECT_API_KEY_ID" in workflow
     assert "APP_STORE_CONNECT_API_ISSUER_ID" in workflow
+    assert "APP_STORE_CONNECT_API_KEY_P8" in workflow
     assert "APP_STORE_CONNECT_API_KEY_P8_BASE64" in workflow
+    assert (
+        "APP_STORE_CONNECT_API_KEY_P8 or APP_STORE_CONNECT_API_KEY_P8_BASE64"
+        in workflow
+    )
     assert "mise exec -- just appstore-preflight" in workflow
     assert "mise exec -- just appstore-check" in workflow
+    assert "mise exec -- just appstore-ensure-provisioning" in workflow
     assert "mise exec -- just testflight-upload" in workflow
 
 

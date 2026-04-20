@@ -23,7 +23,7 @@ API_ROOT = "https://api.appstoreconnect.apple.com"
 JWT_AUDIENCE = "appstoreconnect-v1"
 DEFAULT_APP_NAME = "WeChore"
 DEFAULT_BUNDLE_ID = "app.peyton.wechore"
-DEFAULT_SKU = "WECHORE-IOS"
+DEFAULT_SKU = "app.peyton.wechore"
 DEFAULT_PRIMARY_LOCALE = "en-US"
 DEFAULT_PLATFORM = "IOS"
 DEFAULT_INITIAL_VERSION = "1.0.0"
@@ -132,7 +132,8 @@ def load_private_key_pem(environment: Mapping[str, str]) -> bytes:
         return normalize_private_key_pem(key_raw).encode("utf-8")
     raise AppStoreConnectError(
         "Missing App Store Connect private key. Set "
-        "APP_STORE_CONNECT_API_KEY_PATH or APP_STORE_CONNECT_API_KEY_P8_BASE64."
+        "APP_STORE_CONNECT_API_KEY_PATH, APP_STORE_CONNECT_API_KEY_P8, "
+        "or APP_STORE_CONNECT_API_KEY_P8_BASE64."
     )
 
 
@@ -265,28 +266,28 @@ def check_app(config: AppStoreConnectConfig) -> AppRecord:
 def validate_app_record(
     config: AppStoreConnectConfig,
     record: AppRecord,
-) -> None:
-    mismatches: list[str] = []
+) -> list[str]:
+    if record.bundle_id != config.bundle_id:
+        raise AppStoreConnectError(
+            "App Store Connect app bundle ID mismatch: "
+            f"expected {config.bundle_id!r}, found {record.bundle_id!r}"
+        )
+    warnings: list[str] = []
     expected_values = {
         "name": config.app_name,
-        "bundle_id": config.bundle_id,
         "sku": config.sku,
         "primary_locale": config.primary_locale,
     }
     actual_values = {
         "name": record.name,
-        "bundle_id": record.bundle_id,
         "sku": record.sku,
         "primary_locale": record.primary_locale,
     }
     for field, expected in expected_values.items():
         actual = actual_values[field]
         if actual != expected:
-            mismatches.append(f"{field} expected {expected!r}, found {actual!r}")
-    if mismatches:
-        raise AppStoreConnectError(
-            "App Store Connect app metadata mismatch: " + "; ".join(mismatches)
-        )
+            warnings.append(f"{field} expected {expected!r}, found {actual!r}")
+    return warnings
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -316,6 +317,7 @@ def main() -> int:
                 initial_version=config.initial_version,
             )
         record = check_app(config)
+        warnings = validate_app_record(config, record)
     except AppStoreAppMissingError as error:
         print(str(error), file=sys.stderr)
         return 3
@@ -326,6 +328,11 @@ def main() -> int:
     if args.json:
         print(json.dumps(record.__dict__, sort_keys=True))
     else:
+        for warning in warnings:
+            print(
+                f"Warning: App Store Connect app metadata: {warning}",
+                file=sys.stderr,
+            )
         print(
             "Found App Store Connect app: "
             f"{record.name} ({record.bundle_id}, sku {record.sku}, id {record.app_id})"

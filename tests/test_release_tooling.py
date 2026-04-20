@@ -27,7 +27,12 @@ from scripts.app_store_connect.provisioning import (
     ProfileRecord,
     RequiredCapability,
     app_group_settings,
+    bundle_capabilities_query,
+    bundle_platform_matches,
+    bundle_profiles_query,
+    capability_api_settings,
     capability_satisfies,
+    certificate_list_query,
     create_bundle_id_body,
     create_capability_body,
     create_profile_body,
@@ -57,7 +62,7 @@ def test_app_store_manual_creation_message_names_required_values() -> None:
     assert "no official create-app endpoint" in message
     assert "Name: WeChore" in message
     assert f"Bundle ID: {DEFAULT_BUNDLE_ID}" in message
-    assert "SKU: WECHORE-IOS" in message
+    assert "SKU: app.peyton.wechore" in message
     assert "Version: 1.0.0" in message
 
 
@@ -155,7 +160,7 @@ def test_private_key_rejects_invalid_base64_env() -> None:
         load_private_key_pem({"APP_STORE_CONNECT_API_KEY_P8_BASE64": "not base64!"})
 
 
-def test_app_store_record_metadata_must_match_expected_values() -> None:
+def test_app_store_record_metadata_warnings_do_not_block_upload() -> None:
     config = AppStoreConnectConfig(
         key_id="KEY123",
         issuer_id="issuer",
@@ -169,7 +174,27 @@ def test_app_store_record_metadata_must_match_expected_values() -> None:
         primary_locale="en-US",
     )
 
-    with pytest.raises(AppStoreConnectError, match="metadata mismatch"):
+    assert validate_app_record(config, record) == [
+        "name expected 'WeChore', found 'Wrong'",
+        "sku expected 'app.peyton.wechore', found 'WRONG-SKU'",
+    ]
+
+
+def test_app_store_record_bundle_id_mismatch_blocks_upload() -> None:
+    config = AppStoreConnectConfig(
+        key_id="KEY123",
+        issuer_id="issuer",
+        private_key_pem=b"key",
+    )
+    record = AppRecord(
+        app_id="app-id",
+        name="WeChore",
+        bundle_id="app.peyton.other",
+        sku="app.peyton.wechore",
+        primary_locale="en-US",
+    )
+
+    with pytest.raises(AppStoreConnectError, match="bundle ID mismatch"):
         validate_app_record(config, record)
 
 
@@ -186,6 +211,16 @@ def test_asc_environment_maps_existing_app_store_connect_names() -> None:
     assert env["ASC_ISSUER_ID"] == "issuer"
     assert env["ASC_PRIVATE_KEY_B64"] == "base64"
     assert env["ASC_BYPASS_KEYCHAIN"] == "1"
+
+    wrapped_base64_env = asc_environment(
+        {
+            "APP_STORE_CONNECT_API_KEY_ID": "KEY123",
+            "APP_STORE_CONNECT_API_ISSUER_ID": "issuer",
+            "APP_STORE_CONNECT_API_KEY_P8_BASE64": "abc\n 123\txyz",
+        }
+    )
+
+    assert wrapped_base64_env["ASC_PRIVATE_KEY_B64"] == "abc123xyz"
 
     raw_pem_env = asc_environment(
         {
@@ -295,19 +330,22 @@ def test_create_capability_body_links_capability_to_bundle_id() -> None:
     body = create_capability_body(bundle, capability)
 
     assert body["data"]["type"] == "bundleIdCapabilities"
-    assert body["data"]["attributes"] == {
-        "capabilityType": "APP_GROUPS",
-        "settings": [
-            {
-                "key": "APP_GROUP_IDENTIFIERS",
-                "options": [{"key": "group.app.peyton.wechore", "enabled": True}],
-            }
-        ],
-    }
+    assert body["data"]["attributes"] == {"capabilityType": "APP_GROUPS"}
     assert body["data"]["relationships"]["bundleId"]["data"] == {
         "type": "bundleIds",
         "id": "bundle-123",
     }
+
+
+def test_app_group_settings_are_not_sent_to_bundle_capabilities_api() -> None:
+    app_group = RequiredCapability(
+        "APP_GROUPS",
+        app_group_settings("group.app.peyton.wechore"),
+    )
+    icloud = production_requirements()[0].capabilities[2]
+
+    assert capability_api_settings(app_group) == ()
+    assert capability_api_settings(icloud) == icloud.settings
 
 
 def test_create_profile_body_links_bundle_and_certificates() -> None:
@@ -341,34 +379,65 @@ def test_create_profile_body_links_bundle_and_certificates() -> None:
     ]
 
 
-def test_capability_satisfies_required_enabled_options() -> None:
-    expected = RequiredCapability(
-        "APP_GROUPS",
-        app_group_settings("group.app.peyton.wechore"),
+def test_certificate_list_query_avoids_repeated_certificate_type_filter() -> None:
+    query = certificate_list_query()
+
+    assert "filter[certificateType]" not in query
+    assert query["fields[certificates]"] == (
+        "certificateType,displayName,expirationDate,activated"
     )
+
+
+def test_ios_bundle_id_accepts_existing_universal_platform() -> None:
+    assert bundle_platform_matches("UNIVERSAL", "IOS")
+    assert bundle_platform_matches("IOS", "IOS")
+    assert not bundle_platform_matches("MAC_OS", "IOS")
+
+
+def test_bundle_relationship_queries_avoid_unsupported_limit_parameter() -> None:
+    assert bundle_capabilities_query() == {
+        "fields[bundleIdCapabilities]": "capabilityType,settings"
+    }
+    assert bundle_profiles_query() == {
+        "fields[profiles]": "name,profileType,profileState,expirationDate"
+    }
+
+
+def test_capability_satisfies_required_enabled_options() -> None:
+    expected = production_requirements()[0].capabilities[2]
     actual = CapabilityRecord(
         resource_id="cap-1",
-        capability_type="APP_GROUPS",
+        capability_type="ICLOUD",
         settings=(
             {
-                "key": "APP_GROUP_IDENTIFIERS",
-                "options": [{"key": "group.app.peyton.wechore", "enabled": True}],
+                "key": "ICLOUD_VERSION",
+                "options": [{"key": "XCODE_6", "enabled": True}],
             },
         ),
     )
     disabled = CapabilityRecord(
         resource_id="cap-1",
-        capability_type="APP_GROUPS",
+        capability_type="ICLOUD",
         settings=(
             {
-                "key": "APP_GROUP_IDENTIFIERS",
-                "options": [{"key": "group.app.peyton.wechore", "enabled": False}],
+                "key": "ICLOUD_VERSION",
+                "options": [{"key": "XCODE_6", "enabled": False}],
             },
         ),
+    )
+    app_groups = RequiredCapability(
+        "APP_GROUPS",
+        app_group_settings("group.app.peyton.wechore"),
+    )
+    app_groups_without_settings = CapabilityRecord(
+        resource_id="cap-2",
+        capability_type="APP_GROUPS",
+        settings=(),
     )
 
     assert capability_satisfies(actual, expected)
     assert not capability_satisfies(disabled, expected)
+    assert capability_satisfies(app_groups_without_settings, app_groups)
 
 
 def test_distribution_certificate_and_profile_usability_checks_expiration() -> None:

@@ -19,6 +19,12 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-14T11:29:43Z) Provisioned the Cloudflare Pages project `wechore` and attached the pending custom domain `wechore.peyton.app` with the available token.
 - [ ] Provision Cloudflare DNS and Email Routing after receiving a Cloudflare token with DNS/Edit and Email Routing permissions and after choosing a non-conflicting email hostname.
 - [x] (2026-04-14T11:29:43Z) Ran focused Python tests and `mise exec -- just lint`; both passed after fixing shellcheck path-variable annotations.
+- [x] (2026-04-20T03:17:59Z) Re-inspected live GitHub Actions after master commit `8ca5177`; `TestFlight` failed in `just appstore-check` before archiving because `asc apps list` rejected the private key supplied through `APP_STORE_CONNECT_API_KEY_P8_BASE64`.
+- [x] (2026-04-20T03:17:59Z) Verified with Safari and local `asc` that the App Store Connect app exists as Apple ID `6762228330` for bundle ID `app.peyton.wechore`; its current portal name is `WenChore` and its immutable SKU is `app.peyton.wechore`.
+- [x] (2026-04-20T03:34:00Z) Updated the GitHub TestFlight workflow, release checks, tests, and docs so the existing raw `APP_STORE_CONNECT_API_KEY_P8` secret is the primary key source, base64 values are normalized when used, and non-blocking portal metadata does not prevent upload.
+- [x] (2026-04-20T03:34:00Z) Added `appstore-ensure-provisioning` to the TestFlight workflow before archive/upload so CI explicitly creates or verifies bundle IDs, capabilities, and App Store provisioning profiles before Xcode export.
+- [x] (2026-04-20T03:36:00Z) Ran focused release tests, local `appstore-check`, local `appstore-provisioning-plan`, and the required `mise exec -- just lint`; all completed successfully after the fixes.
+- [ ] Run non-dry-run provisioning after user confirmation, then push and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -36,6 +42,14 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: Pages custom domain verification reports that a CNAME record is required for `wechore.peyton.app`; email delivery to `support@wechore.peyton.app` requires MX records at `wechore.peyton.app`; DNS does not allow CNAME and MX records at the same owner name.
 - Observation: The available Cloudflare token can create Pages resources but cannot edit DNS or Email Routing for `peyton.app`.
   Evidence: Creating the Pages project succeeded, adding the Pages custom domain succeeded, and attempts to call DNS or Email Routing endpoints returned Cloudflare API authentication error `10000`.
+- Observation: The live GitHub `testflight` environment already has a raw `APP_STORE_CONNECT_API_KEY_P8` secret, but `.github/workflows/testflight.yml` only passed `APP_STORE_CONNECT_API_KEY_P8_BASE64` into the job.
+  Evidence: `gh secret list --env testflight` listed both `APP_STORE_CONNECT_API_KEY_P8` and `APP_STORE_CONNECT_API_KEY_P8_BASE64`, while workflow run `24577280724` failed with `asc apps list failed: Error: apps: invalid private key: invalid PEM data`.
+- Observation: The one-time App Store Connect app record exists, so missing app creation is no longer the TestFlight blocker.
+  Evidence: Local `asc --strict-auth apps list --bundle-id app.peyton.wechore --output json` returned app ID `6762228330` with bundle ID `app.peyton.wechore`.
+- Observation: The provisioning dry-run uncovered current Apple API shape differences that the earlier script did not handle.
+  Evidence: Apple rejected repeated `filter[certificateType]` query parameters, rejected `limit` on bundle-ID relationship endpoints, and returned the existing iOS app bundle ID platform as `UNIVERSAL`.
+- Observation: The current Apple account is missing several release resources, but the repo can now plan them successfully.
+  Evidence: `mise exec -- just appstore-provisioning-plan` reported an active distribution certificate, the existing main bundle ID, and planned creation of app-group, associated-domains, iCloud capabilities, the widget bundle ID, and both App Store provisioning profiles.
 
 ## Decision Log
 
@@ -57,6 +71,15 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - Decision: Make the Pages/email hostname conflict explicit in tooling and docs rather than silently creating non-working Email Routing rules.
   Rationale: The user asked to double check that everything is possible. Creating rules for `support@wechore.peyton.app` while the same hostname is a Pages CNAME would produce configuration that appears automated but cannot receive SMTP mail.
   Date/Author: 2026-04-14 / Codex
+- Decision: Prefer the raw `APP_STORE_CONNECT_API_KEY_P8` GitHub secret for TestFlight and retain `APP_STORE_CONNECT_API_KEY_P8_BASE64` only as a backward-compatible fallback.
+  Rationale: The repository already supports raw PEM input, the user previously preferred non-base64 Apple secrets, and the live failure is on the older base64 path before archive/upload can run.
+  Date/Author: 2026-04-20 / Codex
+- Decision: Treat App Store Connect name, SKU, and locale mismatches as warnings after the expected bundle ID is found, not as hard blockers for TestFlight upload.
+  Rationale: The SKU is an immutable App Store Connect creation value and does not affect whether Xcode can upload a build for `app.peyton.wechore`. The visible name typo should be fixed in App Store Connect, but it should not block shipping a TestFlight build.
+  Date/Author: 2026-04-20 / Codex
+- Decision: Run the repo-owned provisioning ensure step in the TestFlight workflow before archive/upload.
+  Rationale: The dry-run showed required bundle IDs, capabilities, and profiles are not fully present yet. Making provisioning explicit catches Apple portal drift before the slower Xcode archive/export step and keeps the clean-checkout GitHub path self-contained.
+  Date/Author: 2026-04-20 / Codex
 
 ## Outcomes & Retrospective
 
@@ -129,3 +152,7 @@ At completion, new or updated interfaces should include:
 Revision note, 2026-04-14: Created the ExecPlan after auditing the repository and external platform constraints so the remaining implementation can be resumed from this file alone.
 
 Revision note, 2026-04-14: Updated the plan after implementing release scripts, GitHub Actions, Cloudflare setup tooling, documentation, focused tests, and required lint. Added the discovered DNS conflict between the requested Pages hostname and requested email addresses.
+
+Revision note, 2026-04-20: Reopened the plan for the live TestFlight failure on master. Added evidence from GitHub Actions, local `asc`, and Safari, and recorded the decision to move the CI path to the raw `.p8` secret while keeping base64 as a fallback.
+
+Revision note, 2026-04-20: Updated the plan after local validation passed. The remaining blocked step is non-dry-run Apple Developer provisioning, which will persistently modify bundle identifiers, capabilities, and provisioning profiles.
