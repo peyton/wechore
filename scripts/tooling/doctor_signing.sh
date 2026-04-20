@@ -235,10 +235,10 @@ if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] &&
   [ -n "${APP_STORE_CONNECT_API_ISSUER_ID:-}" ] &&
   [ -n "$key_source" ]; then
 
-  hint "Running: scripts.app_store_connect.check_asc"
+  hint "Running: scripts.app_store_connect.check"
   asc_output=""
   if asc_output="$(WECHORE_FLAVOR=prod \
-    run_repo_python_module scripts.app_store_connect.check_asc 2>&1)"; then
+    run_repo_python_module scripts.app_store_connect.check 2>&1)"; then
     ok "App Store Connect app found"
     hint "  $asc_output"
   else

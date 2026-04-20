@@ -26,7 +26,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T03:36:00Z) Ran focused release tests, local `appstore-check`, local `appstore-provisioning-plan`, and the required `mise exec -- just lint`; all completed successfully after the fixes.
 - [x] (2026-04-20T22:26:19Z) Used Apple Developer portal access to create and assign `group.app.peyton.wechore`, create and assign `iCloud.app.peyton.wechore`, and save App Groups on the widget App ID.
 - [x] (2026-04-20T22:26:47Z) Regenerated App Store profiles `B2M3324R6V` and `FG6GNSL2Q7`; decoded entitlements now include `group.app.peyton.wechore` on both profiles and `iCloud.app.peyton.wechore` on the app profile.
-- [ ] Push the provisioning fix and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T22:29:24Z) Pushed the provisioning fix to `master`; GitHub run `24693639425` still failed in `appstore-check` because the `asc` CLI rejected the GitHub environment private key before provisioning/archive.
+- [ ] Switch the default App Store Connect check to the repo-local Python API client, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -54,6 +55,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: `mise exec -- just appstore-provisioning-plan` reported an active distribution certificate, the existing main bundle ID, and planned creation of app-group, associated-domains, iCloud capabilities, the widget bundle ID, and both App Store provisioning profiles.
 - Observation: Saving App Groups or iCloud in the Apple Developer portal invalidates existing provisioning profiles, and Apple's API can still reserve the old profile names after invalidation.
   Evidence: After saving the App Groups update for `app.peyton.wechore.widgets`, `just appstore-provisioning-plan` planned new App Store profiles, while the non-dry-run create failed with `Multiple profiles found with the name 'WeChore App Store'`.
+- Observation: The GitHub runner still fails when `appstore-check` shells out to `asc`, even after the workflow passes the raw `APP_STORE_CONNECT_API_KEY_P8` secret.
+  Evidence: TestFlight run `24693639425` had both `APP_STORE_CONNECT_API_KEY_P8` and `APP_STORE_CONNECT_API_KEY_P8_BASE64` populated, then failed with `asc apps list failed: Error: apps: invalid private key: invalid PEM data`.
 
 ## Decision Log
 
@@ -86,6 +89,9 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Date/Author: 2026-04-20 / Codex
 - Decision: Create timestamped replacement profile names when invalidated Apple profiles still occupy the preferred profile name.
   Rationale: The archive/export path uses automatic signing and does not require a fixed profile name. Timestamped replacement names avoid a repeatable Apple API 409 while preserving the stable preferred name whenever it is available.
+  Date/Author: 2026-04-20 / Codex
+- Decision: Make `appstore-check` use the repo-local Python App Store Connect API client by default, leaving `appstore-check-asc` as an explicit secondary check.
+  Rationale: The Python client already handles raw PEM, escaped PEM, base64, and key-path inputs consistently, while `asc` is failing on the GitHub environment key before upload can begin.
   Date/Author: 2026-04-20 / Codex
 
 ## Outcomes & Retrospective

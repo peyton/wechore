@@ -27,6 +27,7 @@ def test_justfile_exposes_required_commands() -> None:
         "appstore-create-app:",
         "appstore-preflight:",
         "appstore-check:",
+        "appstore-check-asc:",
         "appstore-provisioning-plan:",
         "appstore-ensure-provisioning:",
         "testflight-archive:",
@@ -54,6 +55,17 @@ def test_justfile_exposes_required_commands() -> None:
         "ci:",
     ):
         assert command in justfile
+
+
+def test_appstore_check_uses_python_api_client_by_default() -> None:
+    justfile = (REPO_ROOT / "justfile").read_text(encoding="utf-8")
+
+    assert (
+        "appstore-check:\n"
+        "    WECHORE_FLAVOR=prod mise exec -- uv run python -m "
+        "scripts.app_store_connect.check"
+    ) in justfile
+    assert "appstore-check-asc:" in justfile
 
 
 def test_mise_pins_project_tools() -> None:
