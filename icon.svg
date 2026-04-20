@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
   <title>WeChore app icon</title>
-  <rect width="1024" height="1024" rx="208" fill="#07c160" />
+  <rect width="1024" height="1024" fill="#07c160" />
   <path d="M206 332c0-82 66-148 148-148h316c82 0 148 66 148 148v198c0 82-66 148-148 148H472L318 806c-21 17-52 2-52-25V662c-37-27-60-70-60-119V332Z" fill="#f8fff9" />
   <path d="M342 384h340" stroke="#121814" stroke-width="58" stroke-linecap="round" />
   <path d="M342 516h220" stroke="#121814" stroke-width="58" stroke-linecap="round" />
