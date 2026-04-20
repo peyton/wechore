@@ -118,6 +118,15 @@ def test_ios_test_wrapper_retries_simulator_launch_timeouts() -> None:
     )
 
 
+def test_release_scripts_do_not_require_helper_execute_bits() -> None:
+    for script_name in ("archive_release.sh", "upload_testflight.sh"):
+        script = (REPO_ROOT / "scripts" / "tooling" / script_name).read_text(
+            encoding="utf-8"
+        )
+
+        assert 'api_key_path="$(bash "$TOOLING_DIR/appstore_api_key.sh")"' in script
+
+
 def test_release_tag_and_build_number_helpers() -> None:
     assert parse_release_tag("v1.2.3") == "1.2.3"
     assert resolve_marketing_version({"WECHORE_MARKETING_VERSION": "2.3.4"}) == "2.3.4"

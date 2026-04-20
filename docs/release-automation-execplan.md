@@ -30,7 +30,9 @@ After this work, a maintainer can start from a clean checkout and use `just` com
 - [x] (2026-04-20T22:32:51Z) Pushed the Python API-client check to `master`; GitHub run `24693764635` confirmed the Python path runs, but `APP_STORE_CONNECT_API_KEY_P8_BASE64` still shadowed the raw PEM secret in the shared key loader.
 - [x] (2026-04-20T22:35:41Z) Pushed raw-secret precedence to `master`; GitHub run `24693868296` still failed loading the PEM, which suggests the raw secret slot may contain base64 text rather than PEM framing.
 - [x] (2026-04-20T22:38:48Z) Pushed support for base64 text in `APP_STORE_CONNECT_API_KEY_P8`; GitHub run `24693969061` still failed with `MalformedFraming`, which points to PEM text stored without valid line framing.
-- [ ] Reconstruct single-line or space-separated PEM framing before loading the key, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
+- [x] (2026-04-20T22:41:39Z) Reconstructed single-line or space-separated PEM framing before loading the key; GitHub run `24694067860` then failed cleanly with `App Store Connect private key is not valid PEM`.
+- [x] (2026-04-20T23:13:35Z) After the App Store Connect key secret and matching key ID/issuer secrets were corrected, GitHub run `24695149674` passed credentials, release metadata, App Store Connect app verification, and provisioning; archive/upload failed because `appstore_api_key.sh` was invoked as an executable without executable bits.
+- [ ] Invoke `appstore_api_key.sh` through `bash`, push, and monitor a master TestFlight workflow until it archives/uploads or reports the next explicit blocker.
 
 ## Surprises & Discoveries
 
@@ -66,6 +68,8 @@ After this work, a maintainer can start from a clean checkout and use `just` com
   Evidence: TestFlight run `24693868296` failed at `serialization.load_pem_private_key` with `MalformedFraming` after using the raw-priority loader.
 - Observation: Supporting base64 in the raw slot did not change the failure, which means the secret reaches the loader as PEM-looking text with invalid internal framing.
   Evidence: TestFlight run `24693969061` still failed at `serialization.load_pem_private_key` with `MalformedFraming` after the encoded-raw fallback patch.
+- Observation: With matching App Store Connect key credentials in GitHub, the TestFlight workflow reaches archive/upload.
+  Evidence: TestFlight run `24695149674` passed `Verify App Store Connect app` and `Ensure App Store provisioning`, then failed in `Archive and upload` with `scripts/tooling/appstore_api_key.sh: Permission denied`.
 
 ## Decision Log
 

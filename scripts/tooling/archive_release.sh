@@ -56,7 +56,7 @@ resolve_version_metadata
 export_tuist_manifest_env
 run_repo_python_module scripts.app_store_connect.preflight --require-credentials
 
-api_key_path="$("$TOOLING_DIR/appstore_api_key.sh")"
+api_key_path="$(bash "$TOOLING_DIR/appstore_api_key.sh")"
 
 mkdir -p \
   "$(dirname "$archive_path")" \
