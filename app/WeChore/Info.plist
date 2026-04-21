@@ -47,6 +47,8 @@
 	<string>WeChore can use contacts to start a DM or invite someone to a chat.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>WeChore uses the local network to exchange chat invites with nearby phones.</string>
+	<key>NSNearbyInteractionUsageDescription</key>
+	<string>WeChore uses nearby interaction to confirm which nearby phone should join your chat invite.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_wchore-chat._tcp</string>

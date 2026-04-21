@@ -120,6 +120,7 @@ def validate_info_plist(path: Path, errors: list[str]) -> None:
         "NSContactsUsageDescription",
         "NSLocalNetworkUsageDescription",
         "NSMicrophoneUsageDescription",
+        "NSNearbyInteractionUsageDescription",
         "NSSpeechRecognitionUsageDescription",
     )
     for key in required_usage_keys:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import plistlib
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -322,6 +323,42 @@ def test_release_preflight_rejects_development_cloudkit_environment() -> None:
     )
 
     assert any("must be Production" in error for error in errors)
+
+
+def test_release_preflight_requires_nearby_interaction_usage_description(
+    tmp_path: Path,
+) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    app_root = tmp_path / "app" / "WeChore"
+    privacy_root = app_root / "Resources"
+    web_root = tmp_path / "web" / ".well-known"
+    privacy_root.mkdir(parents=True)
+    web_root.mkdir(parents=True)
+
+    info = plistlib.loads((repo_root / "app/WeChore/Info.plist").read_bytes())
+    info.pop("NSNearbyInteractionUsageDescription", None)
+    (app_root / "Info.plist").write_bytes(plistlib.dumps(info))
+    (app_root / "WeChore.entitlements").write_bytes(
+        (repo_root / "app/WeChore/WeChore.entitlements").read_bytes()
+    )
+    (privacy_root / "PrivacyInfo.xcprivacy").write_bytes(
+        (repo_root / "app/WeChore/Resources/PrivacyInfo.xcprivacy").read_bytes()
+    )
+    (web_root / "apple-app-site-association").write_bytes(
+        (repo_root / "web/.well-known/apple-app-site-association").read_bytes()
+    )
+
+    errors = validate_release_preflight(
+        {
+            "APP_IDENTIFIER": DEFAULT_BUNDLE_ID,
+            "TEAM_ID": "3VDQ4656LX",
+            "WECHORE_CLOUD_KIT_ENVIRONMENT": "Production",
+        },
+        repo_root=tmp_path,
+        require_credentials=False,
+    )
+
+    assert any("NSNearbyInteractionUsageDescription" in error for error in errors)
 
 
 def test_provisioning_requirements_cover_app_and_widget_identifiers() -> None:
