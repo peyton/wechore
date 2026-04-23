@@ -1,20 +1,20 @@
 [tools]
-just = "latest"
-tuist = { version = "latest", os = ["macos"] }
+just = "1.49.0"
+tuist = { version = "4.180.0", os = ["macos"] }
 hk = "latest"
 actionlint = "latest"
-python = "latest"
+python = "3.14"
 uv = "latest"
-node = "latest"
+node = "24"
 "npm:prettier" = "latest"
 "npm:wrangler" = "latest"
-"github:rudrankriyam/App-Store-Connect-CLI" = { version = "latest", bin = "asc" }
+"github:rudrankriyam/App-Store-Connect-CLI" = { version = "1.2.2", bin = "asc" }
 ruff = "latest"
 shellcheck = "latest"
 rumdl = "latest"
 shfmt = "latest"
 zizmor = "latest"
-swiftlint = "latest"
+swiftlint = "0.63.2"
 pkl = "latest"
 
 [settings]
