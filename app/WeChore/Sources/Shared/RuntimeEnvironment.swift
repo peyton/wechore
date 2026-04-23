@@ -11,12 +11,8 @@ enum RuntimeEnvironment {
         }
         let raw = String(argument.dropFirst("UITEST_ROUTE=".count))
         switch raw {
-        case "join", "joinStart":
-            return .joinStart
-        case "myQR", "qr":
-            return .myQRCode
         case "tasks", "today", "chores":
-            return .tasks
+            return .taskInbox
         case "me", "settings":
             return .settings
         case "dm":
@@ -27,6 +23,19 @@ enum RuntimeEnvironment {
             if raw.hasPrefix("thread:") {
                 return .thread(String(raw.dropFirst("thread:".count)))
             }
+            return nil
+        }
+    }
+
+    static var preferredModal: ChatModal? {
+        guard let argument = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("UITEST_ROUTE=") }) else {
+            return nil
+        }
+        let raw = String(argument.dropFirst("UITEST_ROUTE=".count))
+        switch raw {
+        case "join", "joinStart":
+            return .newChat
+        default:
             return nil
         }
     }

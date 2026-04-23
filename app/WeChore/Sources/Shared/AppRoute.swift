@@ -2,10 +2,14 @@ import Foundation
 
 enum ChatDestination: Hashable {
     case thread(String)
-    case tasks
-    case joinStart
-    case myQRCode
+    case taskInbox
     case settings
+}
+
+enum ChatModal: String, Identifiable {
+    case newChat
+
+    var id: String { rawValue }
 }
 
 @MainActor
@@ -13,6 +17,7 @@ enum ChatDestination: Hashable {
 final class AppRouter {
     var phonePath: [ChatDestination] = []
     var selectedDestination: ChatDestination?
+    var activeModal: ChatModal?
 
     func openOnPhone(_ destination: ChatDestination) {
         phonePath = [destination]
@@ -20,5 +25,16 @@ final class AppRouter {
 
     func selectOnIPad(_ destination: ChatDestination) {
         selectedDestination = destination
+    }
+
+    func openThread(_ threadID: String) {
+        let destination = ChatDestination.thread(threadID)
+        openOnPhone(destination)
+        selectOnIPad(destination)
+        activeModal = nil
+    }
+
+    func presentNewChat() {
+        activeModal = .newChat
     }
 }

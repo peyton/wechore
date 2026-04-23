@@ -21,10 +21,11 @@ WeChore is a local-first messaging/task app for iPhone and iPad. Users create gr
 
 ## Core Screens
 
-- Onboarding captures the user's display name, first group chat name, and optional contact handle.
-- Chats is the first screen and lists group chats, DMs, Join or Start, and Me without a bottom tab bar.
-- Conversation shows the floating task tile, messages, voice/text composer, invite/share controls, and task activity.
-- Join or Start creates group chats, starts DMs, accepts invite codes, and simulates nearby join in tests.
+- Onboarding is a single screen: name plus either start first chat or join by invite code.
+- Chats is the first screen and lists recent group chats and DMs, plus Task Inbox and Me, without a bottom tab bar.
+- New Chat is a unified modal that starts group chats, starts DMs, and joins existing chats (code/QR guidance/nearby simulation).
+- Conversation shows the compact task rail, messages, voice/text composer, manual task fallback entry, and invite sheet.
+- Task Inbox shows cross-chat overdue/today/upcoming/recently-done tasks and deep-links back to source chats.
 - Me shows notification, privacy, support, and sync controls.
 
 ## Apple API Use

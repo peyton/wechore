@@ -24,7 +24,7 @@ struct SettingsView: View {
                 )
                 SettingsRow(
                     title: "Invites",
-                    detail: "QR codes, Camera scanning, share links, AirDrop, and nearby join"
+                    detail: "Create and share invite links from each conversation header"
                 )
 
                 SettingsAppearanceSection()
@@ -35,7 +35,6 @@ struct SettingsView: View {
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
                 SettingsProfileSection()
-                SettingsQRCodeSection()
                 WidgetFavoritesSection()
                 SettingsDiagnosticsSection()
 
@@ -91,63 +90,6 @@ private struct SettingsAppearanceSection: View {
         .padding(14)
         .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-}
-
-private struct SettingsQRCodeSection: View {
-    @Environment(AppState.self) private var appState
-    @State private var invitePayload: InvitePayload?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("My QR")
-                        .font(.headline)
-                        .foregroundStyle(AppPalette.ink)
-                    Text("Friends can scan this with Camera to join your first chat.")
-                        .font(.subheadline)
-                        .foregroundStyle(AppPalette.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer()
-                Button(invitePayload == nil ? "Create QR" : "Refresh") {
-                    createOrRefreshInvite()
-                }
-                .buttonStyle(SecondaryActionButtonStyle())
-                .accessibilityIdentifier("settings.myQR.refresh")
-            }
-
-            if let invitePayload {
-                InviteQRCodeCard(payload: invitePayload, title: "My WeChore QR")
-            } else {
-                Text("Start a chat first, then your QR code appears here.")
-                    .font(.subheadline)
-                    .foregroundStyle(AppPalette.muted)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .task {
-            if invitePayload == nil {
-                loadExistingInvite()
-            }
-        }
-    }
-
-    private func loadExistingInvite() {
-        guard let threadID = appState.groupThreads.first?.id ?? appState.threads.first?.id else {
-            invitePayload = nil
-            return
-        }
-        invitePayload = appState.activeInvitePayload(for: threadID)
-    }
-
-    private func createOrRefreshInvite() {
-        guard let threadID = appState.groupThreads.first?.id ?? appState.threads.first?.id else {
-            invitePayload = nil
-            return
-        }
-        invitePayload = appState.createInvite(for: threadID)
     }
 }
 

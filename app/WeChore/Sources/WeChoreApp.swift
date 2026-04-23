@@ -58,6 +58,9 @@ struct WeChoreApp: App {
                         router.selectedDestination = preferredDestination
                         router.phonePath = [preferredDestination]
                     }
+                    if let preferredModal = RuntimeEnvironment.preferredModal {
+                        router.activeModal = preferredModal
+                    }
                 }
                 .onOpenURL { url in
                     if let destination = route(for: url) {

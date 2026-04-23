@@ -2,9 +2,11 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppState.self) private var appState
+    @Environment(AppRouter.self) private var router
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
+        @Bindable var router = router
         Group {
             if appState.settings.hasCompletedOnboarding {
                 if horizontalSizeClass == .regular {
@@ -17,6 +19,12 @@ struct RootView: View {
             }
         }
         .background(AppPalette.canvas)
+        .sheet(item: $router.activeModal) { modal in
+            switch modal {
+            case .newChat:
+                NewChatSheet()
+            }
+        }
     }
 }
 
@@ -26,9 +34,10 @@ private struct PhoneRootView: View {
     var body: some View {
         @Bindable var router = router
         NavigationStack(path: $router.phonePath) {
-            ChatTreeView { destination in
-                router.openOnPhone(destination)
-            }
+            ChatTreeView(
+                open: { destination in router.openOnPhone(destination) },
+                presentNewChat: { router.presentNewChat() }
+            )
             .navigationTitle("Chats")
             .navigationDestination(for: ChatDestination.self) { destination in
                 ChatDestinationView(destination: destination)
@@ -45,9 +54,10 @@ private struct IPadRootView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            ChatTreeView { destination in
-                router.selectOnIPad(destination)
-            }
+            ChatTreeView(
+                open: { destination in router.selectOnIPad(destination) },
+                presentNewChat: { router.presentNewChat() }
+            )
             .navigationTitle("Chats")
             .accessibilityIdentifier("root.sidebar")
         } detail: {
@@ -66,7 +76,10 @@ private struct IPadRootView: View {
         if let first = appState.threads.first {
             return .thread(first.id)
         }
-        return .joinStart
+        if !appState.chores.isEmpty {
+            return .taskInbox
+        }
+        return .settings
     }
 }
 
@@ -77,12 +90,8 @@ private struct ChatDestinationView: View {
         switch destination {
         case let .thread(threadID):
             ConversationView(threadID: threadID)
-        case .tasks:
-            ChoresView()
-        case .joinStart:
-            JoinStartView()
-        case .myQRCode:
-            MyQRCodeView()
+        case .taskInbox:
+            TaskInboxView()
         case .settings:
             SettingsView()
         }
@@ -92,6 +101,7 @@ private struct ChatDestinationView: View {
 struct ChatTreeView: View {
     @Environment(AppState.self) private var appState
     let open: (ChatDestination) -> Void
+    let presentNewChat: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -99,10 +109,11 @@ struct ChatTreeView: View {
                 ContentUnavailableView {
                     Label("No chats yet", systemImage: "bubble.left.and.bubble.right")
                 } description: {
-                    Text("Start a chat to begin tracking chores with your household.")
+                    Text("Start a chat to begin tracking todos with your people.")
                 } actions: {
-                    Button("Start a Chat") { open(.joinStart) }
+                    Button("New Chat", action: presentNewChat)
                         .buttonStyle(PrimaryActionButtonStyle())
+                        .accessibilityIdentifier("chatTree.emptyNewChat")
                 }
             }
 
@@ -129,25 +140,11 @@ struct ChatTreeView: View {
 
                 Section {
                     Button {
-                        open(.tasks)
+                        open(.taskInbox)
                     } label: {
-                        Label(tasksLabel, systemImage: "checklist.checked")
+                        Label(taskInboxLabel, systemImage: "checklist.checked")
                     }
-                    .accessibilityIdentifier("chatTree.tasks")
-
-                    Button {
-                        open(.joinStart)
-                    } label: {
-                        Label("Join or Start", systemImage: "plus.bubble.fill")
-                    }
-                    .accessibilityIdentifier("chatTree.joinStart")
-
-                    Button {
-                        open(.myQRCode)
-                    } label: {
-                        Label("My QR", systemImage: "qrcode")
-                    }
-                    .accessibilityIdentifier("chatTree.myQR")
+                    .accessibilityIdentifier("chatTree.taskInbox")
 
                     Button {
                         open(.settings)
@@ -166,21 +163,19 @@ struct ChatTreeView: View {
         .background(AppPalette.canvas)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    open(.tasks)
-                } label: {
-                    Label("New Task", systemImage: "plus")
+                Button(action: presentNewChat) {
+                    Label("New Chat", systemImage: "plus")
                 }
                 .keyboardShortcut("n", modifiers: .command)
-                .accessibilityIdentifier("chatTree.newTask")
+                .accessibilityIdentifier("chatTree.newChat")
             }
         }
         .accessibilityIdentifier("chat.tree")
     }
 
-    private var tasksLabel: String {
+    private var taskInboxLabel: String {
         let count = appState.activeChores.count
-        return count == 0 ? "Tasks" : "Tasks (\(count))"
+        return count == 0 ? "Task Inbox" : "Task Inbox (\(count))"
     }
 }
 
