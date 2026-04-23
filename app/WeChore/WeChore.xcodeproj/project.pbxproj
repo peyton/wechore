@@ -16,6 +16,7 @@
 		1597737A726E72D3ABB61AF0 /* EmojiPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BAD31A1DAA6EAC915D726D /* EmojiPickerSheet.swift */; };
 		1B4A47BFE222B65692A465F7 /* VoiceMessageServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5776EEC590992DB1D8C39EF4 /* VoiceMessageServices.swift */; };
 		21150B907A7A1159EEC72344 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */; };
+		22FB826B39436C5B4348B06A /* NewChatSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B236FE001E38EB4AFCE505 /* NewChatSheet.swift */; };
 		292FDE83B0FE1F2EDEDD43FD /* WeChoreDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75688C20095192147F2BA651 /* WeChoreDeepLink.swift */; };
 		2ADDB735E6EA2A21A4938EF3 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E02B4ADB1A0FB6B832D14F /* DomainModels.swift */; };
 		2E79DF102256163B6DE4257C /* TuistBundle+WeChore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA60A67D6AE72E1B9E9288C /* TuistBundle+WeChore.swift */; };
@@ -39,6 +40,7 @@
 		6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */; };
 		69F23ED45B841BA673D3808D /* ChoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B53447435F88D82364A810A /* ChoresView.swift */; };
 		6AC06BD1E47F006BEF9BD114 /* Repository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E994A026F5DF5FBF75A268 /* Repository.swift */; };
+		6C0214A8A46AF43825E926C6 /* NewChatSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B236FE001E38EB4AFCE505 /* NewChatSheet.swift */; };
 		6FA3AE0592B52D02728CA5F6 /* WeChoreDevWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A5714810EB28BF1653AA5DE4 /* WeChoreDevWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		70785E6F38DA6A9C8001FE14 /* WeChoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB5E7E664E92352D0D57293 /* WeChoreApp.swift */; };
 		77371031B2F28DD449624828 /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 016AC5C6A9F51FF736BF127A /* AppRoute.swift */; };
@@ -269,6 +271,7 @@
 		A8C8F5EC061A571D76405E67 /* WeChoreDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeChoreDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE2D028F2405BB3E99C7B91E /* StoredModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredModels.swift; sourceTree = "<group>"; };
 		C3E994A026F5DF5FBF75A268 /* Repository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repository.swift; sourceTree = "<group>"; };
+		C6B236FE001E38EB4AFCE505 /* NewChatSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatSheet.swift; sourceTree = "<group>"; };
 		C8002C9CDD9DA50A3F9721CB /* NearbyInviteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyInviteService.swift; sourceTree = "<group>"; };
 		C8919174CB8232012241AA84 /* WeChoreIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChoreIntegrationTests.swift; sourceTree = "<group>"; };
 		D13F845CADA130693A4918C9 /* MessageSuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSuggestionEngine.swift; sourceTree = "<group>"; };
@@ -348,6 +351,7 @@
 				93BAD31A1DAA6EAC915D726D /* EmojiPickerSheet.swift */,
 				F04C26C70B959FF12E8E4569 /* InviteQRCodeView.swift */,
 				F6BFF9A87A70275F2C2D0A97 /* MessagesView.swift */,
+				C6B236FE001E38EB4AFCE505 /* NewChatSheet.swift */,
 				2A85B8E7B7C3AD45C17A9A8C /* OnboardingView.swift */,
 				9A7ACFFB3297A85AAAFF05A3 /* RootView.swift */,
 				5D0A2CCF3F85EC50CEA44AEE /* SettingsView.swift */,
@@ -818,6 +822,7 @@
 				1597737A726E72D3ABB61AF0 /* EmojiPickerSheet.swift in Sources */,
 				88A6EE6A7ADB777DF0DB23F6 /* InviteQRCodeView.swift in Sources */,
 				DD2F11EEA2833973A5AC458A /* MessagesView.swift in Sources */,
+				6C0214A8A46AF43825E926C6 /* NewChatSheet.swift in Sources */,
 				D2E530DCC0C456C19AA24F29 /* OnboardingView.swift in Sources */,
 				21150B907A7A1159EEC72344 /* RootView.swift in Sources */,
 				87C761A1BD33C5526097CD8F /* SettingsView.swift in Sources */,
@@ -887,6 +892,7 @@
 				94E6083D3D9095F12FF1294C /* EmojiPickerSheet.swift in Sources */,
 				E7EBB9903546867BF3A71AD4 /* InviteQRCodeView.swift in Sources */,
 				6883DF7A0B5B4588CDC5FB5B /* MessagesView.swift in Sources */,
+				22FB826B39436C5B4348B06A /* NewChatSheet.swift in Sources */,
 				2E9FC92FB27CD8AFF6F2A107 /* OnboardingView.swift in Sources */,
 				A3E2842DC12C02398E5F303D /* RootView.swift in Sources */,
 				BB8B63041D210511FE9CF80C /* SettingsView.swift in Sources */,
@@ -1276,7 +1282,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2604141505;
+				CURRENT_PROJECT_VERSION = 2604221007;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1294,7 +1300,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
-				WECHORE_BUILD_NUMBER = 2604141505;
+				WECHORE_BUILD_NUMBER = 2604221007;
 			};
 			name = Release;
 		};
@@ -1454,7 +1460,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2604141505;
+				CURRENT_PROJECT_VERSION = 2604221007;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1478,7 +1484,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
-				WECHORE_BUILD_NUMBER = 2604141505;
+				WECHORE_BUILD_NUMBER = 2604221007;
 			};
 			name = Debug;
 		};

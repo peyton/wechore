@@ -12,9 +12,8 @@ struct ConversationView: View {
     @State private var isVoiceMode = false
     @State private var isActionPanelOpen = false
     @State private var selectedPhoto: PhotosPickerItem?
-    @State private var isQuickAddPresented = false
     @State private var invitePayload: InvitePayload?
-    @State private var isInviteQRPresented = false
+    @State private var isInviteSheetPresented = false
     @FocusState private var isDraftFocused: Bool
 
     private let bottomID = "conversation.bottom"
@@ -24,8 +23,7 @@ struct ConversationView: View {
             ConversationHeader(
                 threadID: threadID,
                 invitePayload: $invitePayload,
-                createInvite: createInvite,
-                showInviteQR: showInviteQR
+                openInviteSheet: openInviteSheet
             )
             AppStatusBanner(allowsUndo: true)
             FloatingTaskTile(threadID: threadID)
@@ -47,13 +45,8 @@ struct ConversationView: View {
                 )
                 if isActionPanelOpen {
                     ConversationActionPanel(
-                        invitePayload: invitePayload,
-                        newTask: {
-                            isQuickAddPresented = true
-                            isActionPanelOpen = false
-                        },
-                        createInvite: createInvite,
-                        showInviteQR: showInviteQR
+                        threadID: threadID,
+                        close: { isActionPanelOpen = false }
                     )
                 }
             }
@@ -77,27 +70,28 @@ struct ConversationView: View {
                 selectedPhoto = nil
             }
         }
-        .sheet(isPresented: $isInviteQRPresented) {
+        .sheet(isPresented: $isInviteSheetPresented) {
             if let invitePayload {
                 NavigationStack {
                     ScrollView {
-                        InviteQRCodeCard(payload: invitePayload)
+                        InviteQRCodeCard(
+                            payload: invitePayload,
+                            title: "Invite People",
+                            detail: "Share this link, code, or QR to add someone to this chat."
+                        )
                             .padding(18)
                     }
                     .background(AppPalette.canvas)
-                    .navigationTitle("Invite QR")
+                    .navigationTitle("Invite")
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") {
-                                isInviteQRPresented = false
+                                isInviteSheetPresented = false
                             }
                         }
                     }
                 }
             }
-        }
-        .sheet(isPresented: $isQuickAddPresented) {
-            QuickAddTaskSheet(threadID: threadID)
         }
     }
 
@@ -127,17 +121,9 @@ struct ConversationView: View {
         appState.cancelVoiceMessageRecording()
     }
 
-    private func createInvite() {
-        invitePayload = appState.createInvite(for: threadID)
-        isActionPanelOpen = false
-    }
-
-    private func showInviteQR() {
-        if invitePayload == nil {
-            createInvite()
-        }
-        isActionPanelOpen = false
-        isInviteQRPresented = invitePayload != nil
+    private func openInviteSheet() {
+        invitePayload = appState.createInvite(for: threadID) ?? appState.activeInvitePayload(for: threadID)
+        isInviteSheetPresented = invitePayload != nil
     }
 
     private func sendPhotoMessage(_ data: Data) async {
@@ -149,8 +135,7 @@ private struct ConversationHeader: View {
     @Environment(AppState.self) private var appState
     let threadID: String
     @Binding var invitePayload: InvitePayload?
-    let createInvite: () -> Void
-    let showInviteQR: () -> Void
+    let openInviteSheet: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -166,36 +151,16 @@ private struct ConversationHeader: View {
                     .foregroundStyle(AppPalette.muted)
             }
             Spacer()
-            if let payload = invitePayload {
-                HStack(spacing: 2) {
-                    Button(action: showInviteQR) {
-                        Label("Show QR", systemImage: "qrcode")
-                            .labelStyle(.iconOnly)
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .accessibilityIdentifier("conversation.showInviteQR")
-
-                    ShareLink(item: payload.shareText) {
-                        Label("Share invite", systemImage: "square.and.arrow.up")
-                            .labelStyle(.iconOnly)
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .accessibilityIdentifier("conversation.shareInvite")
-                }
-            } else {
-                Button(action: createInvite) {
-                    Label("Invite", systemImage: "person.badge.plus")
-                        .labelStyle(.titleAndIcon)
-                }
-                .font(.subheadline.weight(.semibold))
-                .buttonStyle(.plain)
-                .padding(.horizontal, 10)
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-                .accessibilityIdentifier("conversation.createInvite")
+            Button(action: openInviteSheet) {
+                Label("Invite", systemImage: invitePayload == nil ? "person.badge.plus" : "qrcode")
+                    .labelStyle(.titleAndIcon)
             }
+            .font(.subheadline.weight(.semibold))
+            .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+            .accessibilityIdentifier("conversation.invite")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
@@ -228,6 +193,14 @@ private struct FloatingTaskTile: View {
         appState.taskDrafts(in: threadID)
     }
 
+    private var recentlyDoneTasks: [Chore] {
+        appState.chores
+            .filter { $0.threadID == threadID && $0.status == .done }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .prefix(2)
+            .map { $0 }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -247,7 +220,7 @@ private struct FloatingTaskTile: View {
                     .accessibilityHidden(true)
             }
 
-            if drafts.isEmpty && activeTasks.isEmpty {
+            if drafts.isEmpty && activeTasks.isEmpty && recentlyDoneTasks.isEmpty {
                 Text("Nothing active. Send a request and WeChore will pull out the task.")
                     .font(.subheadline)
                     .foregroundStyle(AppPalette.muted)
@@ -261,13 +234,19 @@ private struct FloatingTaskTile: View {
                 }
                 if activeTasks.count > 3 {
                     Button {
-                        router.openOnPhone(.tasks)
-                        router.selectOnIPad(.tasks)
+                        router.openOnPhone(.taskInbox)
+                        router.selectOnIPad(.taskInbox)
                     } label: {
-                        Label("\(activeTasks.count - 3) more in Tasks", systemImage: "arrow.right.circle.fill")
+                        Label("\(activeTasks.count - 3) more in Task Inbox", systemImage: "arrow.right.circle.fill")
                     }
                     .buttonStyle(TaskActionButtonStyle(isPrimary: false))
                     .accessibilityIdentifier("taskTile.viewAll")
+                }
+                if !recentlyDoneTasks.isEmpty {
+                    Divider()
+                    ForEach(recentlyDoneTasks) { chore in
+                        RecentlyDoneTaskRow(chore: chore)
+                    }
                 }
             }
         }
@@ -284,12 +263,33 @@ private struct FloatingTaskTile: View {
     }
 
     private var summary: String {
-        if drafts.isEmpty && activeTasks.isEmpty {
+        if drafts.isEmpty && activeTasks.isEmpty && recentlyDoneTasks.isEmpty {
             return "No open tasks"
         }
         let draftText = drafts.isEmpty ? nil : "\(drafts.count) to confirm"
         let activeText = activeTasks.isEmpty ? nil : "\(activeTasks.count) active"
-        return [draftText, activeText].compactMap(\.self).joined(separator: " • ")
+        let doneText = recentlyDoneTasks.isEmpty ? nil : "\(recentlyDoneTasks.count) done"
+        return [draftText, activeText, doneText].compactMap(\.self).joined(separator: " • ")
+    }
+}
+
+private struct RecentlyDoneTaskRow: View {
+    let chore: Chore
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            StatusIcon(systemName: "checkmark.circle.fill", color: AppPalette.weChatGreen)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(chore.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppPalette.ink)
+                Text("Completed \(chore.updatedAt.weChoreShortDueText)")
+                    .font(.caption)
+                    .foregroundStyle(AppPalette.muted)
+            }
+            Spacer()
+        }
+        .accessibilityIdentifier("taskTile.doneRecent.\(chore.id)")
     }
 }
 
@@ -1058,77 +1058,81 @@ private struct HoldVoiceShortcutButton: View {
 }
 
 private struct ConversationActionPanel: View {
-    let invitePayload: InvitePayload?
-    let newTask: () -> Void
-    let createInvite: () -> Void
-    let showInviteQR: () -> Void
+    @Environment(AppState.self) private var appState
+    let threadID: String
+    let close: () -> Void
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 116), spacing: 10, alignment: .top)
-    ]
+    @State private var title = ""
+    @State private var selectedMemberID = ""
+    @State private var duePreset: ManualDuePreset = .tomorrow
+
+    private var canAdd: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && appState.members.contains(where: { $0.id == selectedMemberID })
+    }
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 10) {
-            ChatActionButton(title: "Add Task", systemImage: "plus.circle.fill", action: newTask)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Add task manually")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(AppPalette.ink)
                 .accessibilityIdentifier("chat.action.newTask")
-            ChatActionButton(title: "Invite", systemImage: "person.badge.plus", action: createInvite)
-                .accessibilityIdentifier("chat.action.invite")
-            if let invitePayload {
-                ChatActionButton(title: "QR code", systemImage: "qrcode", action: showInviteQR)
-                    .accessibilityIdentifier("chat.action.qr")
-                ShareLink(item: invitePayload.shareText) {
-                    VStack(spacing: 8) {
-                        Image(systemName: "airplayaudio")
-                            .font(.title3)
-                            .frame(width: 44, height: 44)
-                            .background(AppPalette.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        Text("Share")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(AppPalette.ink)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+
+            TextField("Task name", text: $title)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("chat.manualTask.title")
+
+            Picker("Assign to", selection: $selectedMemberID) {
+                ForEach(appState.members) { member in
+                    Text(member.displayName).tag(member.id)
                 }
-                .accessibilityIdentifier("chat.action.share")
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("chat.manualTask.assignee")
+
+            Picker("Due", selection: $duePreset) {
+                ForEach(ManualDuePreset.allCases) { preset in
+                    Text(preset.rawValue).tag(preset)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("chat.manualTask.duePreset")
+
+            HStack(spacing: 8) {
+                Button("Add Task", action: addTask)
+                    .buttonStyle(TaskActionButtonStyle(isPrimary: true))
+                    .disabled(!canAdd)
+                    .accessibilityIdentifier("chat.manualTask.save")
+                Button("Close", action: close)
+                    .buttonStyle(TaskActionButtonStyle(isPrimary: false))
+                    .accessibilityIdentifier("chat.manualTask.close")
             }
         }
         .padding(.horizontal, 10)
         .padding(.top, 2)
         .padding(.bottom, 12)
         .background(AppPalette.chrome)
-    }
-}
-
-private struct ChatActionButton: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.title3)
-                    .frame(width: 44, height: 44)
-                    .background(AppPalette.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppPalette.ink)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+        .onAppear {
+            if selectedMemberID.isEmpty {
+                selectedMemberID = appState.currentMember.id
             }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 68)
-            .padding(.vertical, 8)
         }
-        .buttonStyle(.plain)
+    }
+
+    private func addTask() {
+        let didAdd = appState.addChore(
+            title: title,
+            assigneeID: selectedMemberID,
+            dueDate: duePreset.dueDate(),
+            threadID: threadID
+        )
+        guard didAdd else { return }
+        title = ""
+        close()
     }
 }
 
-private enum QuickDuePreset: String, CaseIterable, Identifiable {
+private enum ManualDuePreset: String, CaseIterable, Identifiable {
     case none = "No due date"
     case today = "Today"
     case tomorrow = "Tomorrow"
@@ -1140,257 +1144,6 @@ private enum QuickDuePreset: String, CaseIterable, Identifiable {
         case .none: return nil
         case .today: return calendar.endOfDay(afterAdding: 0, to: now)
         case .tomorrow: return calendar.endOfDay(afterAdding: 1, to: now)
-        }
-    }
-}
-
-private struct QuickAddTaskSheet: View {
-    @Environment(AppState.self) private var appState
-    @Environment(\.dismiss) private var dismiss
-    let threadID: String
-    @State private var title = ""
-    @State private var selectedMemberID = ""
-    @State private var duePreset: QuickDuePreset = .tomorrow
-
-    private var canAdd: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && appState.members.contains(where: { $0.id == selectedMemberID })
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Task name", text: $title)
-                    .accessibilityIdentifier("quickAdd.title")
-                Picker("Assign to", selection: $selectedMemberID) {
-                    ForEach(appState.members) { member in
-                        Text(member.displayName).tag(member.id)
-                    }
-                }
-                .accessibilityIdentifier("quickAdd.assignee")
-                Picker("Due", selection: $duePreset) {
-                    ForEach(QuickDuePreset.allCases) { preset in
-                        Text(preset.rawValue).tag(preset)
-                    }
-                }
-                .accessibilityIdentifier("quickAdd.duePreset")
-            }
-            .navigationTitle("Add Task")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        appState.addChore(
-                            title: title,
-                            assigneeID: selectedMemberID,
-                            dueDate: duePreset.dueDate(),
-                            threadID: threadID
-                        )
-                        dismiss()
-                    }
-                    .disabled(!canAdd)
-                }
-            }
-            .onAppear {
-                if selectedMemberID.isEmpty {
-                    selectedMemberID = appState.currentMember.id
-                }
-            }
-        }
-    }
-}
-
-struct JoinStartView: View {
-    @Environment(AppState.self) private var appState
-    @Environment(AppRouter.self) private var router
-
-    @State private var groupTitle = ""
-    @State private var dmName = ""
-    @State private var dmContact = ""
-    @State private var inviteCode = ""
-    @State private var isDMContactPickerPresented = false
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Join or Start")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(AppPalette.ink)
-
-                JoinStartPanel(title: "Scan a QR code") {
-                    Text(
-                        "Ask your friend to open My QR. Open the iPhone Camera app, "
-                            + "point it at their WeChore QR, then tap the join banner."
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(AppPalette.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 10) {
-                        Image(systemName: "camera.viewfinder")
-                            .foregroundStyle(AppPalette.weChatGreen)
-                        Text("Camera scanning works with WeChore invite links.")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(AppPalette.ink)
-                    }
-                    .accessibilityIdentifier("join.scanQR")
-                }
-
-                JoinStartPanel(title: "Start a group chat") {
-                    VisibleFieldLabel("Group chat name") {
-                        TextField("Family, weekend crew, soccer carpool", text: $groupTitle)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("join.groupTitle")
-                    }
-                    Button("Start Group") {
-                        openThread(appState.createGroupChat(title: groupTitle))
-                        groupTitle = ""
-                    }
-                    .buttonStyle(PrimaryActionButtonStyle())
-                    .disabled(!canStartGroup)
-                    .accessibilityIdentifier("join.startGroup")
-                }
-
-                JoinStartPanel(title: "Start a DM") {
-                    VisibleFieldLabel("Name") {
-                        TextField("Name", text: $dmName)
-                            .textContentType(.name)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("join.dmName")
-                    }
-                    VisibleFieldLabel("Phone or email") {
-                        TextField("Phone or email", text: $dmContact)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("join.dmContact")
-                    }
-                    Button {
-                        isDMContactPickerPresented = true
-                    } label: {
-                        Label("Choose from Contacts", systemImage: "person.crop.circle.badge.plus")
-                    }
-                    .buttonStyle(SecondaryActionButtonStyle())
-                    .accessibilityIdentifier("join.pickContact")
-
-                    Button("Start DM") {
-                        openThread(appState.startDM(
-                            displayName: dmName,
-                            phoneNumber: dmContact.contains("@") ? "" : dmContact,
-                            faceTimeHandle: dmContact.contains("@") ? dmContact : ""
-                        ))
-                        dmName = ""
-                        dmContact = ""
-                    }
-                    .buttonStyle(PrimaryActionButtonStyle())
-                    .disabled(!canStartDM)
-                    .accessibilityIdentifier("join.startDM")
-                }
-
-                JoinStartPanel(title: "Join with code") {
-                    VisibleFieldLabel("Invite code") {
-                        TextField("Invite code", text: $inviteCode)
-                            .textInputAutocapitalization(.characters)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("join.inviteCode")
-                    }
-                    Button("Join Code") {
-                        if let threadID = appState.acceptInviteCode(inviteCode) {
-                            openThread(threadID)
-                        }
-                    }
-                    .buttonStyle(PrimaryActionButtonStyle())
-                    .disabled(!canJoinCode)
-                    .accessibilityIdentifier("join.code")
-                }
-
-                JoinStartPanel(title: "Bring phones together") {
-                    Text("WeChore uses nearby Apple device discovery when available, then falls back to matching codes.")
-                        .font(.subheadline)
-                        .foregroundStyle(AppPalette.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button("Simulate Nearby Join") {
-                        openThread(appState.simulateNearbyJoin())
-                    }
-                    .buttonStyle(SecondaryActionButtonStyle())
-                    .accessibilityIdentifier("join.nearby")
-                }
-            }
-            .padding(18)
-            .frame(maxWidth: 760, alignment: .leading)
-        }
-        .background(AppPalette.canvas)
-        .navigationTitle("Join or Start")
-        .safeAreaInset(edge: .bottom) {
-            AppStatusBanner()
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
-        }
-        .sheet(isPresented: $isDMContactPickerPresented) {
-            ContactPicker { selection in
-                dmName = selection.displayName
-                dmContact = selection.contactValue
-                isDMContactPickerPresented = false
-            } onCancel: {
-                isDMContactPickerPresented = false
-            }
-        }
-    }
-
-    private var canStartGroup: Bool {
-        !groupTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var canStartDM: Bool {
-        !dmName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var canJoinCode: Bool {
-        inviteCode.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
-    }
-
-    private func openThread(_ threadID: String?) {
-        guard let threadID else { return }
-        let destination = ChatDestination.thread(threadID)
-        router.phonePath = [destination]
-        router.selectedDestination = destination
-    }
-}
-
-private struct JoinStartPanel<Content: View>: View {
-    let title: String
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(AppPalette.ink)
-            content
-        }
-        .padding(14)
-        .background(AppPalette.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-}
-
-private struct VisibleFieldLabel<Content: View>: View {
-    let title: String
-    @ViewBuilder var content: Content
-
-    init(_ title: String, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppPalette.ink)
-            content
         }
     }
 }
